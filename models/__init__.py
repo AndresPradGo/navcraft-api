@@ -9,3 +9,4 @@ Usage:
 
 """
 from models.base import Model
+from models.waypoint import *
