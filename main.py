@@ -11,4 +11,8 @@ Usage:
 
 from fastapi import FastAPI
 
+from startup.db import create_tables
+
 app = FastAPI()
+
+create_tables()
