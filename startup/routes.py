@@ -10,6 +10,8 @@ Usage:
 
 from fastapi import FastAPI
 
+from routes.waypoints import router as waypoints
+
 
 def link_routes(app: FastAPI) -> None:
     """
@@ -21,3 +23,5 @@ def link_routes(app: FastAPI) -> None:
 
     Returns: None
     """
+
+    app.include_router(waypoints, prefix="/api/waypoints")
