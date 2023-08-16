@@ -12,7 +12,9 @@ Usage:
 from fastapi import FastAPI
 
 from startup.db import create_tables
+from startup.routes import link_routes
 
 app = FastAPI()
 
 create_tables()
+link_routes(app)
