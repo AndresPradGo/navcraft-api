@@ -4,11 +4,11 @@ Sqlalchemy waypoint model
 This module defines the waipoint, aerodrome, and related db-table models.
 
 Usage: 
-- Import the required model classto create db-tables and db-table entries.
+- Import the required model class to create db-tables and db-table entries.
 
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, DECIMAL, String, Boolean, ForeignKey
 from sqlalchemy.orm import Relationship
 
 from models.base import BaseModel
@@ -19,11 +19,10 @@ class Waypoint(BaseModel):
     This class defines the database waypoint model.
 
     Attributes:
-    - id (Integer Column): table row entry id.
+    - id (Integer Column): table primary key.
     - code (String Column): waypoint code identifyer.
     - name (String Column): waypoint name.
-    - user_added (boolean Column): True if waypoint was added by a normal user, 
-                                   False if it was added by an admin user.
+    - is_official (boolean Column): True if waypoint is an official aviation waypoint.
     - lat_degrees (Integer Column): latitude degrees of the waypoint coordinates.
     - lat_minutes (Integer Column): latitude minutes of the waypoint coordinates.
     - lat_seconds (Integer Column): latitude seconds of the waypoint coordinates.
@@ -32,6 +31,7 @@ class Waypoint(BaseModel):
     - lon_minutes (Integer Column): longitude minutes of the waypoint coordinates.
     - lon_seconds (Integer Column): longitude seconds of the waypoint coordinates.
     - lon_direction (String Column): longitude direction of the waypoint coordinates ("E" or "W").
+    - magnetic_variation (Decimal Column): magnetic variation at the waypoint.
     - aerodrome (Relationship): Defines the one-to-one relationship with the Aerodrome table.
     - legs (Relationship): defines the one-to-many relationship with the Leg table.
     """
@@ -41,15 +41,20 @@ class Waypoint(BaseModel):
     id = Column(Integer, primary_key=True, autoincrement=True)
     code = Column(String(10), nullable=False, unique=True)
     name = Column(String(50), nullable=False)
-    user_added = Column(Boolean, nullable=False, default=True)
+    is_official = Column(Boolean, nullable=False, default=True)
     lat_degrees = Column(Integer, nullable=False)
-    lat_minutes = Column(Integer, nullable=False)
+    lat_minutes = Column(Integer, nullable=False, default=0)
     lat_seconds = Column(Integer, nullable=False, default=0)
     lat_direction = Column(String(1), nullable=False, default="N")
     lon_degrees = Column(Integer, nullable=False)
     lon_minutes = Column(Integer, nullable=False)
     lon_seconds = Column(Integer, nullable=False, default=0)
     lon_direction = Column(String(1), nullable=False, default="E")
+    magnetic_variation = Column(
+        DECIMAL(precision=3, scale=1),
+        nullable=False,
+        default=0.0
+    )
 
     aerodrome = Relationship(
         "Aerodrome",
@@ -71,16 +76,11 @@ class Aerodrome(BaseModel):
     This class defines the database aerodrome model.
 
     Attributes:
-    - id (Integer Column): table row entry id.
+    - id (Integer Column): table primary key. Also a foreignkey with the waypoints table.
+    - has_taf (Boolean Column): True if the aerodrome has an official TAF.
+    - has_metar(Boolean Column): True if the aerodrome has an official METAR.
+    - has_fds (Boolean Column): True if the aerodrome has an official FDs.
     - elevation (Integer Column): aerodrome elevation in feet.
-    - status_id (Integer Column): foreign key that defines the relation with the aerodrome_status table.
-    - status (Relationship): defines the many_to_one relationship, with the aerodrome_status table.
-    - waypoint (Relationship): defines the one_to_one relationship, with the waypoints table.
-    - runways (Relationship): defines the one_to_many relationship, with the runways table.
-    - departure_point_trips (Relationship): defines the one_to_many relationship, with the trips table.
-                                            List of trips for which an aerodrome has been the departure point.
-    - destination_point_trips (Relationship): defines the one_to_many relationship, with the runways table.
-                                              List of trips for which an aerodrome has been the destination point.
     """
 
     __tablename__ = "aerodromes"
@@ -96,44 +96,10 @@ class Aerodrome(BaseModel):
         nullable=False,
         unique=True
     )
+    has_taf = Column(Boolean, nullable=False, default=False)
+    has_metar = Column(Boolean, nullable=False, default=False)
+    has_fds = Column(Boolean, nullable=False, default=False)
     elevation = Column(Integer, nullable=False, default=0)
-    status_id = Column(
-        Integer,
-        ForeignKey(
-            "aerodrome_status.id",
-            ondelete="RESTRICT",
-            onupdate="CASCADE"
-        ),
-        nullable=False,
-        default=1
-    )
-
-    status = Relationship("AerodromeStatus", back_populates="aerodrome")
-    waypoint = Relationship(
-        "Waypoint",
-        back_populates="aerodrome",
-        foreign_keys=[id]
-    )
-    runways = Relationship(
-        "Runway",
-        back_populates="aerodrome",
-        passive_deletes=True,
-        passive_updates=True
-    )
-    departure_point_trips = Relationship(
-        "Trip",
-        back_populates="departure",
-        passive_deletes=True,
-        passive_updates=True,
-        foreign_keys="Trip.departure_id"
-    )
-    destination_point_trips = Relationship(
-        "Trip",
-        back_populates="destination",
-        passive_deletes=True,
-        passive_updates=True,
-        foreign_keys="Trip.destination_id"
-    )
 
 
 class Runway(BaseModel):
@@ -141,14 +107,16 @@ class Runway(BaseModel):
     This class defines the database runway model.
 
     Attributes:
-    - id (Integer Column): table row entry id.
+    - id (Integer Column): table primary key.
     - length_ft (Integer Column): length of the runway in ft.
     - number (integer Column): runway number.
     - position (String Column): "R", "L" or "C" position for parallel runways.
-    - surface_id (Integer Column): foreign key that defines the relation with the runway_surfaces table.
-    - aerodrome_id (Integer Column): foreign key that defines the relation with the aerodromes table.
+    - surface_id (Integer Column): foreign key that points to the runway_surfaces table.
+    - aerodrome_id (Integer Column): foreign key that points to the aerodromes table.
     - surface (Relationship): defines the many-to-one relationship with the runway_surfaces table.
     - aerodrome (Relationship): Defines the one-to-one relationship with the aerodromes table.
+    - departures (Relationship): defines the one_to_many relationship with the departures table.
+    - arrivals (Relationship): defines the one_to_many relationship with the arrivals table.
     """
 
     __tablename__ = "runways"
@@ -179,6 +147,20 @@ class Runway(BaseModel):
 
     surface = Relationship("RunwaySurface", back_populates="runways")
     aerodrome = Relationship("Aerodrome", back_populates="runways")
+    departures = Relationship(
+        "Departure",
+        back_populates="runway_id",
+        passive_deletes=True,
+        passive_updates=True,
+        foreign_keys="Departure.id"
+    )
+    arrivals = Relationship(
+        "Arrival",
+        back_populates="runway_id",
+        passive_deletes=True,
+        passive_updates=True,
+        foreign_keys="Arrival.id"
+    )
 
 
 class RunwaySurface(BaseModel):
@@ -186,8 +168,11 @@ class RunwaySurface(BaseModel):
     This class defines the database runway_surface model.
 
     Attributes:
-    - id (Integer Column): table row entry id.
+    - id (Integer Column): table primary key.
     - surface (String Column): runway surface material.
+    - performance_level (Integer Column): sorts the surfaces in terms of which one is better; 
+      e.g. if asphalt has a performance_level of 1, grass has a performance level of 2, since 
+      aircraft performe better on asphalt.
     - runways (Relationship): defines the one_to_many relationship with the runways table.
     """
 
@@ -195,33 +180,11 @@ class RunwaySurface(BaseModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     surface = Column(String(50), nullable=False, unique=True)
+    performance_level = Column(Integer, nullable=False, autoincrement=True)
 
     runways = Relationship(
         "Runway",
         back_populates="surface",
-        passive_deletes=True,
-        passive_updates=True
-    )
-
-
-class AerodrometStatus(BaseModel):
-    """
-    This class defines the database aerodrome_status model.
-
-    Attributes:
-    - id (Integer Column): table row entry id.
-    - status (String Column): aerodrome status.
-    - aerodrome (Relationship): defines the one_to_many relationship with the aerodromes table.
-    """
-
-    __tablename__ = "aerodrome_status"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    status = Column(String(50), nullable=False, unique=True)
-
-    aerodrome = Relationship(
-        "Aerodrome",
-        back_populates="status",
         passive_deletes=True,
         passive_updates=True
     )

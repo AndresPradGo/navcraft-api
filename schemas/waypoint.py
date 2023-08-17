@@ -10,7 +10,7 @@ Usage:
 
 from typing import Optional, Any
 
-from pydantic import BaseModel, constr, conint, model_validator
+from pydantic import BaseModel, constr, conint, confloat, validator, model_validator
 
 
 class Waypoint(BaseModel):
@@ -18,8 +18,10 @@ class Waypoint(BaseModel):
     This class defines the pydantic waypoint schema.
 
     Attributes:
+   Attributes:
     - code (String): waypoint code identifyer.
     - name (String): waypoint name.
+    - is_official (boolean): True if waypoint is an official aviation waypoint.
     - lat_degrees (Integer): latitude degrees of the waypoint coordinates.
     - lat_minutes (Integer): latitude minutes of the waypoint coordinates.
     - lat_seconds (Integer): latitude seconds of the waypoint coordinates.
@@ -28,6 +30,7 @@ class Waypoint(BaseModel):
     - lon_minutes (Integer): longitude minutes of the waypoint coordinates.
     - lon_seconds (Integer): longitude seconds of the waypoint coordinates.
     - lon_direction (String): longitude direction of the waypoint coordinates ("E" or "W").
+    - magnetic_variation (Integer): magnetic variation at the waypoint.
     """
 
     code: constr(
@@ -60,6 +63,22 @@ class Waypoint(BaseModel):
         max_length=1,
         pattern='\s*[EWew]\s*'
     )]
+    magnetic_variation: Optional[confloat(strict=True, allow_inf_nan=False)]
+
+    @validator('magnetic_variation')
+    @classmethod
+    def round_magnetic_variation(clc, value: float) -> float:
+        '''
+        Classmethod to round magnetic_variation input value to 1 decimal place.
+
+        Parameters:
+        - value (float): The object with the values to be validated.
+
+        Returns:
+        (float) : The magnetic_variation value rounded to 1 decimal place.
+
+        '''
+        return round(value, 1)
 
     @model_validator(mode='after')
     @classmethod
@@ -71,7 +90,6 @@ class Waypoint(BaseModel):
 
         Parameters:
         - values (Any): The object with the values to be validated.
-        ...
 
         Returns:
         (Any) : The object of validated values.
