@@ -9,4 +9,5 @@ Usage:
 
 """
 from models.base import Model
+from models.flight import *
 from models.waypoint import *
