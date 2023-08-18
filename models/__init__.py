@@ -8,6 +8,8 @@ Usage:
 - This module will run automatically, whenever the models package gets imported.
 
 """
+
 from models.base import Model
 from models.flight import *
+from models.user import *
 from models.waypoint import *
