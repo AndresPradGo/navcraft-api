@@ -10,6 +10,7 @@ Usage:
 """
 
 from models.base import Model
+from models.aircraft import *
 from models.flight import *
 from models.user import *
 from models.waypoint import *
