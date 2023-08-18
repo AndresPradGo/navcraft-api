@@ -81,6 +81,8 @@ class Aerodrome(BaseModel):
     - has_metar(Boolean Column): True if the aerodrome has an official METAR.
     - has_fds (Boolean Column): True if the aerodrome has an official FDs.
     - elevation (Integer Column): aerodrome elevation in feet.
+    - waypoint (Relationship): defines the one-to-one relationship with the waypoints table.
+    - runways (Relationship): list of runways.
     """
 
     __tablename__ = "aerodromes"
@@ -100,6 +102,14 @@ class Aerodrome(BaseModel):
     has_metar = Column(Boolean, nullable=False, default=False)
     has_fds = Column(Boolean, nullable=False, default=False)
     elevation = Column(Integer, nullable=False, default=0)
+
+    waypoint = Relationship("Waypoint", back_populates="aerodrome")
+    runways = Relationship(
+        "Runway",
+        back_populates="aerodrome",
+        passive_deletes=True,
+        passive_updates=True
+    )
 
 
 class Runway(BaseModel):
