@@ -34,6 +34,8 @@ class Flight(BaseModel):
     - departure (Relationship): Defines the one-to-one relationship with the departures table.
     - arrival (Relationship): Defines the one-to-one relationship with the arrivals table.
     - legs (Relationship): defines the one-to-many relationship with the legs table.
+    - passengers (Relationship): defines the one-to-many relationship with the passengers table.
+    - baggages (Relationship): defines the one-to-many relationship with the baggages table.
     """
 
     __tablename__ = "flights"
@@ -96,6 +98,18 @@ class Flight(BaseModel):
     )
     legs = Relationship(
         "Leg",
+        back_populates="flight",
+        passive_deletes=True,
+        passive_updates=True
+    )
+    passengers = Relationship(
+        "Passenger",
+        back_populates="flight",
+        passive_deletes=True,
+        passive_updates=True
+    )
+    baggages = Relationship(
+        "Baggage",
         back_populates="flight",
         passive_deletes=True,
         passive_updates=True

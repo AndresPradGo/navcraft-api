@@ -159,17 +159,17 @@ class Runway(BaseModel):
     aerodrome = Relationship("Aerodrome", back_populates="runways")
     departures = Relationship(
         "Departure",
-        back_populates="runway_id",
+        back_populates="runway",
         passive_deletes=True,
         passive_updates=True,
-        foreign_keys="Departure.id"
+        foreign_keys="Departure.runway_id"
     )
     arrivals = Relationship(
         "Arrival",
-        back_populates="runway_id",
+        back_populates="runway",
         passive_deletes=True,
         passive_updates=True,
-        foreign_keys="Arrival.id"
+        foreign_keys="Arrival.runway_id"
     )
 
 

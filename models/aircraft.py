@@ -14,7 +14,7 @@ from sqlalchemy.orm import Relationship
 from models.base import BaseModel
 
 
-class AicraftModel(BaseModel):
+class AircraftModel(BaseModel):
     """
     This class defines the database aircraft_model model.
 
@@ -77,6 +77,7 @@ class Aircraft(BaseModel):
       to decrease landing/takeoff performance for different runway surfaces.
     - weight_balance_profiles (Relationship): list of W&B profiles for different categories.
     - baggage_compartments (Relationship): list of baggage compartments the aircraft is equipt with.
+    - seat_rows (Relationship): list of seat rows the aircraft is equipt with.
     - takeoff_performance_data (Relationship): takeoff performance data table.
     - landing_performance_data (Relationship): landing performance data table.
     - climb_performance_data (Relationship): climb performance data table.
@@ -163,6 +164,12 @@ class Aircraft(BaseModel):
     )
     baggage_compartments = Relationship(
         "BaggageCompartment",
+        back_populates="aircraft",
+        passive_deletes=True,
+        passive_updates=True
+    )
+    seat_rows = Relationship(
+        "SeatRow",
         back_populates="aircraft",
         passive_deletes=True,
         passive_updates=True
@@ -444,7 +451,7 @@ class SeatRow(BaseModel):
 
     aircraft = Relationship(
         "Aircraft",
-        back_populates="baggage_compartments"
+        back_populates="seat_rows"
     )
 
     passengers = Relationship(
