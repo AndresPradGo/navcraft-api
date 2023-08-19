@@ -82,6 +82,8 @@ class Aircraft(BaseModel):
     - climb_performance_data (Relationship): climb performance data table.
     - cruise_performance_data (Relationship): cruise performance data table.
     - fuel_type (Relationship): Defines the many-to-one relationship with the fuel_types table.
+    - compass_card_data (Relationship): compass card data table.
+    - airspeed_calibration_data (Relationship): airspeed calibration data table.
     """
 
     __tablename__ = "aircraft"
@@ -192,6 +194,18 @@ class Aircraft(BaseModel):
     fuel_type = Relationship(
         "FuelType",
         back_populates="aircraft"
+    )
+    compass_card_data = Relationship(
+        "CompassCard",
+        back_populates="aircraft",
+        passive_deletes=True,
+        passive_updates=True
+    )
+    airspeed_calibration_data = Relationship(
+        "AirspeedCalibration",
+        back_populates="aircraft",
+        passive_deletes=True,
+        passive_updates=True
     )
 
     class SurfacePerformanceDecrease(BaseModel):
@@ -613,3 +627,71 @@ class CruisePerformance(BaseModel):
             passive_deletes=True,
             passive_updates=True
         )
+
+
+class CompassCard(BaseModel):
+    """
+    This class defines the database compass_card model.
+
+    Attributes:
+    - id (Integer Column): table primary key.
+    - uncorrected (Integer Column): the compass track before correction. The track you want to steer.
+    - corrected (Integer Column): the compass track after correction. The track you have to steer.
+    - aircraft_id (Integer Column): foreignkey pointing to the aircraft table.
+    - aircraft (Relationship): Defines the many-to-one relationship with the aircraft table.
+    """
+
+    __tablename__ = "compass_card_data"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    uncorrected = Column(Integer, nullable=False)
+    corrected = Column(Integer, nullable=False)
+
+    aircraft_id = Column(
+        Integer,
+        ForeignKey(
+            "aircraft.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE"
+        ),
+        nullable=False
+    )
+
+    aircraft = Relationship(
+        "Aircraft",
+        back_populates="compass_card_data"
+    )
+
+
+class AirspeedCalibration(BaseModel):
+    """
+    This class defines the database airspeed_calibration model.
+
+    Attributes:
+    - id (Integer Column): table primary key.
+    - kias (Integer Column): indicated airspeed in knots.
+    - kcas (Integer Column): calibrated airspeed in knots.
+    - aircraft_id (Integer Column): foreignkey pointing to the aircraft table.
+    - aircraft (Relationship): Defines the many-to-one relationship with the aircraft table.
+    """
+
+    __tablename__ = "airspeed_calibration_data"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    kias = Column(Integer, nullable=False)
+    kcas = Column(Integer, nullable=False)
+
+    aircraft_id = Column(
+        Integer,
+        ForeignKey(
+            "aircraft.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE"
+        ),
+        nullable=False
+    )
+
+    aircraft = Relationship(
+        "Aircraft",
+        back_populates="airspeed_calibration_data"
+    )
