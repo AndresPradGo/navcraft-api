@@ -139,6 +139,12 @@ class Aircraft(BaseModel):
         passive_deletes=True,
         passive_updates=True
     )
+    baggage_compartments = Relationship(
+        "BaggageCompartment",
+        back_populates="aircraft",
+        passive_deletes=True,
+        passive_updates=True
+    )
 
     class SurfacePerformanceDecrease(BaseModel):
         """
@@ -293,4 +299,94 @@ class WeightBalanceLimit(BaseModel):
     profile = Relationship(
         "WeightBalanceProfile",
         back_populates="weight_balance_limits"
+    )
+
+
+class BaggageCompartment(BaseModel):
+    """
+    This class defines the database weight_balance_limit model.
+
+    Attributes:
+    - id (Integer Column): table primary key.
+    - name (String Column): the name of the compartment (e.g. compartment 1, back compartment)
+    - arm_in (Decimal Column): the W&B arm of the baggage compartment.
+    - weight_limit_lb (Decimal Column): the weight limit in lbs, if any.
+    - aircraft_id (Integer Column): foreign key that links to the aircraft table.
+    - aircraft (Relationship): defines the many_to_one relationship with the aircraft table.
+    - baggages (Relationship): defines the one_to_many relationship with the baggages table.
+
+    """
+
+    __tablename__ = "baggage_compartments"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(50), nullable=False)
+    arm_in = Column(DECIMAL(5, 2), nullable=False)
+    weight_limit_lb = Column(DECIMAL(6, 2))
+    aircraft_id = Column(
+        Integer,
+        ForeignKey(
+            "aircraft.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE"
+        ),
+        nullable=False
+    )
+
+    aircraft = Relationship(
+        "Aircraft",
+        back_populates="baggage_compartments"
+    )
+
+    baggages = Relationship(
+        "Baggage",
+        back_populates="baggage_compartment",
+        passive_deletes=True,
+        passive_updates=True
+    )
+
+
+class SeatRow(BaseModel):
+    """
+    This class defines the database seat_row model.
+
+    Attributes:
+    - id (Integer Column): table primary key.
+    - name (String Column): the name of the row (e.g. pilot seat, back passanger seats)
+    - arm_in (Decimal Column): the W&B arm of the row.
+    - weight_limit_lb (Decimal Column): the weight limit in lbs, if any.
+    - number_of_seats (Integer Column): the number of seats in that row.
+    - aircraft_id (Integer Column): foreign key that links to the aircraft table.
+    - aircraft (Relationship): defines the many_to_one relationship with the aircraft table.
+    - passengers (Relationship): defines the one_to_many relationship with the passengers table.
+
+    """
+
+    __tablename__ = "seat_rows"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(50), nullable=False)
+    arm_in = Column(DECIMAL(5, 2), nullable=False)
+    weight_limit_lb = Column(DECIMAL(6, 2))
+    number_of_seats = Column(Integer, nullable=False)
+    aircraft_id = Column(
+        Integer,
+        ForeignKey(
+            "aircraft.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE"
+        ),
+        nullable=False
+    )
+
+    aircraft = Relationship(
+        "Aircraft",
+        back_populates="baggage_compartments"
+    )
+
+    passengers = Relationship(
+        "Passenger",
+        back_populates="seat_row",
+        passive_deletes=True,
+        passive_updates=True
     )
