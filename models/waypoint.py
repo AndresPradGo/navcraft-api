@@ -184,6 +184,8 @@ class RunwaySurface(BaseModel):
       e.g. if asphalt has a performance_level of 1, grass has a performance level of 2, since 
       aircraft performe better on asphalt.
     - runways (Relationship): defines the one_to_many relationship with the runways table.
+    - aircraft_performance_percentages (Relationship): defines the one_to_many relationship 
+      with the surfaces_performance_decrease table.
     """
 
     __tablename__ = "runway_surfaces"
@@ -194,6 +196,13 @@ class RunwaySurface(BaseModel):
 
     runways = Relationship(
         "Runway",
+        back_populates="surface",
+        passive_deletes=True,
+        passive_updates=True
+    )
+
+    aircraft_performance_percentages = Relationship(
+        "SurfacePerformanceDecrease",
         back_populates="surface",
         passive_deletes=True,
         passive_updates=True
