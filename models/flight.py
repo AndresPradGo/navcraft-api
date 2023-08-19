@@ -266,7 +266,7 @@ class FlightStatus(BaseModel):
     __tablename__ = "flight_status"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    status = Column(String(50), nullable=False)
+    status = Column(String(50), nullable=False, unique=True)
 
     flights = Relationship(
         "Flight",

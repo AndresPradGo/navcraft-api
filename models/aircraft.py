@@ -269,7 +269,7 @@ class WeightBalanceLimit(BaseModel):
     - from_weight_lb (Decimal Column): the weight value of the first point in the W&B limit line in lbs.
     - to_cg_in (Decimal Column): the cg value of the last point in the W&B limit line in inches.
     - to_weight_lb (Decimal Column): the weight value of the last point in the W&B limit line in lbs.
-    - profile_in (Integer Column): foreign key pointing to the weight_balance_profiles table.
+    - profile_id (Integer Column): foreign key pointing to the weight_balance_profiles table.
     - profile (Relationship): defines the many_to_one relationship with the weight_balance_profiles table.
     """
 

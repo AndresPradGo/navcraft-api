@@ -28,7 +28,7 @@ class PassengerProfile(BaseModel):
     __tablename__ = "profiles"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(50), nullable=False)
+    name = Column(String(50), nullable=False, unique=True)
     weight_lb = Column(DECIMAL(4, 1), nullable=False, default=200.0)
 
     passengers = Relationship(
