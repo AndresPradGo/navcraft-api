@@ -25,7 +25,7 @@ class PassengerProfile(BaseModel):
     - passengers (Relationship): defines the one-to-many relationship with the passenger table.
     """
 
-    __tablename__ = "profiles"
+    __tablename__ = "passenger_profiles"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False, unique=True)
