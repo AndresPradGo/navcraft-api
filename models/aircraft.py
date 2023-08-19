@@ -71,6 +71,12 @@ class Aircraft(BaseModel):
       time, fuel and distance per degree celsius of air temperature above standard.
     - model (Relationship): defines the many-to-one relationship with the aircraft_models table.
     - flights (Relationship): list of flights with this particular aircraft.
+    - performance_decreace_runway_surfaces_percent (Relationship): list of percentages by which 
+      to decrease landing/takeoff performance for different runway surfaces
+    - weight_balance_profiles (Relationship): list of W&B profiles for different categories.
+    - baggage_compartments (Relationship): list of baggage compartments the aircraft is equipt with.
+    - takeoff_performance_data (Relationship): takeoff performance data table.
+    - arrival_performance_data (Relationship): landing performance data table.
     """
 
     __tablename__ = "aircraft"
@@ -141,6 +147,18 @@ class Aircraft(BaseModel):
     )
     baggage_compartments = Relationship(
         "BaggageCompartment",
+        back_populates="aircraft",
+        passive_deletes=True,
+        passive_updates=True
+    )
+    takeoff_performance_data = Relationship(
+        "TakeoffPerformance",
+        back_populates="aircraft",
+        passive_deletes=True,
+        passive_updates=True
+    )
+    arrival_performance_data = Relationship(
+        "ArrivalPerformance",
         back_populates="aircraft",
         passive_deletes=True,
         passive_updates=True
@@ -389,4 +407,70 @@ class SeatRow(BaseModel):
         back_populates="seat_row",
         passive_deletes=True,
         passive_updates=True
+    )
+
+
+class TakeoffLandingPerformance(BaseModel):
+    """
+    This class defines the database takeoff and landing performance base model, 
+    which will be the parent for the TakeoffPerformance and LandingPerformance models.
+
+    Attributes:
+    - id (Integer Column): table primary key.
+    - weight_lb (Integer Column):
+    - pressure_alt_ft (Integer Column): pressure altitude in ft.
+    - temperature_c (Integer Column): air temperature at aerodrome, in celsius.
+    - groundroll_ft (Integer Column): ground roll distance in ft.
+    - obstacle_clearance_ft (Integer Column): distance to clear a 50ft obstacle in ft.
+    - aircraft_id (Integer Column): foreignkey pointing to the aircraft table.
+    """
+
+    __abstract__ = True
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    weight_lb = Column(DECIMAL(7, 2), nullable=False)
+    pressure_alt_ft = Column(Integer, nullable=False)
+    temperature_c = Column(Integer, nullable=False)
+    groundroll_ft = Column(Integer, nullable=False)
+    obstacle_clearance_ft = Column(Integer, nullable=False)
+    aircraft_id = Column(
+        Integer,
+        ForeignKey(
+            "aircraft.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE"
+        ),
+        nullable=False
+    )
+
+
+class TakeoffPerformance(TakeoffLandingPerformance):
+    """
+    This class defines the database takeoff_performance model.
+
+    Attributes:
+    - aircraft (Relationship): Defines the many-to-one relationship with the aircraft table.
+    """
+
+    __tablename__ = "takeoff_performance"
+
+    aircraft = Relationship(
+        "Aircraft",
+        back_populates="takeoff_performance_data"
+    )
+
+
+class ArrivalPerformance(TakeoffLandingPerformance):
+    """
+    This class defines the database arrival_performance model.
+
+    Attributes:
+    - aircraft (Relationship): Defines the many-to-one relationship with the aircraft table.
+    """
+
+    __tablename__ = "arrival_performance"
+
+    aircraft = Relationship(
+        "Aircraft",
+        back_populates="arrival_performance_data"
     )
