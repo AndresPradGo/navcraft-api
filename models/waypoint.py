@@ -76,18 +76,18 @@ class Aerodrome(BaseModel):
     This class defines the database aerodrome model.
 
     Attributes:
-    - id (Integer Column): table primary key. Also a foreignkey with the waypoints table.
+    - waypoint_id (Integer Column): table primary key. Also a foreignkey with the waypoints table.
     - has_taf (Boolean Column): True if the aerodrome has an official TAF.
     - has_metar(Boolean Column): True if the aerodrome has an official METAR.
     - has_fds (Boolean Column): True if the aerodrome has an official FDs.
-    - elevation (Integer Column): aerodrome elevation in feet.
+    - elevation_ft (Integer Column): aerodrome elevation in feet.
     - waypoint (Relationship): defines the one-to-one relationship with the waypoints table.
     - runways (Relationship): list of runways.
     """
 
     __tablename__ = "aerodromes"
 
-    id = Column(
+    waypoint_id = Column(
         Integer,
         ForeignKey(
             "waypoints.id",
@@ -101,7 +101,7 @@ class Aerodrome(BaseModel):
     has_taf = Column(Boolean, nullable=False, default=False)
     has_metar = Column(Boolean, nullable=False, default=False)
     has_fds = Column(Boolean, nullable=False, default=False)
-    elevation = Column(Integer, nullable=False, default=0)
+    elevation_ft = Column(Integer, nullable=False, default=0)
 
     waypoint = Relationship("Waypoint", back_populates="aerodrome")
     runways = Relationship(
@@ -147,7 +147,7 @@ class Runway(BaseModel):
     aerodrome_id = Column(
         Integer,
         ForeignKey(
-            "aerodromes.id",
+            "aerodromes.waypoint_id",
             ondelete="CASCADE",
             onupdate="CASCADE"
         ),

@@ -17,7 +17,6 @@ class Waypoint(BaseModel):
     """
     This class defines the pydantic waypoint schema.
 
-    Attributes:
    Attributes:
     - code (String): waypoint code identifyer.
     - name (String): waypoint name.
@@ -137,3 +136,20 @@ class Waypoint(BaseModel):
             raise ValueError(err_message['lon'])
 
         return values
+
+
+class Aerodrome(BaseModel):
+    """
+    This class defines the pydantic aerodrome schema.
+
+   Attributes:
+    - has_taf (boolean): true if the airport has a weather TAF.
+    - has_metar (boolean): true if the airport has a weather METAR.
+    - has_fds (boolean): true if the airport has a weather FDs.
+    - elevation (int): airport elevation in ft.
+    """
+
+    has_taf: bool
+    has_metar: bool
+    has_fds: bool
+    elevation_ft: int

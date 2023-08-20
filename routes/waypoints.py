@@ -45,8 +45,8 @@ async def post_waypoint(waypoint: schemas.Waypoint, db: Session):
 
     if exists:
         try:
-            is_airport = db.query(models.Aerodrome).filter_by(
-                id=exists.id).first()
+            is_aerodrome = db.query(models.Aerodrome).filter_by(
+                waypoint_id=exists.id).first()
         except IntegrityError:
             return {
                 "body": {
@@ -55,7 +55,7 @@ async def post_waypoint(waypoint: schemas.Waypoint, db: Session):
                 "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR
             }
 
-        if is_airport:
+        if is_aerodrome:
             msg = f"Aerodrome with code {waypoint.code} already exists. Try using a different code."
         else:
             msg = f"Waypoint with code {waypoint.code} already exists. Try using a different code."
@@ -87,7 +87,7 @@ async def post_waypoint(waypoint: schemas.Waypoint, db: Session):
             "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR
         }
 
-    return {"body": new_waypoint, "status_code": status.HTTP_201_CREATED}
+    return {"body": new_waypoint}
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
@@ -95,7 +95,7 @@ async def post_waypoint_endpoint(
     waypoint: schemas.Waypoint,
     response: Response,
     db: Session = Depends(get_db)
-) -> {}:
+):
     """
     Post Waypoint Endpoint.
 
@@ -112,3 +112,49 @@ async def post_waypoint_endpoint(
         response.status_code = result["status_code"]
 
     return result["body"]
+
+
+@router.post("/aerodrome", status_code=status.HTTP_201_CREATED)
+async def post_aerodrome_endpoint(
+    waypoint: schemas.Waypoint,
+    aerodrome: schemas.Aerodrome,
+    response: Response,
+    db: Session = Depends(get_db)
+):
+    """
+    Post Aerodrome Endpoint.
+
+    Parameters: 
+    - waypoint (dict): the waypoint object to be added.
+    - aerodrome (dict): the aerodrome object to be added.
+
+    Returns: 
+    Dic: dictionary with the aerodrome and waypoint data, or with details of an error response.
+    """
+
+    waypoint_result = await post_waypoint(waypoint=waypoint, db=db)
+    print(waypoint_result["body"])
+    if "status_code" in waypoint_result:
+        response.status_code = waypoint_result["status_code"]
+        return waypoint_result["body"]
+
+    new_aerodrome = models.Aerodrome(
+        waypoint_id=waypoint_result["body"].id,
+        has_taf=aerodrome.has_taf,
+        has_metar=aerodrome.has_metar,
+        has_fds=aerodrome.has_fds,
+        elevation_ft=aerodrome.elevation_ft
+    )
+
+    try:
+        db.add(new_aerodrome)
+        db.commit()
+        db.refresh(new_aerodrome)
+        db.refresh(waypoint_result["body"])
+    except IntegrityError:
+        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        return {
+            "body": {"msg": "Something went wrong, we'll look into it ASAP, please try again latter."},
+        }
+
+    return {"aerodrome": new_aerodrome, "waypoint": waypoint_result["body"]}
