@@ -71,6 +71,7 @@ class Aircraft(BaseModel):
       time, fuel and distance per degree celsius of air temperature above standard.
     - model_id (Integer Column): foreignkey pointing to the aircraft_models table.
     - fuel_type_id (Integer Column): foreignkey pointing to the fuel_types table.
+    - owner_id (Integer Column): foreign key that points to the users table.
     - model (Relationship): defines the many-to-one relationship with the aircraft_models table.
     - flights (Relationship): list of flights with this particular aircraft.
     - performance_decreace_runway_surfaces_percent (Relationship): list of percentages by which 
@@ -83,6 +84,7 @@ class Aircraft(BaseModel):
     - climb_performance_data (Relationship): climb performance data table.
     - cruise_performance_data (Relationship): cruise performance data table.
     - fuel_type (Relationship): Defines the many-to-one relationship with the fuel_types table.
+    - owner (Relationship): defines the many-to-one relationship with the users table.
     - compass_card_data (Relationship): compass card data table.
     - airspeed_calibration_data (Relationship): airspeed calibration data table.
     """
@@ -138,6 +140,15 @@ class Aircraft(BaseModel):
         ForeignKey(
             "fuel_types.id",
             ondelete="RESTRICT",
+            onupdate="CASCADE"
+        ),
+        nullable=False
+    )
+    owner_id = Column(
+        Integer,
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
             onupdate="CASCADE"
         ),
         nullable=False
@@ -202,6 +213,7 @@ class Aircraft(BaseModel):
         "FuelType",
         back_populates="aircraft"
     )
+    owner = Relationship("User", back_populates="aircraft")
     compass_card_data = Relationship(
         "CompassCard",
         back_populates="aircraft",

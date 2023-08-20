@@ -29,7 +29,8 @@ class Waypoint(BaseModel):
     - lon_minutes (Integer): longitude minutes of the waypoint coordinates.
     - lon_seconds (Integer): longitude seconds of the waypoint coordinates.
     - lon_direction (String): longitude direction of the waypoint coordinates ("E" or "W").
-    - magnetic_variation (Integer): magnetic variation at the waypoint.
+    - magnetic_variation (Float): magnetic variation at the waypoint.
+    - creator_id (Integer): foreign key that points to the users table.
     """
 
     code: constr(
@@ -63,6 +64,7 @@ class Waypoint(BaseModel):
         pattern='[EWew]'
     )]
     magnetic_variation: Optional[confloat(strict=True, allow_inf_nan=False)]
+    creator_id: int
 
     @validator('magnetic_variation')
     @classmethod

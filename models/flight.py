@@ -10,7 +10,7 @@ Usage:
 
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, DECIMAL, DateTime, Float, String, ForeignKey
+from sqlalchemy import Column, Integer, DECIMAL, DateTime, String, ForeignKey
 from sqlalchemy.orm import Relationship
 
 from models.base import BaseModel
@@ -29,6 +29,7 @@ class Flight(BaseModel):
     - take_off_fuel_gallons (Decimal Column) = fuel gallons used during start, taxi, runup and takeoff.
     - aircraft_id (Integer Column): foreign key that points to the aircraft table.
     - status_id (Integer Column): foreign key that points to the flight_status table.
+    - pilot_id (Integer Column): foreign key that points to the users table.
     - aircraft (Relationship): Defines the many-to-one relationship with the aircraft table.
     - status (Relationship): Defines the many-to-one relationship with the flight_status table.
     - departure (Relationship): Defines the one-to-one relationship with the departures table.
@@ -36,6 +37,7 @@ class Flight(BaseModel):
     - legs (Relationship): defines the one-to-many relationship with the legs table.
     - passengers (Relationship): defines the one-to-many relationship with the passengers table.
     - baggages (Relationship): defines the one-to-many relationship with the baggages table.
+    - pilot (Relationship): defines the many-to-one relationship with the users table.
     """
 
     __tablename__ = "flights"
@@ -79,6 +81,15 @@ class Flight(BaseModel):
         ),
         nullable=False
     )
+    pilot_id = Column(
+        Integer,
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE"
+        ),
+        nullable=False
+    )
 
     aircraft = Relationship("Aircraft", back_populates="flights")
     status = Relationship("FlightStatus", back_populates="flights")
@@ -114,6 +125,7 @@ class Flight(BaseModel):
         passive_deletes=True,
         passive_updates=True
     )
+    pilot = Relationship("User", back_populates="flights")
 
 
 class DepartureAndArrival(BaseModel):
@@ -168,7 +180,8 @@ class DepartureAndArrival(BaseModel):
             "runways.id",
             ondelete="RESTRICT",
             onupdate="CASCADE"
-        )
+        ),
+        nullable=False
     )
 
 
@@ -260,7 +273,8 @@ class Leg(BaseModel):
             "waypoints.id",
             ondelete="CASCADE",
             onupdate="CASCADE"
-        )
+        ),
+        nullable=False
     )
 
     flight = Relationship("Flight", back_populates="legs")
@@ -364,7 +378,8 @@ class Baggage(BaseModel):
             "flights.id",
             ondelete="CASCADE",
             onupdate="CASCADE"
-        )
+        ),
+        nullable=False
     )
     compartment_id = Column(
         Integer,

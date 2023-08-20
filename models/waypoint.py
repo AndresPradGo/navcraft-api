@@ -32,6 +32,8 @@ class Waypoint(BaseModel):
     - lon_seconds (Integer Column): longitude seconds of the waypoint coordinates.
     - lon_direction (String Column): longitude direction of the waypoint coordinates ("E" or "W").
     - magnetic_variation (Decimal Column): magnetic variation at the waypoint.
+    - creator_id (Integer Column): foreign key that points to the users table.
+    - creator (Relationship): defines the many-to-one relationship with the users table.
     - aerodrome (Relationship): Defines the one-to-one relationship with the Aerodrome table.
     - legs (Relationship): defines the one-to-many relationship with the Leg table.
     """
@@ -55,7 +57,17 @@ class Waypoint(BaseModel):
         nullable=False,
         default=0.0
     )
+    creator_id = Column(
+        Integer,
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE"
+        ),
+        nullable=False
+    )
 
+    creator = Relationship("User", back_populates="waypoints")
     aerodrome = Relationship(
         "Aerodrome",
         back_populates="waypoint",
