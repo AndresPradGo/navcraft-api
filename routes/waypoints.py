@@ -7,6 +7,7 @@ Usage:
 - Import the router to add it to the FastAPI app.
 
 """
+from typing import List
 
 from fastapi import APIRouter, Depends, status, Response, HTTPException
 from sqlalchemy import text
@@ -21,7 +22,7 @@ from utils import common_responses
 router = APIRouter(tags=["Waypoints"])
 
 
-async def post_waypoint(waypoint: schemas.Waypoint, db: Session):
+async def post_waypoint(waypoint: schemas.WaypointData, db: Session):
     """
     This function checks if the waypoint passed as a parameter
     already exists in the database, and adds it to the database, 
@@ -94,7 +95,7 @@ async def post_waypoint(waypoint: schemas.Waypoint, db: Session):
     return new_waypoint
 
 
-@router.get("/", status_code=status.HTTP_200_OK)
+@router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.WaypointReturn])
 async def get_waypoints(db: Session = Depends(get_db)):
     """
     Get Waypoints Endpoint.
@@ -123,7 +124,7 @@ async def get_waypoints(db: Session = Depends(get_db)):
     return waypoints
 
 
-@router.get("/aerodromes", status_code=status.HTTP_200_OK)
+@router.get("/aerodromes", status_code=status.HTTP_200_OK, response_model=List[schemas.AerodromeReturn])
 async def get_aerodromes(db: Session = Depends(get_db)):
     """
     Get Aerodromes Endpoint.
@@ -142,22 +143,18 @@ async def get_aerodromes(db: Session = Depends(get_db)):
 
     try:
         query_results = db.query(w, a).join(a, w.id == a.waypoint_id).all()
-        aerodromes = [
-            {**w.__dict__, **a.__dict__, "waypoint_id": None} for w, a in query_results
-        ]
     except IntegrityError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=common_responses.internal_server_error()
         )
 
-    return aerodromes
+    return [{**w.__dict__, **a.__dict__} for w, a in query_results]
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.WaypointReturn)
 async def post_waypoint_endpoint(
-    waypoint: schemas.Waypoint,
-    response: Response,
+    waypoint: schemas.WaypointData,
     db: Session = Depends(get_db)
 ):
     """
@@ -182,11 +179,9 @@ async def post_waypoint_endpoint(
     return result
 
 
-@router.post("/aerodrome", status_code=status.HTTP_201_CREATED)
+@router.post("/aerodrome", status_code=status.HTTP_201_CREATED, response_model=schemas.AerodromeReturn)
 async def post_aerodrome_endpoint(
-    waypoint: schemas.Waypoint,
-    aerodrome: schemas.Aerodrome,
-    response: Response,
+    aerodrome: schemas.AerodromeData,
     db: Session = Depends(get_db)
 ):
     """
@@ -205,7 +200,7 @@ async def post_aerodrome_endpoint(
     """
 
     try:
-        waypoint_result = await post_waypoint(waypoint=waypoint, db=db)
+        waypoint_result = await post_waypoint(waypoint=aerodrome, db=db)
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
@@ -228,7 +223,4 @@ async def post_aerodrome_endpoint(
             detail=common_responses.internal_server_error()
         )
 
-    aerodrome_dict = {**new_aerodrome.__dict__, **waypoint_result.__dict__}
-    del aerodrome_dict["waypoint_id"]
-
-    return aerodrome_dict
+    return {**new_aerodrome.__dict__, **waypoint_result.__dict__}

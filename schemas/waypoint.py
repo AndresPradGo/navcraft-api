@@ -10,12 +10,12 @@ Usage:
 
 from typing import Optional, Any
 
-from pydantic import BaseModel, constr, conint, confloat, validator, model_validator
+from pydantic import BaseModel, constr, conint, confloat, NaiveDatetime, validator, model_validator
 
 
-class Waypoint(BaseModel):
+class WaypointBase(BaseModel):
     """
-    This class defines the pydantic waypoint schema.
+    This class defines the pydantic waypoint_base schema.
 
    Attributes:
     - code (String): waypoint code identifyer.
@@ -65,6 +65,32 @@ class Waypoint(BaseModel):
     )]
     magnetic_variation: Optional[confloat(strict=True, allow_inf_nan=False)]
     creator_id: int
+
+
+class WaypointReturn(WaypointBase):
+    """
+    This class defines the pydantic waypoint_return schema.
+
+    Attributes:
+    - id (Integer): waypoint id.
+    - created_at (DateTime): date time created.
+    - last_updated (DateTime): date time last updated.
+    """
+
+    id: int
+    created_at: NaiveDatetime
+    last_updated: NaiveDatetime
+
+    class Config():
+        orm_mode = True
+
+
+class WaypointData(WaypointBase):
+    """
+    This class defines the pydantic waypoint_data schema.
+
+    Attributes: None
+    """
 
     @validator('magnetic_variation')
     @classmethod
@@ -140,9 +166,9 @@ class Waypoint(BaseModel):
         return values
 
 
-class Aerodrome(BaseModel):
+class AerodromeBase(BaseModel):
     """
-    This class defines the pydantic aerodrome schema.
+    This class defines the pydantic aerodrome_base schema.
 
    Attributes:
     - has_taf (boolean): true if the airport has a weather TAF.
@@ -155,3 +181,17 @@ class Aerodrome(BaseModel):
     has_metar: bool
     has_fds: bool
     elevation_ft: int
+
+
+class AerodromeData(WaypointData, AerodromeBase):
+    """
+    This class defines the pydantic aerodrome_data schema.
+    """
+    ...
+
+
+class AerodromeReturn(WaypointReturn, AerodromeBase):
+    """
+    This class defines the pydantic aerodrome_return schema.
+    """
+    ...
