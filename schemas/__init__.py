@@ -9,3 +9,4 @@ Usage:
 
 """
 from schemas.waypoint import *
+from schemas.user import *

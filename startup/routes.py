@@ -11,6 +11,7 @@ Usage:
 from fastapi import FastAPI
 
 from routes.waypoints import router as waypoints
+from routes.users import router as users
 
 
 def link_routes(app: FastAPI) -> None:
@@ -25,3 +26,4 @@ def link_routes(app: FastAPI) -> None:
     """
 
     app.include_router(waypoints, prefix="/api/waypoints")
+    app.include_router(users, prefix="/api/users")

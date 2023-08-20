@@ -4,11 +4,11 @@ Pydantic waypoint scemas
 This module defines the waipoint, aerodrome, and related pydantic schemas for data validation.
 
 Usage: 
-- Import the required schema class to validate data input to the API endpoints.
+- Import the required schema class to validate data at the API endpoints.
 
 """
 
-from typing import Optional, Any
+from typing import Optional
 
 from pydantic import BaseModel, constr, conint, confloat, NaiveDatetime, validator, model_validator
 
@@ -36,35 +36,33 @@ class WaypointBase(BaseModel):
     code: constr(
         strip_whitespace=True,
         to_upper=True,
-        strict=True,
         min_length=2,
         max_length=10,
         pattern='[-a-zA-Z0-9]{2,10}'
     )
-    name: constr(strict=True, min_length=2, max_length=50)
-    is_official: Optional[bool]
-    lat_degrees: conint(strict=True, ge=0, le=90)
-    lat_minutes: conint(strict=True, ge=0, le=59)
-    lat_seconds: Optional[conint(strict=True, ge=0, le=59)]
+    name: constr(min_length=2, max_length=50)
+    is_official: Optional[bool] = None
+    lat_degrees: conint(ge=0, le=90)
+    lat_minutes: conint(ge=0, le=59)
+    lat_seconds: Optional[conint(ge=0, le=59)] = None
     lat_direction: Optional[constr(
         strip_whitespace=True,
         to_upper=True,
         min_length=1,
         max_length=1,
         pattern='[NSns]'
-    )]
-    lon_degrees: conint(strict=True, ge=0, le=180)
-    lon_minutes: conint(strict=True, ge=0, le=59)
-    lon_seconds: Optional[conint(strict=True, ge=0, le=59)]
+    )] = None
+    lon_degrees: conint(ge=0, le=180)
+    lon_minutes: conint(ge=0, le=59)
+    lon_seconds: Optional[conint(ge=0, le=59)] = None
     lon_direction: Optional[constr(
         strip_whitespace=True,
         to_upper=True,
         min_length=1,
         max_length=1,
         pattern='[EWew]'
-    )]
-    magnetic_variation: Optional[confloat(strict=True, allow_inf_nan=False)]
-    creator_id: int
+    )] = None
+    magnetic_variation: Optional[confloat(allow_inf_nan=False)] = None
 
 
 class WaypointReturn(WaypointBase):
@@ -91,6 +89,7 @@ class WaypointData(WaypointBase):
 
     Attributes: None
     """
+    creator_id: int
 
     @validator('magnetic_variation')
     @classmethod
@@ -99,7 +98,7 @@ class WaypointData(WaypointBase):
         Classmethod to round magnetic_variation input value to 1 decimal place.
 
         Parameters:
-        - value (float): The object with the values to be validated.
+        - value (float): the values to be validated.
 
         Returns:
         (float) : The magnetic_variation value rounded to 1 decimal place.
@@ -109,7 +108,7 @@ class WaypointData(WaypointBase):
 
     @model_validator(mode='after')
     @classmethod
-    def validate_waypoint_schema(cls, values) -> Any:
+    def validate_waypoint_schema(cls, values):
         '''
         Classmethod to check whether the lattitude is between 
         89 59 59 S and 90 0 0 N, and the longitude is between 

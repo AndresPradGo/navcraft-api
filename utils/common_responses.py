@@ -1,7 +1,7 @@
 """
-Common Server Response Messages
+Common Server Responses
 
-This module defines common and general response messages.
+This module defines common and general server responses.
 
 Usage: 
 - Import the function returning the response you want to use, and call it.
@@ -10,19 +10,27 @@ Usage:
 
 import re
 
+from fastapi import status, HTTPException
 
-def internal_server_error() -> str:
+
+def internal_server_error():
     """
-    This function returns an internal server error message.
+    This function returns an internal server error HTTPException.
 
     Parameters: None
 
     Returns: 
-    str: internal server error general message.
+    HTTPException: internal server error response.
     """
     message = '''
         An unexpected server error occurred. Our team has been 
         notified and is investigating the issue. We apologize 
         for any inconvenience.
     '''
-    return re.sub(r'\s+', ' ', message).strip()
+
+    response = HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail=re.sub(r'\s+', ' ', message).strip()
+    )
+
+    return response

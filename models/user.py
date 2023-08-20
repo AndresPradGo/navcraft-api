@@ -22,7 +22,7 @@ class User(BaseModel):
     - id (Integer Column): table primary key.
     - email (String Column): user email.
     - name (String Column): user name.
-    - password (String Column): user password.
+    - password (String Column): user's hashed password.
     - weight_lb (Decimal Column): user weight in lbs.
     - is_admin (Boolean Column): true if the user is admin. Admin users have privileges 
       like adding aerodromes and aircraft base models.
@@ -41,7 +41,7 @@ class User(BaseModel):
     email = Column(String(255), nullable=False, unique=True)
     name = Column(String(255), nullable=False)
     weight_lb = Column(DECIMAL(4, 1), nullable=False, default=200.0)
-    password = Column(String(255), nullable=False)
+    password = Column(String(510), nullable=False)
     is_admin = Column(Boolean, nullable=False, default=False)
     is_master = Column(Boolean, nullable=False, default=False)
 

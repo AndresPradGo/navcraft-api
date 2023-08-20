@@ -8,7 +8,8 @@ fastapi = "*"
 uvicorn = "*"
 sqlalchemy = "*"
 pymysql = "*"
-pydantic = "*"
+passlib = {extras = ["bcrypt"], version = "*"}
+pydantic = {extras = ["email"], version = "*"}
 
 [dev-packages]
 

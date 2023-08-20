@@ -9,7 +9,7 @@ Usage:
 """
 from typing import List
 
-from fastapi import APIRouter, Depends, status, Response, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -36,18 +36,15 @@ async def post_waypoint(waypoint: schemas.WaypointData, db: Session):
     dict: Object with the added waypoint 
 
     Raise:
-    HTTPException (400): if waypoint already exists.
-    HTTPException (500): if there is a server error. 
+    - HTTPException (400): if waypoint already exists.
+    - HTTPException (500): if there is a server error. 
     """
 
     try:
         exists = db.query(models.Waypoint).filter_by(
             code=waypoint.code).first()
     except IntegrityError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=common_responses.internal_server_error()
-        )
+        raise common_responses.internal_server_error()
 
     if exists:
         try:
@@ -55,10 +52,7 @@ async def post_waypoint(waypoint: schemas.WaypointData, db: Session):
                 waypoint_id=exists.id).first()
 
         except IntegrityError:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=common_responses.internal_server_error()
-            )
+            raise common_responses.internal_server_error()
 
         msg = f"{'Aerodrome' if is_aerodrome else 'Waypoint'} with code {waypoint.code} already exists. Try using a different code."
         raise HTTPException(
@@ -87,10 +81,7 @@ async def post_waypoint(waypoint: schemas.WaypointData, db: Session):
         db.commit()
         db.refresh(new_waypoint)
     except IntegrityError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=common_responses.internal_server_error()
-        )
+        raise common_responses.internal_server_error()
 
     return new_waypoint
 
@@ -103,10 +94,10 @@ async def get_waypoints(db: Session = Depends(get_db)):
     Parameters: None
 
     Returns: 
-    list: list of waypoint dictionaries.
+    - list: list of waypoint dictionaries.
 
     Raise:
-    HTTPException (500): if there is a server error. 
+    - HTTPException (500): if there is a server error. 
     """
 
     query = text("SELECT waypoint_id FROM aerodromes")
@@ -116,10 +107,7 @@ async def get_waypoints(db: Session = Depends(get_db)):
         waypoints = db.query(models.Waypoint).filter(
             models.Waypoint.id.not_in(aerodromes_ids)).all()
     except IntegrityError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=common_responses.internal_server_error()
-        )
+        raise common_responses.internal_server_error()
 
     return waypoints
 
@@ -132,10 +120,10 @@ async def get_aerodromes(db: Session = Depends(get_db)):
     Parameters: None
 
     Returns: 
-    list: list of aerodrome dictionaries.
+    - list: list of aerodrome dictionaries.
 
     Raise:
-    HTTPException (500): if there is a server error. 
+    - HTTPException (500): if there is a server error. 
     """
 
     a = models.Aerodrome
@@ -144,10 +132,7 @@ async def get_aerodromes(db: Session = Depends(get_db)):
     try:
         query_results = db.query(w, a).join(a, w.id == a.waypoint_id).all()
     except IntegrityError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=common_responses.internal_server_error()
-        )
+        raise common_responses.internal_server_error()
 
     return [{**w.__dict__, **a.__dict__} for w, a in query_results]
 
@@ -167,8 +152,8 @@ async def post_waypoint_endpoint(
     Dic: dictionary with the waypoint data.
 
     Raise:
-    HTTPException (400): if waypoint already exists.
-    HTTPException (500): if there is a server error. 
+    - HTTPException (400): if waypoint already exists.
+    - HTTPException (500): if there is a server error. 
     """
 
     try:
@@ -192,11 +177,11 @@ async def post_aerodrome_endpoint(
     - aerodrome (dict): the aerodrome object to be added.
 
     Returns: 
-    Dic: dictionary with the aerodrome and waypoint data.
+    - Dic: dictionary with the aerodrome and waypoint data.
 
     Raise:
-    HTTPException (400): if waypoint already exists.
-    HTTPException (500): if there is a server error. 
+    - HTTPException (400): if waypoint already exists.
+    - HTTPException (500): if there is a server error. 
     """
 
     try:
@@ -218,9 +203,6 @@ async def post_aerodrome_endpoint(
         db.refresh(new_aerodrome)
         db.refresh(waypoint_result)
     except IntegrityError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=common_responses.internal_server_error()
-        )
+        raise common_responses.internal_server_error()
 
     return {**new_aerodrome.__dict__, **waypoint_result.__dict__}
