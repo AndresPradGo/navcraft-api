@@ -9,6 +9,7 @@ Usage:
 """
 
 from fastapi import APIRouter, Depends, status, Response
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
@@ -88,6 +89,45 @@ async def post_waypoint(waypoint: schemas.Waypoint, db: Session):
         }
 
     return {"body": new_waypoint}
+
+
+@router.get("/", status_code=status.HTTP_200_OK)
+async def get_waypoints(db: Session = Depends(get_db)):
+    """
+    Get Waypoints Endpoint.
+
+    Parameters: None
+
+    Returns: 
+    list: list of waypoint dictionaries.
+    """
+
+    query = text("SELECT waypoint_id FROM aerodromes")
+    aerodromes_ids = [id[0] for id in db.execute(query).fetchall()]
+
+    waypoints = db.query(models.Waypoint).filter(
+        models.Waypoint.id.not_in(aerodromes_ids)).all()
+
+    return waypoints
+
+
+@router.get("/aerodromes", status_code=status.HTTP_200_OK)
+async def get_aerodromes(db: Session = Depends(get_db)):
+    """
+    Get Aerodromes Endpoint.
+
+    Parameters: None
+
+    Returns: 
+    list: list of aerodrome dictionaries.
+    """
+
+    a = models.Aerodrome
+    w = models.Waypoint
+    query_results = db.query(w, a).join(a, w.id == a.waypoint_id).all()
+    aerodromes = [{**i[0].__dict__, **i[1].__dict__} for i in query_results]
+
+    return aerodromes
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
