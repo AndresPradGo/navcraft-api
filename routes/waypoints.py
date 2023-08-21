@@ -16,6 +16,7 @@ from sqlalchemy.exc import IntegrityError
 
 import models
 import schemas
+import auth
 from utils.db import get_db
 from utils import common_responses
 
@@ -87,7 +88,10 @@ async def post_waypoint(waypoint: schemas.WaypointData, db: Session):
 
 
 @router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.WaypointReturn])
-async def get_waypoints(db: Session = Depends(get_db)):
+async def get_waypoints(
+    db: Session = Depends(get_db),
+    current_user_email: schemas.UserEmail = Depends(auth.validate_user)
+):
     """
     Get Waypoints Endpoint.
 

@@ -84,8 +84,12 @@ class User(BaseModel):
         Returns: 
         - str: Jason Web Token.
         """
+        jwt_key = environ.get("jwtSecretKey")
+        jwt_algorithm = environ.get("jwtAlgorithm")
 
-        to_encode = {"email": self.email}
+        permissions = ["admin", "master"] if self.is_admin and self.is_master else [
+            "admin"] if self.is_admin else []
+        to_encode = {"email": self.email, "permissions": permissions}
 
         if expires_delta:
             expire = datetime.utcnow() + expires_delta
@@ -93,8 +97,6 @@ class User(BaseModel):
             expire = datetime.utcnow() + timedelta(minutes=60)
         to_encode.update({"exp": expire})
 
-        jwt_key = environ.get("jwtSecretKey")
-        jwt_algorithm = environ.get("jwtAlgorithm")
         encoded_jwt = jwt.encode(to_encode, jwt_key, algorithm=jwt_algorithm)
 
         return encoded_jwt

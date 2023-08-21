@@ -11,7 +11,6 @@ Usage:
 
 """
 
-from fastapi import HTTPException, status
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -35,13 +34,11 @@ session = scoped_session(
 )
 
 
-def get_db() -> None:
+def get_db():
     """
-    This function initiates a database session to use inside the API endpoints
+    This generator function initiates a database session to use inside the API endpoints.
 
     Parameters: None
-
-    Returns: None
     """
 
     database = session()
@@ -49,10 +46,6 @@ def get_db() -> None:
         yield database
 
     except IntegrityError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=common_responses.internal_server_error()
-        )
-
+        raise common_responses.internal_server_error()
     finally:
         database.close()

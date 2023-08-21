@@ -26,6 +26,6 @@ def link_routes(app: FastAPI) -> None:
     Returns: None
     """
 
-    app.include_router(auth, prefix="/api/auth")
-    app.include_router(users, prefix="/api/users")
-    app.include_router(waypoints, prefix="/api/waypoints")
+    app.include_router(auth, prefix="/login")
+    app.include_router(users, prefix="/users")
+    app.include_router(waypoints, prefix="/waypoints")

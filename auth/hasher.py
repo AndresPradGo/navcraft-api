@@ -42,7 +42,7 @@ class Hasher():
     @classmethod
     def verify(cls, plain_pass: str, hashed_pass: str):
         """
-        This method ompares the hashed_pass with plain_pass and returns True if equal. 
+        This method compares the hashed_pass with plain_pass and returns True if equal. 
 
         Parameters:
         - plain_pass (str): unhashed password.

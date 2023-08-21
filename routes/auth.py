@@ -8,7 +8,10 @@ Usage:
 
 """
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -17,14 +20,14 @@ import models
 import schemas
 from utils import common_responses
 from utils.db import get_db
-from utils.hasher import Hasher
+from auth import Hasher
 
 router = APIRouter(tags=["Auth"])
 
 
 @router.post("/", status_code=status.HTTP_200_OK, response_model=schemas.JWTData)
 async def login_endpoint(
-    login_data: schemas.AuthenticationData,
+    login_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Session = Depends(get_db)
 ):
     """
@@ -43,13 +46,13 @@ async def login_endpoint(
 
     try:
         user = db.query(models.User).filter(
-            models.User.email == login_data.email).first()
+            models.User.email == login_data.username).first()
     except IntegrityError:
         raise common_responses.internal_server_error()
 
     exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail=f"Invalid credentials, please enter a valid email and password."
+        detail="Invalid credentials, please enter a valid email and password."
     )
 
     if not user:

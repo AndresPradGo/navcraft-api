@@ -13,21 +13,30 @@ from typing import Optional, Any
 from pydantic import BaseModel, constr, EmailStr, conint, confloat, NaiveDatetime, validator, model_validator
 
 
-class UserBase(BaseModel):
+class UserEmail(BaseModel):
+    """
+    This class defines the pydantic user_email schema.
+
+   Attributes:
+    - email (String): user email.
+    """
+
+    email: EmailStr
+
+
+class UserBase(UserEmail):
     """
     This class defines the pydantic user_base schema.
 
    Attributes:
-    - email (String Column): user email.
-    - name (String Column): user name.
-    - weight_lb (Decimal Column): user weight in lbs.
-    - is_admin (Boolean Column): true if the user is admin. Admin users have privileges 
+    - name (String): user name.
+    - weight_lb (Decimal): user weight in lbs.
+    - is_admin (Boolean): true if the user is admin. Admin users have privileges 
       like adding aerodromes and aircraft base models.
-    - is_master (Boolean Column): true if the user is master. Only master users can add 
+    - is_master (Boolean): true if the user is master. Only master users can add 
       new admin users. Master users have to be Admin Users.
     """
 
-    email: EmailStr
     name: constr(
         strip_whitespace=True,
         strict=True,
@@ -44,7 +53,7 @@ class UserData(UserBase):
     This class defines the pydantic user_data schema.
 
    Attributes:
-    - password (String Column): user password.
+    - password (String): user password.
     """
 
     password: constr(
@@ -82,20 +91,3 @@ class JWTData(BaseModel):
 
     access_token: str
     token_type: str
-
-
-class AuthenticationData(BaseModel):
-    """
-    This class defines the pydantic authentication_data schema.
-
-    Attributes:
-    - email (String Column): user email.
-    - password (String Column): user password.
-    """
-    email: EmailStr
-    password: constr(
-        strip_whitespace=True,
-        strict=True,
-        min_length=8,
-        max_length=255
-    )

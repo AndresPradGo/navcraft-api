@@ -15,7 +15,7 @@ from sqlalchemy.exc import IntegrityError
 import models
 import schemas
 from utils import common_responses
-from utils.hasher import Hasher
+from auth import Hasher
 from utils.db import get_db
 
 
