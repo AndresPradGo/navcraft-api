@@ -8,10 +8,14 @@ Usage:
 
 """
 
+from datetime import datetime, timedelta
+
+from jose import jwt
 from sqlalchemy import Column, Integer, DECIMAL, String, Boolean, ForeignKey
 from sqlalchemy.orm import Relationship
 
 from models.base import BaseModel
+from utils import environ_variable as environ
 
 
 class User(BaseModel):
@@ -69,6 +73,31 @@ class User(BaseModel):
         passive_deletes=True,
         passive_updates=True
     )
+
+    def generate_auth_token(self, expires_delta: timedelta | None = None):
+        """
+        This method generates a Jason Web Token.
+
+        Parameters:
+        - expires_delta (timedelta): An optional timedelta specifying the expiration time of the JWT.
+
+        Returns: 
+        - str: Jason Web Token.
+        """
+
+        to_encode = {"email": self.email}
+
+        if expires_delta:
+            expire = datetime.utcnow() + expires_delta
+        else:
+            expire = datetime.utcnow() + timedelta(minutes=60)
+        to_encode.update({"exp": expire})
+
+        jwt_key = environ.get("jwtSecretKey")
+        jwt_algorithm = environ.get("jwtAlgorithm")
+        encoded_jwt = jwt.encode(to_encode, jwt_key, algorithm=jwt_algorithm)
+
+        return encoded_jwt
 
 
 class PassengerProfile(BaseModel):

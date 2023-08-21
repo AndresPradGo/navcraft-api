@@ -9,19 +9,20 @@ Usage:
 """
 
 from fastapi import APIRouter, Depends, status, HTTPException
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 import models
 import schemas
-from utils.db import get_db
 from utils import common_responses
+from utils.hasher import Hasher
+from utils.db import get_db
+
 
 router = APIRouter(tags=["Users"])
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.UserReturn)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.UserBase)
 async def sign_in_endpoint(
     user: schemas.UserData,
     db: Session = Depends(get_db)
@@ -54,8 +55,8 @@ async def sign_in_endpoint(
         )
 
     # hash password
-    crypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    hashed_pswd = crypt_context.hash(user.password)
+
+    hashed_pswd = Hasher.bcrypt(user.password)
 
     try:
         new_user = models.User(

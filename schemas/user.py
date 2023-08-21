@@ -21,6 +21,10 @@ class UserBase(BaseModel):
     - email (String Column): user email.
     - name (String Column): user name.
     - weight_lb (Decimal Column): user weight in lbs.
+    - is_admin (Boolean Column): true if the user is admin. Admin users have privileges 
+      like adding aerodromes and aircraft base models.
+    - is_master (Boolean Column): true if the user is master. Only master users can add 
+      new admin users. Master users have to be Admin Users.
     """
 
     email: EmailStr
@@ -31,6 +35,8 @@ class UserBase(BaseModel):
         max_length=255
     )
     weight_lb: confloat(ge=0)
+    is_admin: Optional[bool] = None
+    is_master: Optional[bool] = None
 
 
 class UserData(UserBase):
@@ -39,10 +45,6 @@ class UserData(UserBase):
 
    Attributes:
     - password (String Column): user password.
-    - is_admin (Boolean Column): true if the user is admin. Admin users have privileges 
-      like adding aerodromes and aircraft base models.
-    - is_master (Boolean Column): true if the user is master. Only master users can add 
-      new admin users. Master users have to be Admin Users.
     """
 
     password: constr(
@@ -51,8 +53,6 @@ class UserData(UserBase):
         min_length=8,
         max_length=255
     )
-    is_admin: Optional[bool] = None
-    is_master: Optional[bool] = None
 
     @validator('weight_lb')
     @classmethod
@@ -70,10 +70,32 @@ class UserData(UserBase):
         return round(value, 1)
 
 
-class UserReturn(UserBase):
+class JWTData(BaseModel):
     """
-    This class defines the pydantic user_return schema.
+    This class defines the pydantic jwt_data schema, 
+    to return the JWT after authentication.
 
     Attributes:
+    - jwt (String): the Jason Web Token.
+    - type (String): the token type.
     """
-    ...
+
+    access_token: str
+    token_type: str
+
+
+class AuthenticationData(BaseModel):
+    """
+    This class defines the pydantic authentication_data schema.
+
+    Attributes:
+    - email (String Column): user email.
+    - password (String Column): user password.
+    """
+    email: EmailStr
+    password: constr(
+        strip_whitespace=True,
+        strict=True,
+        min_length=8,
+        max_length=255
+    )
