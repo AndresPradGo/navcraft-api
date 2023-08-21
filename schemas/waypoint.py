@@ -20,7 +20,6 @@ class WaypointBase(BaseModel):
    Attributes:
     - code (String): waypoint code identifyer.
     - name (String): waypoint name.
-    - is_official (boolean): True if waypoint is an official aviation waypoint.
     - lat_degrees (Integer): latitude degrees of the waypoint coordinates.
     - lat_minutes (Integer): latitude minutes of the waypoint coordinates.
     - lat_seconds (Integer): latitude seconds of the waypoint coordinates.
@@ -30,7 +29,6 @@ class WaypointBase(BaseModel):
     - lon_seconds (Integer): longitude seconds of the waypoint coordinates.
     - lon_direction (String): longitude direction of the waypoint coordinates ("E" or "W").
     - magnetic_variation (Float): magnetic variation at the waypoint.
-    - creator_id (Integer): foreign key that points to the users table.
     """
 
     code: constr(
@@ -41,7 +39,6 @@ class WaypointBase(BaseModel):
         pattern='[-a-zA-Z0-9]{2,10}'
     )
     name: constr(min_length=2, max_length=50)
-    is_official: Optional[bool] = None
     lat_degrees: conint(ge=0, le=90)
     lat_minutes: conint(ge=0, le=59)
     lat_seconds: Optional[conint(ge=0, le=59)] = None
@@ -73,11 +70,13 @@ class WaypointReturn(WaypointBase):
     - id (Integer): waypoint id.
     - created_at (DateTime): date time created.
     - last_updated (DateTime): date time last updated.
+    - is_official (boolean): True if waypoint is an official aviation waypoint.
     """
 
     id: int
     created_at: NaiveDatetime
     last_updated: NaiveDatetime
+    is_official: Optional[bool] = None
 
     class Config():
         orm_mode = True
@@ -85,11 +84,10 @@ class WaypointReturn(WaypointBase):
 
 class WaypointData(WaypointBase):
     """
-    This class defines the pydantic waypoint_data schema.
+    This class defines the pydantic waypoint_with_validation schema.
 
     Attributes: None
     """
-    creator_id: int
 
     @validator('magnetic_variation')
     @classmethod

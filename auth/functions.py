@@ -16,14 +16,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from pydantic import BaseModel
 
-from utils import environ_variable as environ
-
-
-_CREDENTIALS_EXCEPTION = HTTPException(
-    status_code=status.HTTP_401_UNAUTHORIZED,
-    detail="Invalid credentials, please log in with a valid email and password.",
-    headers={"WWW-Authenticate": "Bearer"},
-)
+from utils import common_responses, environ_variable as environ
 
 
 class TokenData(BaseModel):
@@ -65,7 +58,7 @@ def get_jwt_payload(token: str):
         permissions: List[str] = payload.get("permissions")
 
         if user_email is None or permissions is None:
-            raise _CREDENTIALS_EXCEPTION
+            raise common_responses.invalid_credentials()
 
         token_data = TokenData(
             email=user_email,
@@ -74,7 +67,7 @@ def get_jwt_payload(token: str):
         )
 
     except JWTError:
-        raise _CREDENTIALS_EXCEPTION
+        raise common_responses.invalid_credentials()
 
     return token_data
 
@@ -101,7 +94,7 @@ def validate_user(
     jwt_payload = get_jwt_payload(token)
 
     if not jwt_payload.is_admin:
-        raise
+        raise common_responses.invalid_credentials()
 
     return {"email": jwt_payload.email}
 
@@ -128,7 +121,7 @@ def validate_admin_user(
     jwt_payload = get_jwt_payload(token)
 
     if not jwt_payload.is_admin:
-        raise _CREDENTIALS_EXCEPTION
+        raise common_responses.invalid_credentials()
 
     return {"email": jwt_payload.email}
 
@@ -156,6 +149,6 @@ def validate_master_user(
     jwt_payload = get_jwt_payload(token)
 
     if not jwt_payload.is_admin or not jwt_payload.is_master:
-        raise _CREDENTIALS_EXCEPTION
+        raise common_responses.invalid_credentials()
 
     return {"email": jwt_payload.email}

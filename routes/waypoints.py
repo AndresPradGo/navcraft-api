@@ -10,7 +10,7 @@ Usage:
 from typing import List
 
 from fastapi import APIRouter, Depends, status, HTTPException
-from sqlalchemy import text
+from sqlalchemy import text, and_, or_
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
@@ -23,7 +23,7 @@ from utils import common_responses
 router = APIRouter(tags=["Waypoints"])
 
 
-async def post_waypoint(waypoint: schemas.WaypointData, db: Session):
+async def post_waypoint(waypoint: schemas.WaypointData, db: Session, creator_id: int, official: bool):
     """
     This function checks if the waypoint passed as a parameter
     already exists in the database, and adds it to the database, 
@@ -58,14 +58,14 @@ async def post_waypoint(waypoint: schemas.WaypointData, db: Session):
         msg = f"{'Aerodrome' if is_aerodrome else 'Waypoint'} with code {waypoint.code} already exists. Try using a different code."
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=msg
+            detail="Please login to access this data."
         )
 
     try:
         new_waypoint = models.Waypoint(
             code=waypoint.code,
             name=waypoint.name,
-            is_official=waypoint.is_official,
+            is_official=official,
             lat_degrees=waypoint.lat_degrees,
             lat_minutes=waypoint.lat_minutes,
             lat_seconds=waypoint.lat_seconds,
@@ -75,7 +75,7 @@ async def post_waypoint(waypoint: schemas.WaypointData, db: Session):
             lon_seconds=waypoint.lon_seconds,
             lon_direction=waypoint.lon_direction,
             magnetic_variation=waypoint.magnetic_variation,
-            creator_id=waypoint.creator_id
+            creator_id=creator_id
         )
 
         db.add(new_waypoint)
@@ -90,7 +90,7 @@ async def post_waypoint(waypoint: schemas.WaypointData, db: Session):
 @router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.WaypointReturn])
 async def get_waypoints(
     db: Session = Depends(get_db),
-    current_user_email: schemas.UserEmail = Depends(auth.validate_user)
+    current_user: schemas.UserEmail = Depends(auth.validate_user)
 ):
     """
     Get Waypoints Endpoint.
@@ -107,9 +107,21 @@ async def get_waypoints(
     query = text("SELECT waypoint_id FROM aerodromes")
 
     try:
-        aerodromes_ids = [id[0] for id in db.execute(query).fetchall()]
-        waypoints = db.query(models.Waypoint).filter(
-            models.Waypoint.id.not_in(aerodromes_ids)).all()
+        aerodrome_ids = [id[0] for id in db.execute(query).fetchall()]
+        user_id = db.query(models.User.id).filter(
+            models.User.email == current_user["email"]).first()
+        if not user_id:
+            raise common_responses.invalid_credentials()
+        user_id = user_id[0]
+        print(user_id)
+
+        waypoints = db.query(models.Waypoint).filter(and_(
+            ~models.Waypoint.id.in_(aerodrome_ids),
+            or_(
+                models.Waypoint.creator.has(id=user_id),
+                models.Waypoint.is_official == True
+            )
+        )).all()
     except IntegrityError:
         raise common_responses.internal_server_error()
 
@@ -117,7 +129,7 @@ async def get_waypoints(
 
 
 @router.get("/aerodromes", status_code=status.HTTP_200_OK, response_model=List[schemas.AerodromeReturn])
-async def get_aerodromes(db: Session = Depends(get_db)):
+async def get_aerodromes(db: Session = Depends(get_db), current_user: schemas.UserEmail = Depends(auth.validate_user)):
     """
     Get Aerodromes Endpoint.
 
@@ -144,7 +156,8 @@ async def get_aerodromes(db: Session = Depends(get_db)):
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.WaypointReturn)
 async def post_waypoint_endpoint(
     waypoint: schemas.WaypointData,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: schemas.UserEmail = Depends(auth.validate_user)
 ):
     """
     Post Waypoint Endpoint.
@@ -161,7 +174,43 @@ async def post_waypoint_endpoint(
     """
 
     try:
-        result = await post_waypoint(waypoint=waypoint, db=db)
+        user_id = db.query(models.User.id).filter(
+            models.User.email == current_user["email"]).first()
+        if not user_id:
+            raise common_responses.invalid_credentials()
+        result = await post_waypoint(waypoint=waypoint, db=db, creator_id=user_id, official=False)
+    except HTTPException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+    return result
+
+
+@router.post("/official", status_code=status.HTTP_201_CREATED, response_model=schemas.WaypointReturn)
+async def post_official_waypoint_endpoint(
+    waypoint: schemas.WaypointData,
+    db: Session = Depends(get_db),
+    current_user: schemas.UserEmail = Depends(auth.validate_admin_user)
+):
+    """
+    Post Official Waypoint Endpoint.
+
+    Parameters: 
+    - waypoint (dict): the waypoint object to be added.
+
+    Returns: 
+    Dic: dictionary with the waypoint data.
+
+    Raise:
+    - HTTPException (400): if waypoint already exists.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    try:
+        user_id = db.query(models.User.id).filter(
+            models.User.email == current_user["email"]).first()
+        if not user_id:
+            raise common_responses.invalid_credentials()
+        result = await post_waypoint(waypoint=waypoint, db=db, creator_id=user_id, official=True)
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
@@ -171,7 +220,8 @@ async def post_waypoint_endpoint(
 @router.post("/aerodrome", status_code=status.HTTP_201_CREATED, response_model=schemas.AerodromeReturn)
 async def post_aerodrome_endpoint(
     aerodrome: schemas.AerodromeData,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: schemas.UserEmail = Depends(auth.validate_admin_user)
 ):
     """
     Post Aerodrome Endpoint.
@@ -189,7 +239,11 @@ async def post_aerodrome_endpoint(
     """
 
     try:
-        waypoint_result = await post_waypoint(waypoint=aerodrome, db=db)
+        user_id = db.query(models.User.id).filter(
+            models.User.email == current_user["email"]).first()
+        if not user_id:
+            raise common_responses.invalid_credentials()
+        waypoint_result = await post_waypoint(waypoint=aerodrome, db=db, creator_id=user_id, official=True)
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 

@@ -34,3 +34,20 @@ def internal_server_error():
     )
 
     return response
+
+
+def invalid_credentials():
+    """
+    This function returns an invalid credantials HTTPException.
+
+    Parameters: None
+
+    Returns: 
+    HTTPException: invalid credantials response.
+    """
+    response = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid credentials, please log in with a valid email and password.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    return response
