@@ -11,14 +11,12 @@ Usage:
 
 """
 
-from os import environ
-
 from fastapi import HTTPException, status
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker, scoped_session
 
-from utils import common_responses
+from utils import common_responses, environ_variable as environ
 
 DB_NAME = "flight_planner_api_db"
 DB_USER = environ.get('db_user')

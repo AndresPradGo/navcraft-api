@@ -1,0 +1,7 @@
+{
+    "db_user": "flight_planner_db_user",
+    "db_password": "flight_planner_db_password",
+    "db_host": "flight_planner_db_host",
+    "jwtSecretKey": "flight_planner_jwtSecretKey",
+    "jwtAlgorithm": "flight_planner_jwtAlgorithm"
+}
