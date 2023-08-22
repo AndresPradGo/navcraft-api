@@ -607,7 +607,7 @@ class CruisePerformance(BaseModel):
     bhp_percent = Column(Integer, nullable=False)
     rpm = Column(Integer, nullable=False)
     ktas = Column(Integer, nullable=False)
-    gph = Column(DECIMAL(3, 1), nullable=False)
+    gph = Column(DECIMAL(5, 1), nullable=False)
     aircraft_id = Column(
         Integer,
         ForeignKey(

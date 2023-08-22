@@ -224,6 +224,9 @@ class Leg(BaseModel):
     - sequence (Integer Column): sequence of this leg in the flight.
     - altitude_ft (Integer Column):  altitude in ft above sea level.
     - temperature_c (Integer Column): air temperature at cruise altitude, in celsius.
+    - rpm (Integer Column): RPM of the engine during cruise.
+    - ktas (Integer Column): true airspeed in knots.
+    - gph (Decimal Column): gallons per hour of fuel burned during cruise.
     - wind_direction (Integer Column): wind direction in degrees true.
     - wind_magnitude_knot (Integer Column): wind magnitude in knots.
     - magnetic_variation (Decimal Column): magnetic variation for the leg.
@@ -239,6 +242,9 @@ class Leg(BaseModel):
     sequence = Column(Integer, nullable=False)
     altitude_ft = Column(Integer, nullable=False, default=0)
     temperature_c = Column(Integer, nullable=False, default=15)
+    rpm = Column(Integer, nullable=False)
+    ktas = Column(Integer, nullable=False)
+    gph = Column(DECIMAL(5, 1), nullable=False)
     wind_direction = Column(Integer, nullable=False, default=0)
     wind_magnitude_knot = Column(Integer, nullable=False, default=0)
     weather_valid_from = Column(
