@@ -31,10 +31,6 @@ class UserBase(UserEmail):
    Attributes:
     - name (String): user name.
     - weight_lb (Decimal): user weight in lbs.
-    - is_admin (Boolean): true if the user is admin. Admin users have privileges 
-      like adding aerodromes and aircraft base models.
-    - is_master (Boolean): true if the user is master. Only master users can add 
-      new admin users. Master users have to be Admin Users.
     """
 
     name: constr(
@@ -44,8 +40,22 @@ class UserBase(UserEmail):
         max_length=255
     )
     weight_lb: confloat(ge=0)
-    is_admin: Optional[bool] = None
-    is_master: Optional[bool] = None
+
+
+class UserReturnForMasterUsers(UserBase):
+    """
+    This class defines the pydantic schema used to return 
+    user data to a master user, about other users users.
+
+   Attributes:
+    - is_admin (Boolean): true if the user is admin. Admin users have privileges 
+      like adding aerodromes and aircraft base models.
+    - is_master (Boolean): true if the user is master. Only master users can add 
+      new admin users. Master users have to be Admin Users.
+    """
+
+    is_admin: bool
+    is_master: bool
 
 
 class UserData(UserBase):
@@ -65,7 +75,7 @@ class UserData(UserBase):
 
     @validator('weight_lb')
     @classmethod
-    def round_magnetic_variation(clc, value: float) -> float:
+    def round_user_weight(clc, value: float) -> float:
         '''
         Classmethod to round weight_lb input value to 1 decimal place.
 
@@ -73,7 +83,7 @@ class UserData(UserBase):
         - value (float): the values to be validated.
 
         Returns:
-        (float) :weight value rounded to 1 decimal place.
+        (float): weight value rounded to 1 decimal place.
 
         '''
         return round(value, 1)

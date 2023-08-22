@@ -15,7 +15,7 @@ from sqlalchemy.exc import IntegrityError
 import models
 import schemas
 from utils import common_responses
-from auth import Hasher
+import auth
 from utils.db import get_db
 
 
@@ -54,9 +54,7 @@ async def sign_in_endpoint(
             detail=msg
         )
 
-    # hash password
-
-    hashed_pswd = Hasher.bcrypt(user.password)
+    hashed_pswd = auth.Hasher.bcrypt(user.password)
 
     try:
         new_user = models.User(
@@ -64,8 +62,8 @@ async def sign_in_endpoint(
             name=user.name,
             weight_lb=user.weight_lb,
             password=hashed_pswd,
-            is_admin=user.is_admin,
-            is_master=user.is_master,
+            is_admin=False,
+            is_master=False,
         )
         db.add(new_user)
         db.commit()
@@ -74,3 +72,44 @@ async def sign_in_endpoint(
         raise common_responses.internal_server_error()
 
     return new_user
+
+
+@router.put("/make-admin/{id}", status_code=status.HTTP_201_CREATED, response_model=schemas.UserReturnForMasterUsers)
+async def grant_revoke_admin_privileges(
+    id,
+    make_admin: bool,
+    db: Session = Depends(get_db),
+    current_user: schemas.UserEmail = Depends(auth.validate_master_user)
+):
+    """
+    Grant or Revoke Admin Privileges Endpoint. Only master users can use this endpoint.
+
+    Parameters: 
+    - user (dict): dictionary with user id and admin set to true or false.
+
+    Returns: 
+    - Dic: dictionary user id and is_admin.
+
+    Raise:
+    - HTTPException (401): if user making the change is not master user.
+    - HTTPException (404): if user to be updated is not in database.
+    - HTTPException (500): if there is a server error. 
+    """
+    print(type(id))
+    try:
+        user = db.query(models.User).filter(models.User.id == id)
+
+        if not user.first():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"User id {id} is not valid."
+            )
+
+        user.update({"is_admin": make_admin})
+        db.commit()
+        new_user = user.first()
+        db.refresh(new_user)
+    except IntegrityError:
+        raise common_responses.internal_server_error()
+
+    return (new_user)

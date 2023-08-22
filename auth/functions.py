@@ -93,9 +93,6 @@ def validate_user(
 
     jwt_payload = get_jwt_payload(token)
 
-    if not jwt_payload.is_admin:
-        raise common_responses.invalid_credentials()
-
     return {"email": jwt_payload.email}
 
 
