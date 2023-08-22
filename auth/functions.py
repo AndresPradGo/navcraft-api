@@ -16,7 +16,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from pydantic import BaseModel
 
-from utils import common_responses, environ_variable as environ
+from utils import common_responses, environ_variable_tools as environ
 
 
 class TokenData(BaseModel):

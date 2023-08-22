@@ -15,9 +15,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker, scoped_session
 
-from utils import common_responses, environ_variable as environ
+from utils import common_responses, environ_variable_tools as environ
 
-DB_NAME = "flight_planner_api_db"
+DB_NAME = environ.get('db_name')
 DB_USER = environ.get('db_user')
 DB_PASSWORD = environ.get('db_password')
 DB_HOST = environ.get('db_host')

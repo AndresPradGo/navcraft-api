@@ -15,7 +15,7 @@ from sqlalchemy import Column, Integer, DECIMAL, String, Boolean, ForeignKey
 from sqlalchemy.orm import Relationship
 
 from models.base import BaseModel
-from utils import environ_variable as environ
+from utils import environ_variable_tools as environ
 
 
 class User(BaseModel):
