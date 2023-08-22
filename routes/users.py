@@ -14,10 +14,10 @@ from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
+import auth
 import models
 import schemas
 from utils import common_responses
-import auth
 from utils.db import get_db
 
 

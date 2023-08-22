@@ -14,11 +14,12 @@ from sqlalchemy import text, and_, or_
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-import models
-import schemas
 import auth
+import models
+from queries import user_queries
+import schemas
 from utils.db import get_db
-from utils import common_responses, db_query
+from utils import common_responses
 
 router = APIRouter(tags=["Waypoints"])
 
@@ -104,7 +105,7 @@ async def get_all_waypoints(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = db_query.get_user_id_from(email=current_user["email"], db=db)
+    user_id = await user_queries.get_id_from(email=current_user["email"], db=db)
     query = text("SELECT waypoint_id FROM aerodromes")
     try:
         aerodrome_ids = [id[0] for id in db.execute(query).fetchall()]
@@ -166,7 +167,7 @@ async def post_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = db_query.get_user_id_from(email=current_user["email"], db=db)
+    user_id = await user_queries.get_id_from(email=current_user["email"], db=db)
     try:
         result = await post_waypoint(waypoint=waypoint, db=db, creator_id=user_id, official=False)
     except HTTPException as e:
@@ -195,7 +196,7 @@ async def post_official_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = db_query.get_user_id_from(email=current_user["email"], db=db)
+    user_id = await user_queries.get_id_from(email=current_user["email"], db=db)
     try:
         result = await post_waypoint(waypoint=waypoint, db=db, creator_id=user_id, official=True)
     except HTTPException as e:
@@ -225,7 +226,7 @@ async def post_aerodrome(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = db_query.get_user_id_from(email=current_user["email"], db=db)
+    user_id = await user_queries.get_id_from(email=current_user["email"], db=db)
     try:
         waypoint_result = await post_waypoint(waypoint=aerodrome, db=db, creator_id=user_id, official=True)
     except HTTPException as e:
