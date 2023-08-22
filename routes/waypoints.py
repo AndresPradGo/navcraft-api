@@ -18,7 +18,7 @@ import models
 import schemas
 import auth
 from utils.db import get_db
-from utils import common_responses
+from utils import common_responses, db_query
 
 router = APIRouter(tags=["Waypoints"])
 
@@ -104,17 +104,10 @@ async def get_waypoints(
     - HTTPException (500): if there is a server error. 
     """
 
+    user_id = db_query.get_user_id_from(email=current_user["email"], db=db)
     query = text("SELECT waypoint_id FROM aerodromes")
-
     try:
         aerodrome_ids = [id[0] for id in db.execute(query).fetchall()]
-        user_id = db.query(models.User.id).filter(
-            models.User.email == current_user["email"]).first()
-        if not user_id:
-            raise common_responses.invalid_credentials()
-        user_id = user_id[0]
-        print(user_id)
-
         waypoints = db.query(models.Waypoint).filter(and_(
             ~models.Waypoint.id.in_(aerodrome_ids),
             or_(
@@ -173,11 +166,8 @@ async def post_waypoint_endpoint(
     - HTTPException (500): if there is a server error. 
     """
 
+    user_id = db_query.get_user_id_from(email=current_user["email"], db=db)
     try:
-        user_id = db.query(models.User.id).filter(
-            models.User.email == current_user["email"]).first()
-        if not user_id:
-            raise common_responses.invalid_credentials()
         result = await post_waypoint(waypoint=waypoint, db=db, creator_id=user_id, official=False)
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
@@ -205,11 +195,8 @@ async def post_official_waypoint_endpoint(
     - HTTPException (500): if there is a server error. 
     """
 
+    user_id = db_query.get_user_id_from(email=current_user["email"], db=db)
     try:
-        user_id = db.query(models.User.id).filter(
-            models.User.email == current_user["email"]).first()
-        if not user_id:
-            raise common_responses.invalid_credentials()
         result = await post_waypoint(waypoint=waypoint, db=db, creator_id=user_id, official=True)
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
@@ -238,11 +225,8 @@ async def post_aerodrome_endpoint(
     - HTTPException (500): if there is a server error. 
     """
 
+    user_id = db_query.get_user_id_from(email=current_user["email"], db=db)
     try:
-        user_id = db.query(models.User.id).filter(
-            models.User.email == current_user["email"]).first()
-        if not user_id:
-            raise common_responses.invalid_credentials()
         waypoint_result = await post_waypoint(waypoint=aerodrome, db=db, creator_id=user_id, official=True)
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
