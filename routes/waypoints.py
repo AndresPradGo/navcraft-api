@@ -88,12 +88,12 @@ async def post_waypoint(waypoint: schemas.WaypointData, db: Session, creator_id:
 
 
 @router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.WaypointReturn])
-async def get_waypoints(
+async def get_all_waypoints(
     db: Session = Depends(get_db),
     current_user: schemas.UserEmail = Depends(auth.validate_user)
 ):
     """
-    Get Waypoints Endpoint.
+    Get All Waypoints Endpoint.
 
     Parameters: None
 
@@ -122,9 +122,9 @@ async def get_waypoints(
 
 
 @router.get("/aerodromes", status_code=status.HTTP_200_OK, response_model=List[schemas.AerodromeReturn])
-async def get_aerodromes(db: Session = Depends(get_db), current_user: schemas.UserEmail = Depends(auth.validate_user)):
+async def get_all_aerodromes(db: Session = Depends(get_db), current_user: schemas.UserEmail = Depends(auth.validate_user)):
     """
-    Get Aerodromes Endpoint.
+    Get All Aerodromes Endpoint.
 
     Parameters: None
 
@@ -147,7 +147,7 @@ async def get_aerodromes(db: Session = Depends(get_db), current_user: schemas.Us
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.WaypointReturn)
-async def post_waypoint_endpoint(
+async def post_waypoint(
     waypoint: schemas.WaypointData,
     db: Session = Depends(get_db),
     current_user: schemas.UserEmail = Depends(auth.validate_user)
@@ -176,7 +176,7 @@ async def post_waypoint_endpoint(
 
 
 @router.post("/official", status_code=status.HTTP_201_CREATED, response_model=schemas.WaypointReturn)
-async def post_official_waypoint_endpoint(
+async def post_official_waypoint(
     waypoint: schemas.WaypointData,
     db: Session = Depends(get_db),
     current_user: schemas.UserEmail = Depends(auth.validate_admin_user)
@@ -205,7 +205,7 @@ async def post_official_waypoint_endpoint(
 
 
 @router.post("/aerodrome", status_code=status.HTTP_201_CREATED, response_model=schemas.AerodromeReturn)
-async def post_aerodrome_endpoint(
+async def post_aerodrome(
     aerodrome: schemas.AerodromeData,
     db: Session = Depends(get_db),
     current_user: schemas.UserEmail = Depends(auth.validate_admin_user)

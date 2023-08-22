@@ -26,7 +26,7 @@ router = APIRouter(tags=["Auth"])
 
 
 @router.post("/", status_code=status.HTTP_200_OK, response_model=schemas.JWTData)
-async def login_endpoint(
+async def login(
     login_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Session = Depends(get_db)
 ):

@@ -23,7 +23,7 @@ router = APIRouter(tags=["Users"])
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.UserBase)
-async def sign_in_endpoint(
+async def sign_in(
     user: schemas.UserData,
     db: Session = Depends(get_db)
 ):
