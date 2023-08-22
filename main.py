@@ -11,10 +11,13 @@ Usage:
 
 from fastapi import FastAPI
 
-from startup.db import create_tables
+from startup.create_db import create_database
+from startup.db_setup import set_charracter_set, create_tables
 from startup.routes import link_routes
 
 app = FastAPI()
 
+create_database()
+set_charracter_set()
 create_tables()
 link_routes(app)

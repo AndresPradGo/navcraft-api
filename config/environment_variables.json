@@ -2,6 +2,7 @@
     "db_user": "flight_planner_db_user",
     "db_password": "flight_planner_db_password",
     "db_host": "flight_planner_db_host",
+    "db_name": "flight_planner_db_name",
     "jwtSecretKey": "flight_planner_jwtSecretKey",
     "jwtAlgorithm": "flight_planner_jwtAlgorithm"
 }
