@@ -8,6 +8,8 @@ Usage:
 
 """
 
+from typing import List
+
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -20,6 +22,32 @@ from utils.db import get_db
 
 
 router = APIRouter(tags=["Users"])
+
+
+@router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.UserReturnForMasterUsers])
+async def get_all_users(
+    db: Session = Depends(get_db),
+    current_user: schemas.UserEmail = Depends(auth.validate_master_user)
+):
+    """
+    Get All Users Endpoint.
+
+    Parameters: None
+
+    Returns: 
+    - list: list of user dictionaries.
+
+    Raise:
+    - HTTPException (401): if user is not master user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    try:
+        users = db.query(models.User).all()
+    except IntegrityError:
+        raise common_responses.internal_server_error()
+
+    return users
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.UserBase)
@@ -91,8 +119,8 @@ async def grant_revoke_admin_privileges(
     - Dic: dictionary user id and is_admin.
 
     Raise:
+    - HTTPException (400): if user to be updated is not in database.
     - HTTPException (401): if user making the change is not master user.
-    - HTTPException (404): if user to be updated is not in database.
     - HTTPException (500): if there is a server error. 
     """
     print(type(id))
