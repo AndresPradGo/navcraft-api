@@ -9,6 +9,7 @@ Usage:
 """
 
 from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 import models
@@ -37,7 +38,7 @@ async def get_id_from(email: str, db: Session):
             models.User.email == email).first()
         if not user_id:
             raise common_responses.invalid_credentials()
-    except HTTPException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except IntegrityError:
+        raise common_responses.internal_server_error()
 
     return user_id[0]

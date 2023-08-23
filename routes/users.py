@@ -11,11 +11,13 @@ Usage:
 from typing import List, Annotated
 
 from fastapi import APIRouter, Depends, status, HTTPException, Response
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 import auth
 import models
+from queries import user_queries
 import schemas
 from utils import common_responses
 from utils.db import get_db
@@ -132,6 +134,55 @@ async def sign_in(
     return new_user
 
 
+@router.post("/new-passenger-profile", status_code=status.HTTP_200_OK, response_model=schemas.PassengerProfileReturn)
+async def add_new_passenger_profile(
+    passenger_profile_data: schemas.PassengerProfileData,
+    db: Session = Depends(get_db),
+    current_user: schemas.UserEmail = Depends(auth.validate_user)
+):
+    """
+    Endpoint to add a new passenger profile
+
+    Parameters: 
+    - passenger_profile_data (dict): dictionary with passenger profile data.
+
+    Returns: 
+    - Dic: dictionary with passenger profile data and database id.
+
+    Raise:
+    - HTTPException (400): if user already has a passenger profile with the given name.
+    - HTTPException (401): not able to validate user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    user_id = await user_queries.get_id_from(email=current_user["email"], db=db)
+
+    try:
+        passenger_already_exists = db.query(models.PassengerProfile).filter(and_(
+            models.PassengerProfile.name == passenger_profile_data.name,
+            models.PassengerProfile.creator_id == user_id
+        )).first()
+        print(passenger_already_exists)
+        if passenger_already_exists:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Passenger with name {passenger_profile_data.name} already exists."
+            )
+
+        new_passenger_profile = models.PassengerProfile(
+            name=passenger_profile_data.name,
+            weight_lb=passenger_profile_data.weight_lb,
+            creator_id=user_id
+        )
+        db.add(new_passenger_profile)
+        db.commit()
+        db.refresh(new_passenger_profile)
+    except IntegrityError:
+        raise common_responses.internal_server_error()
+
+    return new_passenger_profile
+
+
 @router.put("/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturn)
 async def update_user_profile(
     user_data: schemas.UserData,
@@ -186,7 +237,7 @@ async def update_user_profile(
     return new_user
 
 
-@router.put("/make-admin/{id}", status_code=status.HTTP_201_CREATED, response_model=schemas.UserReturn)
+@router.put("/make-admin/{id}", status_code=status.HTTP_200_OK, response_model=schemas.UserReturn)
 async def grant_revoke_admin_privileges(
     id,
     make_admin: bool,
@@ -203,8 +254,8 @@ async def grant_revoke_admin_privileges(
     - Dic: dictionary with user data.
 
     Raise:
-    - HTTPException (404): user not found.
     - HTTPException (401): if user making the change is not master user.
+    - HTTPException (404): user not found.
     - HTTPException (500): if there is a server error. 
     """
 

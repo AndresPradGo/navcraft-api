@@ -45,7 +45,7 @@ class User(BaseModel):
     email = Column(String(255), nullable=False, unique=True)
     name = Column(String(255), nullable=False)
     weight_lb = Column(DECIMAL(4, 1), nullable=False, default=200.0)
-    password = Column(String(510), nullable=False)
+    password = Column(String(255), nullable=False)
     is_admin = Column(Boolean, nullable=False, default=False)
     is_master = Column(Boolean, nullable=False, default=False)
 
@@ -118,7 +118,7 @@ class PassengerProfile(BaseModel):
     __tablename__ = "passenger_profiles"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(255), nullable=False, unique=True)
+    name = Column(String(255), nullable=False)
     weight_lb = Column(DECIMAL(4, 1), nullable=False, default=200.0)
     creator_id = Column(
         Integer,

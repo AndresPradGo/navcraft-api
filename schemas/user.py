@@ -72,7 +72,7 @@ class UserData(UserBase):
         strip_whitespace=True,
         strict=True,
         min_length=8,
-        max_length=255
+        max_length=25
     )
 
     @validator('weight_lb')
@@ -103,3 +103,34 @@ class JWTData(BaseModel):
 
     access_token: str
     token_type: str
+
+
+class PassengerProfileData(BaseModel):
+    """
+    This class defines the pydantic schema used to
+    send passenger profile data.
+
+   Attributes:
+    - name (String): passenger name.
+    - weight_lb (Decimal): passenger weight in lbs.
+    """
+
+    name: constr(
+        strip_whitespace=True,
+        strict=True,
+        min_length=2,
+        max_length=255
+    )
+    weight_lb: confloat(ge=0)
+
+
+class PassengerProfileReturn(PassengerProfileData):
+    """
+    This class defines the pydantic schema used to
+    return passenger profile data to the client.
+
+   Attributes:
+    - id (Integer): passenger id.
+    """
+
+    id: int
