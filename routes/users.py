@@ -26,7 +26,7 @@ from utils.db import get_db
 router = APIRouter(tags=["Users"])
 
 
-@router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.UserReturn])
+@router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.UserReturnBasic])
 async def get_all_users(
     db: Session = Depends(get_db),
     current_user: schemas.UserEmail = Depends(auth.validate_master_user)
@@ -79,7 +79,7 @@ async def get_user_profile_data(
     return user
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.UserReturn)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.UserReturnBasic)
 async def sign_in(
     user: schemas.UserData,
     response: Response,
@@ -182,7 +182,7 @@ async def add_new_passenger_profile(
     return new_passenger_profile
 
 
-@router.put("/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturn)
+@router.put("/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturnBasic)
 async def update_user_profile(
     user_data: schemas.UserData,
     response: Response,
@@ -233,7 +233,7 @@ async def update_user_profile(
     return new_user
 
 
-@router.put("/make-admin/{id}", status_code=status.HTTP_200_OK, response_model=schemas.UserReturn)
+@router.put("/make-admin/{id}", status_code=status.HTTP_200_OK, response_model=schemas.UserReturnBasic)
 async def grant_revoke_admin_privileges(
     id,
     make_admin: bool,

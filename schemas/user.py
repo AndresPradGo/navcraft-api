@@ -8,9 +8,40 @@ Usage:
 
 """
 
-from typing import Optional, Any
+from typing import Optional, List
 
 from pydantic import BaseModel, constr, EmailStr, conint, confloat, NaiveDatetime, validator, model_validator
+
+
+class PassengerProfileData(BaseModel):
+    """
+    This class defines the pydantic schema used to
+    send passenger profile data.
+
+   Attributes:
+    - name (String): passenger name.
+    - weight_lb (Decimal): passenger weight in lbs.
+    """
+
+    name: constr(
+        strip_whitespace=True,
+        strict=True,
+        min_length=2,
+        max_length=255
+    )
+    weight_lb: confloat(ge=0)
+
+
+class PassengerProfileReturn(PassengerProfileData):
+    """
+    This class defines the pydantic schema used to
+    return passenger profile data to the client.
+
+   Attributes:
+    - id (Integer): passenger id.
+    """
+
+    id: int
 
 
 class UserEmail(BaseModel):
@@ -42,7 +73,7 @@ class UserBase(UserEmail):
     weight_lb: confloat(ge=0)
 
 
-class UserReturn(UserBase):
+class UserReturnBasic(UserBase):
     """
     This class defines the pydantic schema used to return 
     user data to the client.
@@ -58,6 +89,18 @@ class UserReturn(UserBase):
     id: int
     is_admin: bool
     is_master: bool
+
+
+class UserReturn(UserReturnBasic):
+    """
+    This class defines the pydantic schema used to return 
+    user data to the client, including the list of passenger profies.
+
+   Attributes:
+    - passenger_profiles (List(PassengerProfileReturn)): List of passenger_profile data.
+    """
+
+    passenger_profiles: List[PassengerProfileReturn]
 
 
 class UserData(UserBase):
@@ -134,34 +177,3 @@ class JWTData(BaseModel):
 
     access_token: str
     token_type: str
-
-
-class PassengerProfileData(BaseModel):
-    """
-    This class defines the pydantic schema used to
-    send passenger profile data.
-
-   Attributes:
-    - name (String): passenger name.
-    - weight_lb (Decimal): passenger weight in lbs.
-    """
-
-    name: constr(
-        strip_whitespace=True,
-        strict=True,
-        min_length=2,
-        max_length=255
-    )
-    weight_lb: confloat(ge=0)
-
-
-class PassengerProfileReturn(PassengerProfileData):
-    """
-    This class defines the pydantic schema used to
-    return passenger profile data to the client.
-
-   Attributes:
-    - id (Integer): passenger id.
-    """
-
-    id: int
