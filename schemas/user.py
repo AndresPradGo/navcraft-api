@@ -42,18 +42,20 @@ class UserBase(UserEmail):
     weight_lb: confloat(ge=0)
 
 
-class UserReturnForMasterUsers(UserBase):
+class UserReturn(UserBase):
     """
     This class defines the pydantic schema used to return 
-    user data to a master user, about other users users.
+    user data to the client.
 
    Attributes:
+    - id (Integer): user id.
     - is_admin (Boolean): true if the user is admin. Admin users have privileges 
       like adding aerodromes and aircraft base models.
     - is_master (Boolean): true if the user is master. Only master users can add 
       new admin users. Master users have to be Admin Users.
     """
 
+    id: int
     is_admin: bool
     is_master: bool
 

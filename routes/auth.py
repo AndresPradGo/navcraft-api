@@ -50,16 +50,11 @@ async def login(
     except IntegrityError:
         raise common_responses.internal_server_error()
 
-    exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid credentials, please enter a valid email and password."
-    )
-
     if not user:
-        raise exception
+        raise common_responses.invalid_credentials()
 
     if not Hasher.verify(login_data.password, user.password):
-        raise exception
+        raise common_responses.invalid_credentials()
 
     token = user.generate_auth_token()
 
