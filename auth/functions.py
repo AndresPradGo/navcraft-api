@@ -51,8 +51,8 @@ def get_jwt_payload(token: str):
     try:
         payload = jwt.decode(
             token,
-            environ.get("jwtSecretKey"),
-            algorithms=environ.get("jwtAlgorithm")
+            environ.get("jwt_secret_key"),
+            algorithms=environ.get("jwt_algorithm")
         )
         user_email: str = payload.get("email")
         permissions: List[str] = payload.get("permissions")

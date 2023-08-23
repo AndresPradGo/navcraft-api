@@ -79,7 +79,7 @@ class WaypointReturn(WaypointBase):
     is_official: Optional[bool] = None
 
     class Config():
-        orm_mode = True
+        from_attributes = True
 
 
 class WaypointData(WaypointBase):

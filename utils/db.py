@@ -25,7 +25,7 @@ DB_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
 
 engine = create_engine(DB_URL, echo=False)
 
-session = scoped_session(
+Session = scoped_session(
     sessionmaker(
         autocommit=False,
         autoflush=False,
@@ -41,7 +41,7 @@ def get_db():
     Parameters: None
     """
 
-    database = session()
+    database = Session()
     try:
         yield database
 

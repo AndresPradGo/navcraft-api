@@ -1,8 +1,12 @@
 {
-    "db_user": "flight_planner_db_user",
-    "db_password": "flight_planner_db_password",
-    "db_host": "flight_planner_db_host",
-    "db_name": "flight_planner_db_name",
-    "jwtSecretKey": "flight_planner_jwtSecretKey",
-    "jwtAlgorithm": "flight_planner_jwtAlgorithm"
+    "db_user": "FLIGHT_PLANNER_DB_USER",
+    "db_password": "FLIGHT_PLANNER_DB_PASSWORD",
+    "db_host": "FLIGHT_PLANNER_DB_HOST",
+    "db_name": "FLIGHT_PLANNER_DB_NAME",
+    "master_user_name": "FLIGHT_PLANNER_MASTER_USER_NAME",
+    "master_user_email": "FLIGHT_PLANNER_MASTER_USER_EMAIL",
+    "master_user_weight": "FLIGHT_PLANNER_MASTER_USER_WEIGHT",
+    "master_user_password": "FLIGHT_PLANNER_MASTER_USER_PASSWORD",
+    "jwt_secret_key": "FLIGHT_PLANNER_JWT_SECRET_KEY",
+    "jwt_algorithm": "FLIGHT_PLANNER_JWT_ALGORITHM"
 }

@@ -84,8 +84,8 @@ class User(BaseModel):
         Returns: 
         - str: Jason Web Token.
         """
-        jwt_key = environ.get("jwtSecretKey")
-        jwt_algorithm = environ.get("jwtAlgorithm")
+        jwt_key = environ.get("jwt_secret_key")
+        jwt_algorithm = environ.get("jwt_algorithm")
 
         permissions = ["admin", "master"] if self.is_admin and self.is_master else [
             "admin"] if self.is_admin else []
