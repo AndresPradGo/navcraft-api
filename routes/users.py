@@ -280,7 +280,7 @@ async def grant_revoke_admin_privileges(
     return new_user
 
 
-@router.put("/update-passenger-profile/{id}", status_code=status.HTTP_200_OK, response_model=schemas.PassengerProfileReturn)
+@router.put("/passenger-profile/{id}", status_code=status.HTTP_200_OK, response_model=schemas.PassengerProfileReturn)
 async def update_existing_passenger_profile(
     id,
     passenger_profile_data: schemas.PassengerProfileData,
@@ -309,9 +309,8 @@ async def update_existing_passenger_profile(
         passenger_already_exists = db.query(models.PassengerProfile).filter(and_(
             models.PassengerProfile.name == passenger_profile_data.name,
             models.PassengerProfile.creator_id == user_id,
-            not_(models.PassengerProfile.id == int(id))
+            not_(models.PassengerProfile.id == id)
         )).first()
-        print(passenger_already_exists)
         if passenger_already_exists:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -319,7 +318,7 @@ async def update_existing_passenger_profile(
             )
 
         passenger_profile = db.query(models.PassengerProfile).filter(and_(
-            models.PassengerProfile.id == int(id),
+            models.PassengerProfile.id == id,
             models.PassengerProfile.creator_id == user_id,
         ))
         if not passenger_profile.first():
@@ -331,7 +330,7 @@ async def update_existing_passenger_profile(
         passenger_profile.update(passenger_profile_data.model_dump())
         db.commit()
         new_passenger_profile = db.query(models.PassengerProfile).filter(
-            models.PassengerProfile.id == int(id)).first()
+            models.PassengerProfile.id == id).first()
 
     except IntegrityError:
         raise common_responses.internal_server_error()
@@ -373,7 +372,7 @@ async def delete_account(
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(
+async def delete_passenger_profile(
     id,
     db: Session = Depends(get_db),
     current_user: schemas.UserEmail = Depends(auth.validate_master_user)
@@ -382,13 +381,13 @@ async def delete_user(
     Delete user endpoint, for master users to delete othe accounts.
 
     Parameters: 
-    id (path parameter int): user id.
+    id (int): user id.
 
     Returns: None
 
     Raise:
-    - HTTPException (404): user not found.
     - HTTPException (401): if user making the change is not master user.
+    - HTTPException (404): user not found.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -400,6 +399,43 @@ async def delete_user(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"The user you're trying to delete, is not in the database."
+            )
+        db.commit()
+    except IntegrityError:
+        raise common_responses.internal_server_error()
+
+
+@router.delete("/passenger-profile/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_passenger_profile(
+    id,
+    db: Session = Depends(get_db),
+    current_user: schemas.UserEmail = Depends(auth.validate_user)
+):
+    """
+    Delete passenger profile.
+
+    Parameters: 
+    id (int): passenger profile id.
+
+    Returns: None
+
+    Raise:
+    - HTTPException (401): invalid credentials.
+    - HTTPException (404): passenger profile not found.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    try:
+        user_id = await user_queries.get_id_from(email=current_user["email"], db=db)
+        deleted = db.query(models.PassengerProfile).filter(and_(
+            models.PassengerProfile.id == id,
+            models.PassengerProfile.creator_id == user_id
+        )).delete(synchronize_session=False)
+
+        if not deleted:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"The passenger profile you're trying to delete, is not in the database."
             )
         db.commit()
     except IntegrityError:
