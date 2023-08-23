@@ -200,10 +200,10 @@ async def grant_revoke_admin_privileges(
     - user (dict): dictionary with user id and admin set to true or false.
 
     Returns: 
-    - Dic: dictionary user id and is_admin.
+    - Dic: dictionary with user data.
 
     Raise:
-    - HTTPException (400): if user to be updated is not in database.
+    - HTTPException (404): user not found.
     - HTTPException (401): if user making the change is not master user.
     - HTTPException (500): if there is a server error. 
     """
@@ -213,8 +213,8 @@ async def grant_revoke_admin_privileges(
 
         if not user.first():
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"User id {id} is not valid."
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"The user you're trying to update, is not in the database."
             )
 
         user.update({"is_admin": make_admin})
@@ -225,3 +225,70 @@ async def grant_revoke_admin_privileges(
         raise common_responses.internal_server_error()
 
     return new_user
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_account(
+    db: Session = Depends(get_db),
+    current_user: schemas.UserEmail = Depends(auth.validate_user)
+):
+    """
+    Delete Account.
+
+    Parameters: None
+
+    Returns: None
+
+    Raise:
+    - HTTPException (404): user not found.
+    - HTTPException (401): if user making the change is not authenticated.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    try:
+        deleted = db.query(models.User).\
+            filter(models.User.email == current_user["email"]).\
+            delete(synchronize_session=False)
+
+        if not deleted:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Your account has already been deleted."
+            )
+        db.commit()
+    except IntegrityError:
+        raise common_responses.internal_server_error()
+
+
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(
+    id,
+    db: Session = Depends(get_db),
+    current_user: schemas.UserEmail = Depends(auth.validate_master_user)
+):
+    """
+    Delete user endpoint, for master users to delete othe accounts.
+
+    Parameters: 
+    id (path parameter int): user id.
+
+    Returns: None
+
+    Raise:
+    - HTTPException (404): user not found.
+    - HTTPException (401): if user making the change is not master user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    try:
+        deleted = db.query(models.User).filter(models.User.id == id).\
+            delete(synchronize_session=False)
+
+        if not deleted:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"The user you're trying to delete, is not in the database."
+            )
+        db.commit()
+    except IntegrityError:
+        raise common_responses.internal_server_error()
