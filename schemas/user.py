@@ -75,6 +75,37 @@ class UserData(UserBase):
         max_length=25
     )
 
+    @validator('password')
+    @classmethod
+    def check_passwrod_criteria(clc, password: float) -> float:
+        '''
+        Classmethod to check if password contains at least 1 uppercase, 
+        1 lowercase and 1 number characters.
+
+        Parameters:
+        - value (string): the password to be validated.
+
+        Returns:
+        (string):password after validation is complete.
+        '''
+
+        if any(c.isspace() or c == '\n' for c in password):
+            raise ValueError(
+                "Password cannot contain any white spaces or line breaks.")
+
+        if not any(c.isupper() for c in password):
+            raise ValueError(
+                "Password must have at least one uppercase character.")
+
+        if not any(c.islower() for c in password):
+            raise ValueError(
+                "Password must have at least one lowercase character.")
+
+        if not any(c.isdigit() for c in password):
+            raise ValueError("Password must have at least one digit.")
+
+        return password
+
     @validator('weight_lb')
     @classmethod
     def round_user_weight(clc, value: float) -> float:
@@ -82,7 +113,7 @@ class UserData(UserBase):
         Classmethod to round weight_lb input value to 1 decimal place.
 
         Parameters:
-        - value (float): the values to be validated.
+        - value (float): the weight to be validated.
 
         Returns:
         (float): weight value rounded to 1 decimal place.
