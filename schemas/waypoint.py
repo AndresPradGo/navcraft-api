@@ -36,7 +36,7 @@ class WaypointBase(BaseModel):
         to_upper=True,
         min_length=2,
         max_length=10,
-        pattern='[-a-zA-Z0-9]{2,10}'
+        pattern='^[-a-zA-Z0-9]+$',
     )
     name: constr(min_length=2, max_length=50)
     lat_degrees: conint(ge=0, le=90)
@@ -47,7 +47,7 @@ class WaypointBase(BaseModel):
         to_upper=True,
         min_length=1,
         max_length=1,
-        pattern='[NSns]'
+        pattern='^[NSns]$'
     )] = None
     lon_degrees: conint(ge=0, le=180)
     lon_minutes: conint(ge=0, le=59)
@@ -57,7 +57,7 @@ class WaypointBase(BaseModel):
         to_upper=True,
         min_length=1,
         max_length=1,
-        pattern='[EWew]'
+        pattern='^[EWew]$'
     )] = None
     magnetic_variation: Optional[confloat(allow_inf_nan=False)] = None
 

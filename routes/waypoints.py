@@ -10,7 +10,7 @@ Usage:
 from typing import List
 
 from fastapi import APIRouter, Depends, status, HTTPException
-from sqlalchemy import text, and_, or_
+from sqlalchemy import text, and_, or_, not_
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
@@ -42,9 +42,11 @@ async def post_waypoint(waypoint: schemas.WaypointData, db: Session, creator_id:
     - HTTPException (500): if there is a server error. 
     """
 
+    db_waypoint_code = f"{waypoint.code}{'' if official else f'@{creator_id}'}"
+
     try:
-        exists = db.query(models.Waypoint).filter_by(
-            code=waypoint.code).first()
+        exists = db.query(models.Waypoint).filter(
+            models.Waypoint.code == db_waypoint_code).first()
     except IntegrityError:
         raise common_responses.internal_server_error()
 
@@ -59,12 +61,12 @@ async def post_waypoint(waypoint: schemas.WaypointData, db: Session, creator_id:
         msg = f"{'Aerodrome' if is_aerodrome else 'Waypoint'} with code {waypoint.code} already exists. Try using a different code."
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Please login to access this data."
+            detail=msg
         )
 
     try:
         new_waypoint = models.Waypoint(
-            code=waypoint.code,
+            code=db_waypoint_code,
             name=waypoint.name,
             is_official=official,
             lat_degrees=waypoint.lat_degrees,
@@ -85,7 +87,7 @@ async def post_waypoint(waypoint: schemas.WaypointData, db: Session, creator_id:
     except IntegrityError:
         raise common_responses.internal_server_error()
 
-    return new_waypoint
+    return new_waypoint.get_clean_waypoint()
 
 
 @router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.WaypointReturn])
@@ -119,7 +121,7 @@ async def get_all_waypoints(
     except IntegrityError:
         raise common_responses.internal_server_error()
 
-    return waypoints
+    return [w.get_clean_waypoint() for w in waypoints]
 
 
 @router.get("/aerodromes", status_code=status.HTTP_200_OK, response_model=List[schemas.AerodromeReturn])
@@ -148,7 +150,7 @@ async def get_all_aerodromes(db: Session = Depends(get_db), current_user: schema
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.WaypointReturn)
-async def post_waypoint(
+async def post_new_waypoint(
     waypoint: schemas.WaypointData,
     db: Session = Depends(get_db),
     current_user: schemas.UserEmail = Depends(auth.validate_user)
@@ -193,6 +195,7 @@ async def post_official_waypoint(
 
     Raise:
     - HTTPException (400): if waypoint already exists.
+    - HTTPException (401): if user is not admin user.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -223,6 +226,7 @@ async def post_aerodrome(
 
     Raise:
     - HTTPException (400): if waypoint already exists.
+    - HTTPException (401): if user is not admin user.
     - HTTPException (500): if there is a server error. 
     """
 

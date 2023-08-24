@@ -41,7 +41,7 @@ class Waypoint(BaseModel):
     __tablename__ = "waypoints"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    code = Column(String(10), nullable=False, unique=True)
+    code = Column(String(20), nullable=False, unique=True)
     name = Column(String(50), nullable=False)
     is_official = Column(Boolean, nullable=False, default=True)
     lat_degrees = Column(Integer, nullable=False)
@@ -81,6 +81,18 @@ class Waypoint(BaseModel):
         passive_deletes=True,
         passive_updates=True
     )
+
+    def get_clean_waypoint(self):
+        '''
+        Method will return the instance of Waypoint class, with the code cleaned.
+        When saving the waypoint in the database, the code gets joined with creator id, 
+        to ensure uniqueness. When returning the waypoint to the client, we need to 
+        clean the code.
+
+        Returns: self
+        '''
+        self.code = self.code.split("@")[0]
+        return self
 
 
 class Aerodrome(BaseModel):
