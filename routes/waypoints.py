@@ -130,7 +130,9 @@ async def update_waypoint(waypoint: schemas.WaypointData, db: Session, creator_i
         ))
 
         if not waypoint_query.first():
-            raise common_responses.invalid_credentials()
+            raise common_responses.invalid_credentials(
+                ", or make sure you have permission to perform this operation"
+            )
 
         if not waypoint_query.first().is_official == official:
             official_text = 'official' if not official else 'unofficial'
@@ -153,7 +155,7 @@ async def update_waypoint(waypoint: schemas.WaypointData, db: Session, creator_i
 @router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.WaypointReturn])
 async def get_all_waypoints(
     db: Session = Depends(get_db),
-    current_user: schemas.UserEmail = Depends(auth.validate_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Get All Waypoints Endpoint.
@@ -167,7 +169,7 @@ async def get_all_waypoints(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await user_queries.get_id_from(email=current_user["email"], db=db)
+    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
     query = text("SELECT waypoint_id FROM aerodromes")
     try:
         aerodrome_ids = [id[0] for id in db.execute(query).fetchall()]
@@ -185,7 +187,7 @@ async def get_all_waypoints(
 
 
 @router.get("/aerodromes", status_code=status.HTTP_200_OK, response_model=List[schemas.AerodromeReturn])
-async def get_all_aerodromes(db: Session = Depends(get_db), current_user: schemas.UserEmail = Depends(auth.validate_user)):
+async def get_all_aerodromes(db: Session = Depends(get_db), current_user: schemas.TokenData = Depends(auth.validate_user)):
     """
     Get All Aerodromes Endpoint.
 
@@ -209,11 +211,11 @@ async def get_all_aerodromes(db: Session = Depends(get_db), current_user: schema
     return [{**w.__dict__, **a.__dict__} for w, a in query_results]
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.WaypointReturn)
-async def post_new_waypoint(
+@router.post("/unofficial", status_code=status.HTTP_201_CREATED, response_model=schemas.WaypointReturn)
+async def post_unofficial_waypoint(
     waypoint: schemas.WaypointData,
     db: Session = Depends(get_db),
-    current_user: schemas.UserEmail = Depends(auth.validate_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Post Waypoint Endpoint.
@@ -229,7 +231,7 @@ async def post_new_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await user_queries.get_id_from(email=current_user["email"], db=db)
+    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
     try:
         result = await post_waypoint(waypoint=waypoint, db=db, creator_id=user_id, official=False)
     except HTTPException as e:
@@ -242,7 +244,7 @@ async def post_new_waypoint(
 async def post_official_waypoint(
     waypoint: schemas.WaypointData,
     db: Session = Depends(get_db),
-    current_user: schemas.UserEmail = Depends(auth.validate_admin_user)
+    current_user: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
     Post Official Waypoint Endpoint.
@@ -259,7 +261,7 @@ async def post_official_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await user_queries.get_id_from(email=current_user["email"], db=db)
+    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
     try:
         result = await post_waypoint(waypoint=waypoint, db=db, creator_id=user_id, official=True)
     except HTTPException as e:
@@ -272,7 +274,7 @@ async def post_official_waypoint(
 async def post_aerodrome(
     aerodrome: schemas.AerodromeData,
     db: Session = Depends(get_db),
-    current_user: schemas.UserEmail = Depends(auth.validate_admin_user)
+    current_user: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
     Post Aerodrome Endpoint.
@@ -290,7 +292,7 @@ async def post_aerodrome(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await user_queries.get_id_from(email=current_user["email"], db=db)
+    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
     try:
         waypoint_result = await post_waypoint(waypoint=aerodrome, db=db, creator_id=user_id, official=True)
     except HTTPException as e:
@@ -315,12 +317,12 @@ async def post_aerodrome(
     return {**new_aerodrome.__dict__, **waypoint_result.__dict__}
 
 
-@router.put("/{id}", status_code=status.HTTP_200_OK, response_model=schemas.WaypointReturn)
+@router.put("/unofficial/{id}", status_code=status.HTTP_200_OK, response_model=schemas.WaypointReturn)
 async def update_unofficial_waypoint(
     id,
     waypoint: schemas.WaypointData,
     db: Session = Depends(get_db),
-    current_user: schemas.UserEmail = Depends(auth.validate_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Update Waypoint Endpoint.
@@ -337,7 +339,7 @@ async def update_unofficial_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await user_queries.get_id_from(email=current_user["email"], db=db)
+    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
     try:
         result = await update_waypoint(waypoint=waypoint, db=db, creator_id=user_id, official=False, id=id)
     except HTTPException as e:
@@ -351,7 +353,7 @@ async def update_official_waypoint(
     id,
     waypoint: schemas.WaypointData,
     db: Session = Depends(get_db),
-    current_user: schemas.UserEmail = Depends(auth.validate_admin_user)
+    current_user: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
     Update Official Waypoint Endpoint.
@@ -368,7 +370,7 @@ async def update_official_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await user_queries.get_id_from(email=current_user["email"], db=db)
+    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
     try:
         is_aerodrome = db.query(models.Aerodrome).filter(
             models.Aerodrome.waypoint_id == id).first()
@@ -389,7 +391,7 @@ async def update_aerodrome(
     id,
     aerodrome: schemas.AerodromeData,
     db: Session = Depends(get_db),
-    current_user: schemas.UserEmail = Depends(auth.validate_admin_user)
+    current_user: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
     Update Aerodrome Endpoint.
@@ -406,7 +408,7 @@ async def update_aerodrome(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await user_queries.get_id_from(email=current_user["email"], db=db)
+    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
     try:
         aerodrome_query = db.query(models.Aerodrome).filter(
             models.Aerodrome.waypoint_id == id
@@ -456,3 +458,107 @@ async def update_aerodrome(
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
     return {**new_aerodrome.__dict__, **new_waypoint.__dict__}
+
+
+@router.delete("/unofficial/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_unofficial_waypoint(
+    id,
+    db: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Delete Unofficial Waypoint.
+
+    Parameters: 
+    id (int): waypoint id.
+
+    Returns: None
+
+    Raise:
+    - HTTPException (401): invalid credentials.
+    - HTTPException (404): passenger profile not found.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    try:
+        user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+        waypoint_query = db.query(models.Waypoint).filter(
+            models.Waypoint.id == id)
+
+        if not waypoint_query.first():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"The waypoint you're trying to delete is not in the database."
+            )
+
+        if waypoint_query.first().is_official:
+            if not current_user.is_admin:
+                raise common_responses.invalid_credentials(
+                    " to perform this operation."
+                )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Request was unsuccessful. If you're trying to delete an official waypoint, please use the 'Delete Official Waypoint' endpoint."
+            )
+
+        if not waypoint_query.first().creator_id == user_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"You do not have valid permissions to delete this waypoint."
+            )
+
+        deleted = waypoint_query.delete(synchronize_session=False)
+
+        if not deleted:
+            raise common_responses.internal_server_error()
+
+        db.commit()
+    except IntegrityError:
+        raise common_responses.internal_server_error()
+
+
+@router.delete("/official/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_official_waypoint_or_aerodrome(
+    id,
+    db: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Delete Official Waypoint or Aerodrome.
+
+    Parameters: 
+    id (int): waypoint id.
+
+    Returns: None
+
+    Raise:
+    - HTTPException (401): invalid credentials.
+    - HTTPException (404): passenger profile not found.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    try:
+        waypoint_query = db.query(models.Waypoint).filter(
+            models.Waypoint.id == id)
+
+        if not waypoint_query.first():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"The waypoint you're trying to delete is not in the database."
+            )
+
+        user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+        if not waypoint_query.first().is_official and\
+                not int(waypoint_query.first().creator_id) == user_id:
+            raise common_responses.invalid_credentials(
+                ", or make sure you have permission to perform this operation"
+            )
+
+        deleted = waypoint_query.delete(synchronize_session=False)
+
+        if not deleted:
+            raise common_responses.internal_server_error()
+
+        db.commit()
+    except IntegrityError:
+        raise common_responses.internal_server_error()

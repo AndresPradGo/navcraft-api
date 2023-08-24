@@ -177,3 +177,17 @@ class JWTData(BaseModel):
 
     access_token: str
     token_type: str
+
+
+class TokenData(BaseModel):
+    """
+    This class defines the pydantic token_data schema.
+
+   Attributes:
+    - email (String): user email.
+    - is_admin (Boolean): true if user is admin.
+    - is_master (Boolean): true if user is master.
+    """
+    email: str | None = None
+    is_admin: bool
+    is_master: bool

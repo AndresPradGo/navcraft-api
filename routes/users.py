@@ -29,7 +29,7 @@ router = APIRouter(tags=["Users"])
 @router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.UserReturnBasic])
 async def get_all_users(
     db: Session = Depends(get_db),
-    current_user: schemas.UserEmail = Depends(auth.validate_master_user)
+    _: schemas.TokenData = Depends(auth.validate_master_user)
 ):
     """
     Get All Users Endpoint.
@@ -55,7 +55,7 @@ async def get_all_users(
 @router.get("/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturn)
 async def get_user_profile_data(
     db: Session = Depends(get_db),
-    current_user: schemas.UserEmail = Depends(auth.validate_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Get Profile Data Endpoint.
@@ -72,7 +72,7 @@ async def get_user_profile_data(
 
     try:
         user = db.query(models.User).filter(
-            models.User.email == current_user["email"]).first()
+            models.User.email == current_user.email).first()
     except IntegrityError:
         raise common_responses.internal_server_error()
 
@@ -138,7 +138,7 @@ async def sign_in(
 async def add_new_passenger_profile(
     passenger_profile_data: schemas.PassengerProfileData,
     db: Session = Depends(get_db),
-    current_user: schemas.UserEmail = Depends(auth.validate_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Endpoint to add a new passenger profile
@@ -155,7 +155,7 @@ async def add_new_passenger_profile(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await user_queries.get_id_from(email=current_user["email"], db=db)
+    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
 
     try:
         passenger_already_exists = db.query(models.PassengerProfile).filter(and_(
@@ -187,7 +187,7 @@ async def update_user_profile(
     user_data: schemas.UserData,
     response: Response,
     db: Session = Depends(get_db),
-    current_user: schemas.UserEmail = Depends(auth.validate_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Update User Endpoint.
@@ -208,14 +208,14 @@ async def update_user_profile(
         user_with_email = db.query(models.User).filter(
             models.User.email == user_data.email).first()
 
-        if user_with_email and not user_data.email == current_user["email"]:
+        if user_with_email and not user_data.email == current_user.email:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"User with email {user_data.email}, already exists."
             )
 
         user = db.query(models.User).filter(
-            models.User.email == current_user["email"])
+            models.User.email == current_user.email)
 
         if not user.first():
             raise common_responses.invalid_credentials()
@@ -238,7 +238,7 @@ async def grant_revoke_admin_privileges(
     id,
     make_admin: bool,
     db: Session = Depends(get_db),
-    current_user: schemas.UserEmail = Depends(auth.validate_master_user)
+    _: schemas.TokenData = Depends(auth.validate_master_user)
 ):
     """
     Grant or Revoke Admin Privileges Endpoint. Only master users can use this endpoint.
@@ -285,7 +285,7 @@ async def update_existing_passenger_profile(
     id,
     passenger_profile_data: schemas.PassengerProfileData,
     db: Session = Depends(get_db),
-    current_user: schemas.UserEmail = Depends(auth.validate_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Endpoint to update a passenger profile
@@ -303,7 +303,7 @@ async def update_existing_passenger_profile(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await user_queries.get_id_from(email=current_user["email"], db=db)
+    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
 
     try:
         passenger_already_exists = db.query(models.PassengerProfile).filter(and_(
@@ -341,7 +341,7 @@ async def update_existing_passenger_profile(
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_account(
     db: Session = Depends(get_db),
-    current_user: schemas.UserEmail = Depends(auth.validate_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Delete Account.
@@ -358,7 +358,7 @@ async def delete_account(
 
     try:
         deleted = db.query(models.User).\
-            filter(models.User.email == current_user["email"]).\
+            filter(models.User.email == current_user.email).\
             delete(synchronize_session=False)
 
         if not deleted:
@@ -375,7 +375,7 @@ async def delete_account(
 async def delete_user(
     id,
     db: Session = Depends(get_db),
-    current_user: schemas.UserEmail = Depends(auth.validate_master_user)
+    _: schemas.TokenData = Depends(auth.validate_master_user)
 ):
     """
     Delete user endpoint, for master users to delete othe accounts.
@@ -409,7 +409,7 @@ async def delete_user(
 async def delete_passenger_profile(
     id,
     db: Session = Depends(get_db),
-    current_user: schemas.UserEmail = Depends(auth.validate_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Delete passenger profile.
@@ -426,7 +426,7 @@ async def delete_passenger_profile(
     """
 
     try:
-        user_id = await user_queries.get_id_from(email=current_user["email"], db=db)
+        user_id = await user_queries.get_id_from(email=current_user.email, db=db)
         deleted = db.query(models.PassengerProfile).filter(and_(
             models.PassengerProfile.id == id,
             models.PassengerProfile.creator_id == user_id

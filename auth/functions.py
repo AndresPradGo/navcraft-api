@@ -17,20 +17,7 @@ from jose import jwt, JWTError
 from pydantic import BaseModel
 
 from utils import common_responses, environ_variable_tools as environ
-
-
-class TokenData(BaseModel):
-    """
-    This class defines the pydantic token_data schema.
-
-   Attributes:
-    - email (String): user email.
-    - is_admin (Boolean): true if user is admin.
-    - is_master (Boolean): true if user is master.
-    """
-    email: str | None = None
-    is_admin: bool
-    is_master: bool
+import schemas
 
 
 def get_jwt_payload(token: str):
@@ -42,7 +29,7 @@ def get_jwt_payload(token: str):
 
 
     Returns: 
-    - TokenData: pydantic token_data schema.
+    - dict: jwt payload data.
 
      Raise:
     - HTTPException (401): if user is not valid.
@@ -54,22 +41,11 @@ def get_jwt_payload(token: str):
             environ.get("jwt_secret_key"),
             algorithms=environ.get("jwt_algorithm")
         )
-        user_email: str = payload.get("email")
-        permissions: List[str] = payload.get("permissions")
-
-        if user_email is None or permissions is None:
-            raise common_responses.invalid_credentials()
-
-        token_data = TokenData(
-            email=user_email,
-            is_admin="admin" in permissions,
-            is_master="master" in permissions
-        )
 
     except JWTError:
         raise common_responses.invalid_credentials()
 
-    return token_data
+    return payload
 
 
 def validate_user(
@@ -92,8 +68,19 @@ def validate_user(
     """
 
     jwt_payload = get_jwt_payload(token)
+    user_email: str = jwt_payload.get("email")
+    permissions: List[str] = jwt_payload.get("permissions")
 
-    return {"email": jwt_payload.email}
+    if user_email is None or permissions is None:
+        raise common_responses.invalid_credentials()
+
+    token_data = schemas.TokenData(
+        email=user_email,
+        is_admin="admin" in permissions,
+        is_master="master" in permissions
+    )
+
+    return token_data
 
 
 def validate_admin_user(
@@ -115,12 +102,12 @@ def validate_admin_user(
     - HTTPException (401): if user is not valid, or user is not admin.
     """
 
-    jwt_payload = get_jwt_payload(token)
+    token_data = validate_user(token)
 
-    if not jwt_payload.is_admin:
+    if not token_data.is_admin:
         raise common_responses.invalid_credentials()
 
-    return {"email": jwt_payload.email}
+    return token_data
 
 
 def validate_master_user(
@@ -143,9 +130,9 @@ def validate_master_user(
       or user is not master.
     """
 
-    jwt_payload = get_jwt_payload(token)
+    token_data = validate_admin_user(token)
 
-    if not jwt_payload.is_admin or not jwt_payload.is_master:
+    if not token_data.is_master:
         raise common_responses.invalid_credentials()
 
-    return {"email": jwt_payload.email}
+    return token_data
