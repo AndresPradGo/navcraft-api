@@ -1,7 +1,7 @@
 """
 FastAPI auth router
 
-This module defines the FastAPI auth router.
+This module defines the FastAPI auth router endpoints.
 
 Usage: 
 - Import the router to add it to the FastAPI app.

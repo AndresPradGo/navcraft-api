@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from routes.auth import router as auth
 from routes.users import router as users
 from routes.waypoints import router as waypoints
+from routes.runways import router as runways
 
 
 def link_routes(app: FastAPI) -> None:
@@ -28,5 +29,6 @@ def link_routes(app: FastAPI) -> None:
 
     print("------ LINKING ROUTES ------")
     app.include_router(auth, prefix="/login")
+    app.include_router(runways, prefix="/runways")
     app.include_router(users, prefix="/users")
     app.include_router(waypoints, prefix="/waypoints")

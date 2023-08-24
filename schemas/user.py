@@ -41,7 +41,7 @@ class PassengerProfileReturn(PassengerProfileData):
     - id (Integer): passenger id.
     """
 
-    id: int
+    id: conint(gt=0)
 
 
 class UserEmail(BaseModel):
@@ -86,7 +86,7 @@ class UserReturnBasic(UserBase):
       new admin users. Master users have to be Admin Users.
     """
 
-    id: int
+    id: conint(gt=0)
     is_admin: bool
     is_master: bool
 

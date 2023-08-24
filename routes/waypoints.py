@@ -1,7 +1,7 @@
 """
 FastAPI waypoints router
 
-This module defines the FastAPI waipoints router.
+This module defines the FastAPI waipoints router endpoints.
 
 Usage: 
 - Import the router to add it to the FastAPI app.

@@ -8,5 +8,6 @@ Usage:
 - This module will run automatically, whenever the schemas package gets imported.
 
 """
-from schemas.waypoint import *
+from schemas.runway import *
 from schemas.user import *
+from schemas.waypoint import *

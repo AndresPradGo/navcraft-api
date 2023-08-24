@@ -1,7 +1,7 @@
 """
 FastAPI users router
 
-This module defines the FastAPI users router.
+This module defines the FastAPI users router endpoints.
 
 Usage: 
 - Import the router to add it to the FastAPI app.

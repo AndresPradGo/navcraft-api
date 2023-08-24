@@ -73,7 +73,7 @@ class WaypointReturn(WaypointBase):
     - is_official (boolean): True if waypoint is an official aviation waypoint.
     """
 
-    id: int
+    id: conint(gt=0)
     created_at: NaiveDatetime
     last_updated: NaiveDatetime
     is_official: Optional[bool] = None
