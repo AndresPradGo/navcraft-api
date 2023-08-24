@@ -30,6 +30,7 @@ def create_database() -> None:
     Returns: None
     """
 
+    print("------ CREATING DATABSE ------")
     temp_engine = create_engine(TEMP_DB_URL)
 
     try:

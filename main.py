@@ -13,14 +13,11 @@ from fastapi import FastAPI
 import asyncio
 
 from startup.create_db import create_database
-from startup.db_setup import set_charracter_set, create_tables
+from startup.set_up_dp import set_up_database
 from startup.routes import link_routes
-from startup.populate_db import populate_db
 
 app = FastAPI()
 
 create_database()
-set_charracter_set()
-create_tables()
-populate_db()
+set_up_database()
 link_routes(app)
