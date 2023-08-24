@@ -216,7 +216,6 @@ class RunwaySurface(BaseModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     surface = Column(String(50), nullable=False, unique=True)
-    performance_level = Column(Integer, nullable=False, autoincrement=True)
 
     runways = Relationship(
         "Runway",

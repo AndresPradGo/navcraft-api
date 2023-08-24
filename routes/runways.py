@@ -74,8 +74,7 @@ async def post_runway_surface(
         )
 
     new_surface = models.RunwaySurface(
-        surface=surface_data.surface,
-        performance_level=surface_data.performance_level
+        surface=surface_data.surface
     )
     db.add(new_surface)
     db.commit()

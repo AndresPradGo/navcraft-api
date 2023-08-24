@@ -8,6 +8,7 @@ Usage:
 
 """
 
+import json
 import sys
 
 from sqlalchemy import text
@@ -79,6 +80,32 @@ def __create_master_user():
         sys.exit(1)
 
 
+def __add_ruway_surfaces():
+    """
+    This function adds an initial list of runway surfaces.
+
+    Parameters: None
+
+    Returns: None
+    """
+    with open("config/runway_surfaces.json", "r") as json_file:
+        surfaces = json.load(json_file)["surfaces"]
+
+    try:
+        with Session() as db:
+            surfaces_in_db = [result.surface for result in db.query(models.RunwaySurface).filter(
+                models.RunwaySurface.surface.in_(surfaces)).all()]
+            surfaces_to_add = [models.RunwaySurface(
+                surface=s
+            ) for s in surfaces if s not in surfaces_in_db]
+
+            db.add_all(surfaces_to_add)
+            db.commit()
+
+    except (IntegrityError, TimeoutError, OperationalError) as e:
+        print(f"Error! could not add runway surfaces: {e}")
+
+
 def __populate_db():
     """
     This function populates the database with the minimum required data.
@@ -88,6 +115,7 @@ def __populate_db():
     Returns: None
     """
     __create_master_user()
+    __add_ruway_surfaces()
 
 
 def set_up_database():

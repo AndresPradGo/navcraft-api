@@ -19,7 +19,6 @@ class RunwaySurfaceData(BaseModel):
 
    Attributes:
     - surface (String): runway surface.
-    - performance_level (Integer): integer that organices the surfaces by better performing, 
       1 being the best performing surface.
     """
 
@@ -29,7 +28,6 @@ class RunwaySurfaceData(BaseModel):
         max_length=50,
         pattern='^[-a-zA-Z]+$',
     )
-    performance_level: Optional[conint(gt=0)] = None
 
 
 class RunwaySurfaceReturn(RunwaySurfaceData):
