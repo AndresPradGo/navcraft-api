@@ -227,51 +227,52 @@ class Aircraft(BaseModel):
         passive_updates=True
     )
 
-    class SurfacePerformanceDecrease(BaseModel):
-        """
-        This class defines the database surface_performance_decrease model.
 
-        Attributes:
-        - id (Integer Column): table primary key.
-        - percent (String Column): percentage by which to decrease landing/takeoff performance 
-        for the runway surface
-        - is_takeoff (Boolean Column): true if the pecentage is for takeoff parformance.
-        - surface_id (Integer Column): foreign key that links to the runway_surfaces table.
-        - aircraft_id (Integer Column): foreign key that links to the aircraft table.
-        - surface (Relationship): defines the many-to-one relationship with the runway_surface table.
-        - aircraft (Relationship): defines the many-to-one relationship with the aicraft table.
-        """
+class SurfacePerformanceDecrease(BaseModel):
+    """
+    This class defines the database surface_performance_decrease model.
 
-        __tablename__ = "surfaces_performance_decrease"
+    Attributes:
+    - id (Integer Column): table primary key.
+    - percent (String Column): percentage by which to decrease landing/takeoff performance 
+    for the runway surface
+    - is_takeoff (Boolean Column): true if the pecentage is for takeoff parformance.
+    - surface_id (Integer Column): foreign key that links to the runway_surfaces table.
+    - aircraft_id (Integer Column): foreign key that links to the aircraft table.
+    - surface (Relationship): defines the many-to-one relationship with the runway_surface table.
+    - aircraft (Relationship): defines the many-to-one relationship with the aicraft table.
+    """
 
-        id = Column(Integer, primary_key=True, autoincrement=True)
-        percent = Column(Float, nullable=False, default=0)
-        is_takeoff = Column(Boolean, nullable=False, default=True)
-        surface_id = Column(
-            Integer,
-            ForeignKey(
-                "runway_surfaces.id",
-                ondelete="RESTRICT",
-                onupdate="CASCADE"
-            ),
-            nullable=False
-        )
-        aircraft_id = Column(
-            Integer,
-            ForeignKey(
-                "aircraft.id",
-                ondelete="CASCADE",
-                onupdate="CASCADE"
-            ),
-            nullable=False
-        )
+    __tablename__ = "surfaces_performance_decrease"
 
-        surface = Relationship(
-            "RunwaySurface", back_populates="aircraft_performance_percentages")
-        aircraft = Relationship(
-            "Aircraft",
-            back_populates="performance_decreace_runway_surfaces_percent"
-        )
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    percent = Column(Float, nullable=False, default=0)
+    is_takeoff = Column(Boolean, nullable=False, default=True)
+    surface_id = Column(
+        Integer,
+        ForeignKey(
+            "runway_surfaces.id",
+            ondelete="RESTRICT",
+            onupdate="CASCADE"
+        ),
+        nullable=False
+    )
+    aircraft_id = Column(
+        Integer,
+        ForeignKey(
+            "aircraft.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE"
+        ),
+        nullable=False
+    )
+
+    surface = Relationship(
+        "RunwaySurface", back_populates="aircraft_performance_percentages")
+    aircraft = Relationship(
+        "Aircraft",
+        back_populates="performance_decreace_runway_surfaces_percent"
+    )
 
 
 class AircraftCategory(BaseModel):

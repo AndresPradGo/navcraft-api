@@ -17,6 +17,7 @@ import auth
 import models
 import schemas
 from utils.db import get_db
+from utils import common_responses
 
 router = APIRouter(tags=["Runways"])
 
@@ -72,7 +73,7 @@ async def post_runway_surface(
             detail=msg
         )
 
-    new_surface = models.User(
+    new_surface = models.RunwaySurface(
         surface=surface_data.surface,
         performance_level=surface_data.performance_level
     )
@@ -133,3 +134,56 @@ async def edit_runway_surface(
     ).first()
 
     return new_surface
+
+
+@router.delete("/surface/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_runway_surface(
+    id,
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Delete Runway Surface.
+
+    Parameters: 
+    id (int): runway surface id.
+
+    Returns: None
+
+    Raise:
+    - HTTPException (401): invalid credentials.
+    - HTTPException (404): passenger profile not found.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    surface_query = db.query(models.RunwaySurface).filter(
+        models.RunwaySurface.id == id)
+
+    if not surface_query.first():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"The runway surface you're trying to delete is not in the database."
+        )
+
+    runway_with_surface = db.query(models.Runway).filter(
+        models.Runway.surface_id == id).first()
+    if runway_with_surface:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"This surface cannot be deleted, as there are runways currently using it."
+        )
+
+    aircraft_performance_with_surface = db.query(models.SurfacePerformanceDecrease).\
+        filter(models.SurfacePerformanceDecrease.surface_id == id).first()
+    if aircraft_performance_with_surface:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"This surface cannot be deleted, as there are aircraft performance tables using it."
+        )
+
+    deleted = surface_query.delete(synchronize_session=False)
+
+    if not deleted:
+        raise common_responses.internal_server_error()
+
+    db.commit()

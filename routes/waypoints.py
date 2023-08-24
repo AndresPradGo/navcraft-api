@@ -302,14 +302,14 @@ async def post_aerodrome(
 
 
 @router.put("/unofficial/{id}", status_code=status.HTTP_200_OK, response_model=schemas.WaypointReturn)
-async def update_unofficial_waypoint(
+async def edit_unofficial_waypoint(
     id,
     waypoint: schemas.WaypointData,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Update Waypoint Endpoint.
+    Edit Waypoint Endpoint.
 
     Parameters: 
     - id (int): waypoint id
@@ -333,14 +333,14 @@ async def update_unofficial_waypoint(
 
 
 @router.put("/official/{id}", status_code=status.HTTP_200_OK, response_model=schemas.WaypointReturn)
-async def update_official_waypoint(
+async def edit_official_waypoint(
     id,
     waypoint: schemas.WaypointData,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Update Official Waypoint Endpoint.
+    Edit Official Waypoint Endpoint.
 
     Parameters: 
     - id (int): waypoint id
@@ -371,14 +371,14 @@ async def update_official_waypoint(
 
 
 @router.put("/aerodrome/{id}", status_code=status.HTTP_200_OK, response_model=schemas.AerodromeReturn)
-async def update_aerodrome(
+async def edit_aerodrome(
     id,
     aerodrome: schemas.AerodromeData,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Update Aerodrome Endpoint.
+    Edit Aerodrome Endpoint.
 
     Parameters: 
     - id (int): aerodrome id

@@ -163,14 +163,14 @@ async def add_new_passenger_profile(
 
 
 @router.put("/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturnBasic)
-async def update_user_profile(
+async def edit_user_profile(
     user_data: schemas.UserData,
     response: Response,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Update User Endpoint.
+    Edit User Endpoint.
 
     Parameters: 
     - user (dict): dictionary with the user data.
@@ -255,14 +255,14 @@ async def grant_revoke_admin_privileges(
 
 
 @router.put("/passenger-profile/{id}", status_code=status.HTTP_200_OK, response_model=schemas.PassengerProfileReturn)
-async def update_existing_passenger_profile(
+async def edit_existing_passenger_profile(
     id,
     passenger_profile_data: schemas.PassengerProfileData,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Endpoint to update a passenger profile
+    Edit a Passenger Profile
 
     Parameters: 
     - id (int): passenger profile id
