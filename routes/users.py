@@ -372,7 +372,7 @@ async def delete_account(
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_passenger_profile(
+async def delete_user(
     id,
     db: Session = Depends(get_db),
     current_user: schemas.UserEmail = Depends(auth.validate_master_user)
