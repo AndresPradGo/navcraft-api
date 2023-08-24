@@ -14,7 +14,6 @@ from fastapi import APIRouter, Depends, status, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 
 import models
 import schemas
@@ -44,11 +43,8 @@ async def login(
     - HTTPException (500): if there is a server error. 
     """
 
-    try:
-        user = db.query(models.User).filter(
-            models.User.email == login_data.username).first()
-    except IntegrityError:
-        raise common_responses.internal_server_error()
+    user = db.query(models.User).filter(
+        models.User.email == login_data.username).first()
 
     if not user:
         raise common_responses.invalid_credentials()

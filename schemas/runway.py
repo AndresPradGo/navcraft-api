@@ -29,7 +29,7 @@ class RunwaySurfaceData(BaseModel):
         max_length=50,
         pattern='^[-a-zA-Z]+$',
     )
-    performance_level: conint(gt=0)
+    performance_level: Optional[conint(gt=0)] = None
 
 
 class RunwaySurfaceReturn(RunwaySurfaceData):

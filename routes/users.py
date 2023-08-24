@@ -13,7 +13,6 @@ from typing import List, Annotated
 from fastapi import APIRouter, Depends, status, HTTPException, Response
 from sqlalchemy import and_, not_
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 
 import auth
 import models
@@ -43,13 +42,7 @@ async def get_all_users(
     - HTTPException (401): if user is not master user.
     - HTTPException (500): if there is a server error. 
     """
-
-    try:
-        users = db.query(models.User).all()
-    except IntegrityError:
-        raise common_responses.internal_server_error()
-
-    return users
+    return db.query(models.User).all()
 
 
 @router.get("/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturn)
@@ -69,12 +62,8 @@ async def get_user_profile_data(
     - HTTPException (401): validation fails.
     - HTTPException (500): if there is a server error. 
     """
-
-    try:
-        user = db.query(models.User).filter(
-            models.User.email == current_user.email).first()
-    except IntegrityError:
-        raise common_responses.internal_server_error()
+    user = db.query(models.User).filter(
+        models.User.email == current_user.email).first()
 
     return user
 
@@ -99,11 +88,8 @@ async def sign_in(
     - HTTPException (500): if there is a server error. 
     """
 
-    try:
-        email_exists = db.query(models.User.id).filter(
-            models.User.email == user.email).first()
-    except IntegrityError:
-        raise common_responses.internal_server_error()
+    email_exists = db.query(models.User.id).filter(
+        models.User.email == user.email).first()
 
     if email_exists:
         msg = f"Email {user.email} is already registered, please choose another email or login to your existing account."
@@ -114,20 +100,17 @@ async def sign_in(
 
     hashed_pswd = auth.Hasher.bcrypt(user.password)
 
-    try:
-        new_user = models.User(
-            email=user.email,
-            name=user.name,
-            weight_lb=user.weight_lb,
-            password=hashed_pswd,
-            is_admin=False,
-            is_master=False,
-        )
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
-    except IntegrityError:
-        raise common_responses.internal_server_error()
+    new_user = models.User(
+        email=user.email,
+        name=user.name,
+        weight_lb=user.weight_lb,
+        password=hashed_pswd,
+        is_admin=False,
+        is_master=False,
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
 
     response.headers["x-access-token"] = new_user.generate_auth_token()
     response.headers["x-token-type"] = "bearer"
@@ -157,27 +140,24 @@ async def add_new_passenger_profile(
 
     user_id = await user_queries.get_id_from(email=current_user.email, db=db)
 
-    try:
-        passenger_already_exists = db.query(models.PassengerProfile).filter(and_(
-            models.PassengerProfile.name == passenger_profile_data.name,
-            models.PassengerProfile.creator_id == user_id
-        )).first()
-        if passenger_already_exists:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Passenger with name {passenger_profile_data.name} already exists."
-            )
-
-        new_passenger_profile = models.PassengerProfile(
-            name=passenger_profile_data.name,
-            weight_lb=passenger_profile_data.weight_lb,
-            creator_id=user_id
+    passenger_already_exists = db.query(models.PassengerProfile).filter(and_(
+        models.PassengerProfile.name == passenger_profile_data.name,
+        models.PassengerProfile.creator_id == user_id
+    )).first()
+    if passenger_already_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Passenger with name {passenger_profile_data.name} already exists."
         )
-        db.add(new_passenger_profile)
-        db.commit()
-        db.refresh(new_passenger_profile)
-    except IntegrityError:
-        raise common_responses.internal_server_error()
+
+    new_passenger_profile = models.PassengerProfile(
+        name=passenger_profile_data.name,
+        weight_lb=passenger_profile_data.weight_lb,
+        creator_id=user_id
+    )
+    db.add(new_passenger_profile)
+    db.commit()
+    db.refresh(new_passenger_profile)
 
     return new_passenger_profile
 
@@ -204,29 +184,26 @@ async def update_user_profile(
     - HTTPException (500): if there is a server error. 
     """
 
-    try:
-        user_with_email = db.query(models.User).filter(
-            models.User.email == user_data.email).first()
+    user_with_email = db.query(models.User).filter(
+        models.User.email == user_data.email).first()
 
-        if user_with_email and not user_data.email == current_user.email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"User with email {user_data.email}, already exists."
-            )
+    if user_with_email and not user_data.email == current_user.email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"User with email {user_data.email}, already exists."
+        )
 
-        user = db.query(models.User).filter(
-            models.User.email == current_user.email)
+    user = db.query(models.User).filter(
+        models.User.email == current_user.email)
 
-        if not user.first():
-            raise common_responses.invalid_credentials()
+    if not user.first():
+        raise common_responses.invalid_credentials()
 
-        user_data.password = auth.Hasher.bcrypt(user_data.password)
-        user.update(user_data.model_dump())
-        db.commit()
-        new_user = db.query(models.User).filter(
-            models.User.email == user_data.email).first()
-    except IntegrityError:
-        raise common_responses.internal_server_error()
+    user_data.password = auth.Hasher.bcrypt(user_data.password)
+    user.update(user_data.model_dump())
+    db.commit()
+    new_user = db.query(models.User).filter(
+        models.User.email == user_data.email).first()
 
     response.headers["x-access-token"] = new_user.generate_auth_token()
     response.headers["x-token-type"] = "bearer"
@@ -256,26 +233,23 @@ async def grant_revoke_admin_privileges(
     - HTTPException (500): if there is a server error. 
     """
 
-    try:
-        user = db.query(models.User).filter(models.User.id == id)
+    user = db.query(models.User).filter(models.User.id == id)
 
-        if not user.first():
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"The user you're trying to update, is not in the database."
-            )
-        if user.first().is_master:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"The user you're trying to update, is a master user."
-            )
+    if not user.first():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"The user you're trying to update, is not in the database."
+        )
+    if user.first().is_master:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The user you're trying to update, is a master user."
+        )
 
-        user.update({"is_admin": make_admin})
-        db.commit()
-        new_user = user.first()
-        db.refresh(new_user)
-    except IntegrityError:
-        raise common_responses.internal_server_error()
+    user.update({"is_admin": make_admin})
+    db.commit()
+    new_user = user.first()
+    db.refresh(new_user)
 
     return new_user
 
@@ -305,35 +279,31 @@ async def update_existing_passenger_profile(
 
     user_id = await user_queries.get_id_from(email=current_user.email, db=db)
 
-    try:
-        passenger_already_exists = db.query(models.PassengerProfile).filter(and_(
-            models.PassengerProfile.name == passenger_profile_data.name,
-            models.PassengerProfile.creator_id == user_id,
-            not_(models.PassengerProfile.id == id)
-        )).first()
-        if passenger_already_exists:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Passenger with name {passenger_profile_data.name} already exists. Please select another name."
-            )
+    passenger_already_exists = db.query(models.PassengerProfile).filter(and_(
+        models.PassengerProfile.name == passenger_profile_data.name,
+        models.PassengerProfile.creator_id == user_id,
+        not_(models.PassengerProfile.id == id)
+    )).first()
+    if passenger_already_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Passenger with name {passenger_profile_data.name} already exists. Please select another name."
+        )
 
-        passenger_profile = db.query(models.PassengerProfile).filter(and_(
-            models.PassengerProfile.id == id,
-            models.PassengerProfile.creator_id == user_id,
-        ))
-        if not passenger_profile.first():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="The passenger profile you're trying to update, is not in the database."
-            )
+    passenger_profile = db.query(models.PassengerProfile).filter(and_(
+        models.PassengerProfile.id == id,
+        models.PassengerProfile.creator_id == user_id,
+    ))
+    if not passenger_profile.first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The passenger profile you're trying to update, is not in the database."
+        )
 
-        passenger_profile.update(passenger_profile_data.model_dump())
-        db.commit()
-        new_passenger_profile = db.query(models.PassengerProfile).filter(
-            models.PassengerProfile.id == id).first()
-
-    except IntegrityError:
-        raise common_responses.internal_server_error()
+    passenger_profile.update(passenger_profile_data.model_dump())
+    db.commit()
+    new_passenger_profile = db.query(models.PassengerProfile).filter(
+        models.PassengerProfile.id == id).first()
 
     return new_passenger_profile
 
@@ -356,19 +326,16 @@ async def delete_account(
     - HTTPException (500): if there is a server error. 
     """
 
-    try:
-        deleted = db.query(models.User).\
-            filter(models.User.email == current_user.email).\
-            delete(synchronize_session=False)
+    deleted = db.query(models.User).\
+        filter(models.User.email == current_user.email).\
+        delete(synchronize_session=False)
 
-        if not deleted:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Your account has already been deleted."
-            )
-        db.commit()
-    except IntegrityError:
-        raise common_responses.internal_server_error()
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Your account has already been deleted."
+        )
+    db.commit()
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -391,18 +358,15 @@ async def delete_user(
     - HTTPException (500): if there is a server error. 
     """
 
-    try:
-        deleted = db.query(models.User).filter(models.User.id == id).\
-            delete(synchronize_session=False)
+    deleted = db.query(models.User).filter(models.User.id == id).\
+        delete(synchronize_session=False)
 
-        if not deleted:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"The user you're trying to delete, is not in the database."
-            )
-        db.commit()
-    except IntegrityError:
-        raise common_responses.internal_server_error()
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"The user you're trying to delete, is not in the database."
+        )
+    db.commit()
 
 
 @router.delete("/passenger-profile/{id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -425,18 +389,15 @@ async def delete_passenger_profile(
     - HTTPException (500): if there is a server error. 
     """
 
-    try:
-        user_id = await user_queries.get_id_from(email=current_user.email, db=db)
-        deleted = db.query(models.PassengerProfile).filter(and_(
-            models.PassengerProfile.id == id,
-            models.PassengerProfile.creator_id == user_id
-        )).delete(synchronize_session=False)
+    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+    deleted = db.query(models.PassengerProfile).filter(and_(
+        models.PassengerProfile.id == id,
+        models.PassengerProfile.creator_id == user_id
+    )).delete(synchronize_session=False)
 
-        if not deleted:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"The passenger profile you're trying to delete, is not in the database."
-            )
-        db.commit()
-    except IntegrityError:
-        raise common_responses.internal_server_error()
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"The passenger profile you're trying to delete, is not in the database."
+        )
+    db.commit()

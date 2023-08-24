@@ -12,7 +12,6 @@ from typing import List
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy import text, and_, or_, not_
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 
 import auth
 import models
@@ -46,40 +45,37 @@ async def post_waypoint(waypoint: schemas.WaypointData, db: Session, creator_id:
 
     db_waypoint_code = f"{waypoint.code}{'' if official else f'@{creator_id}'}"
 
-    try:
-        exists = db.query(models.Waypoint).filter(
-            models.Waypoint.code == db_waypoint_code).first()
-        if exists:
-            is_aerodrome = db.query(models.Aerodrome).filter_by(
-                waypoint_id=exists.id).first()
+    exists = db.query(models.Waypoint).filter(
+        models.Waypoint.code == db_waypoint_code).first()
+    if exists:
+        is_aerodrome = db.query(models.Aerodrome).filter_by(
+            waypoint_id=exists.id).first()
 
-            msg = f"{'Aerodrome' if is_aerodrome else 'Waypoint'} with code {waypoint.code} already exists. Try using a different code."
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=msg
-            )
-
-        new_waypoint = models.Waypoint(
-            code=db_waypoint_code,
-            name=waypoint.name,
-            is_official=official,
-            lat_degrees=waypoint.lat_degrees,
-            lat_minutes=waypoint.lat_minutes,
-            lat_seconds=waypoint.lat_seconds,
-            lat_direction=waypoint.lat_direction,
-            lon_degrees=waypoint.lon_degrees,
-            lon_minutes=waypoint.lon_minutes,
-            lon_seconds=waypoint.lon_seconds,
-            lon_direction=waypoint.lon_direction,
-            magnetic_variation=waypoint.magnetic_variation,
-            creator_id=creator_id
+        msg = f"{'Aerodrome' if is_aerodrome else 'Waypoint'} with code {waypoint.code} already exists. Try using a different code."
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=msg
         )
 
-        db.add(new_waypoint)
-        db.commit()
-        db.refresh(new_waypoint)
-    except IntegrityError:
-        raise common_responses.internal_server_error()
+    new_waypoint = models.Waypoint(
+        code=db_waypoint_code,
+        name=waypoint.name,
+        is_official=official,
+        lat_degrees=waypoint.lat_degrees,
+        lat_minutes=waypoint.lat_minutes,
+        lat_seconds=waypoint.lat_seconds,
+        lat_direction=waypoint.lat_direction,
+        lon_degrees=waypoint.lon_degrees,
+        lon_minutes=waypoint.lon_minutes,
+        lon_seconds=waypoint.lon_seconds,
+        lon_direction=waypoint.lon_direction,
+        magnetic_variation=waypoint.magnetic_variation,
+        creator_id=creator_id
+    )
+
+    db.add(new_waypoint)
+    db.commit()
+    db.refresh(new_waypoint)
 
     return new_waypoint.get_clean_waypoint()
 
@@ -105,49 +101,46 @@ async def update_waypoint(waypoint: schemas.WaypointData, db: Session, creator_i
 
     db_waypoint_code = f"{waypoint.code}{'' if official else f'@{creator_id}'}"
 
-    try:
-        exists = db.query(models.Waypoint).filter(and_(
-            models.Waypoint.code == db_waypoint_code,
-            not_(models.Waypoint.id == id)
-        )).first()
+    exists = db.query(models.Waypoint).filter(and_(
+        models.Waypoint.code == db_waypoint_code,
+        not_(models.Waypoint.id == id)
+    )).first()
 
-        if exists:
-            is_aerodrome = db.query(models.Aerodrome).filter_by(
-                waypoint_id=exists.id).first()
+    if exists:
+        is_aerodrome = db.query(models.Aerodrome).filter_by(
+            waypoint_id=exists.id).first()
 
-            msg = f"{'Aerodrome' if is_aerodrome else 'Waypoint'} with code {waypoint.code} already exists. Try using a different code."
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=msg
-            )
+        msg = f"{'Aerodrome' if is_aerodrome else 'Waypoint'} with code {waypoint.code} already exists. Try using a different code."
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=msg
+        )
 
-        waypoint_query = db.query(models.Waypoint).filter(and_(
-            models.Waypoint.id == id,
-            or_(
-                models.Waypoint.creator_id == creator_id,
-                official
-            )
-        ))
+    waypoint_query = db.query(models.Waypoint).filter(and_(
+        models.Waypoint.id == id,
+        or_(
+            models.Waypoint.creator_id == creator_id,
+            official
+        )
+    ))
 
-        if not waypoint_query.first():
-            raise common_responses.invalid_credentials(
-                ", or make sure you have permission to perform this operation"
-            )
+    if not waypoint_query.first():
+        raise common_responses.invalid_credentials(
+            ", or make sure you have permission to perform this operation"
+        )
 
-        if not waypoint_query.first().is_official == official:
-            official_text = 'official' if not official else 'unofficial'
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"This waypoint is {official_text}, please use the {official_text}-waypoint API endpoint."
-            )
+    if not waypoint_query.first().is_official == official:
+        official_text = 'official' if not official else 'unofficial'
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"This waypoint is {official_text}, please use the {official_text}-waypoint API endpoint."
+        )
 
-        waypoint.code = db_waypoint_code
-        waypoint_query.update(waypoint.model_dump())
-        db.commit()
-        new_waypoint = db.query(models.Waypoint).filter(
-            models.Waypoint.id == id).first()
-    except IntegrityError:
-        raise common_responses.internal_server_error()
+    waypoint.code = db_waypoint_code
+    waypoint_query.update(waypoint.model_dump())
+    db.commit()
+    new_waypoint = db.query(models.Waypoint).filter(
+        models.Waypoint.id == id).first()
 
     return new_waypoint.get_clean_waypoint()
 
@@ -171,17 +164,14 @@ async def get_all_waypoints(
 
     user_id = await user_queries.get_id_from(email=current_user.email, db=db)
     query = text("SELECT waypoint_id FROM aerodromes")
-    try:
-        aerodrome_ids = [id[0] for id in db.execute(query).fetchall()]
-        waypoints = db.query(models.Waypoint).filter(and_(
-            ~models.Waypoint.id.in_(aerodrome_ids),
-            or_(
-                models.Waypoint.creator.has(id=user_id),
-                models.Waypoint.is_official == True
-            )
-        )).all()
-    except IntegrityError:
-        raise common_responses.internal_server_error()
+    aerodrome_ids = [id[0] for id in db.execute(query).fetchall()]
+    waypoints = db.query(models.Waypoint).filter(and_(
+        ~models.Waypoint.id.in_(aerodrome_ids),
+        or_(
+            models.Waypoint.creator.has(id=user_id),
+            models.Waypoint.is_official == True
+        )
+    )).all()
 
     return [w.get_clean_waypoint() for w in waypoints]
 
@@ -203,10 +193,7 @@ async def get_all_aerodromes(db: Session = Depends(get_db), current_user: schema
     a = models.Aerodrome
     w = models.Waypoint
 
-    try:
-        query_results = db.query(w, a).join(a, w.id == a.waypoint_id).all()
-    except IntegrityError:
-        raise common_responses.internal_server_error()
+    query_results = db.query(w, a).join(a, w.id == a.waypoint_id).all()
 
     return [{**w.__dict__, **a.__dict__} for w, a in query_results]
 
@@ -298,21 +285,18 @@ async def post_aerodrome(
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
-    try:
-        new_aerodrome = models.Aerodrome(
-            waypoint_id=waypoint_result.id,
-            has_taf=aerodrome.has_taf,
-            has_metar=aerodrome.has_metar,
-            has_fds=aerodrome.has_fds,
-            elevation_ft=aerodrome.elevation_ft
-        )
+    new_aerodrome = models.Aerodrome(
+        waypoint_id=waypoint_result.id,
+        has_taf=aerodrome.has_taf,
+        has_metar=aerodrome.has_metar,
+        has_fds=aerodrome.has_fds,
+        elevation_ft=aerodrome.elevation_ft
+    )
 
-        db.add(new_aerodrome)
-        db.commit()
-        db.refresh(new_aerodrome)
-        db.refresh(waypoint_result)
-    except IntegrityError:
-        raise common_responses.internal_server_error()
+    db.add(new_aerodrome)
+    db.commit()
+    db.refresh(new_aerodrome)
+    db.refresh(waypoint_result)
 
     return {**new_aerodrome.__dict__, **waypoint_result.__dict__}
 
@@ -480,41 +464,38 @@ async def delete_unofficial_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    try:
-        user_id = await user_queries.get_id_from(email=current_user.email, db=db)
-        waypoint_query = db.query(models.Waypoint).filter(
-            models.Waypoint.id == id)
+    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+    waypoint_query = db.query(models.Waypoint).filter(
+        models.Waypoint.id == id)
 
-        if not waypoint_query.first():
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"The waypoint you're trying to delete is not in the database."
+    if not waypoint_query.first():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"The waypoint you're trying to delete is not in the database."
+        )
+
+    if waypoint_query.first().is_official:
+        if not current_user.is_admin:
+            raise common_responses.invalid_credentials(
+                " to perform this operation."
             )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Request was unsuccessful. If you're trying to delete an official waypoint, please use the 'Delete Official Waypoint' endpoint."
+        )
 
-        if waypoint_query.first().is_official:
-            if not current_user.is_admin:
-                raise common_responses.invalid_credentials(
-                    " to perform this operation."
-                )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Request was unsuccessful. If you're trying to delete an official waypoint, please use the 'Delete Official Waypoint' endpoint."
-            )
+    if not waypoint_query.first().creator_id == user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"You do not have valid permissions to delete this waypoint."
+        )
 
-        if not waypoint_query.first().creator_id == user_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"You do not have valid permissions to delete this waypoint."
-            )
+    deleted = waypoint_query.delete(synchronize_session=False)
 
-        deleted = waypoint_query.delete(synchronize_session=False)
-
-        if not deleted:
-            raise common_responses.internal_server_error()
-
-        db.commit()
-    except IntegrityError:
+    if not deleted:
         raise common_responses.internal_server_error()
+
+    db.commit()
 
 
 @router.delete("/official/{id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -537,28 +518,25 @@ async def delete_official_waypoint_or_aerodrome(
     - HTTPException (500): if there is a server error. 
     """
 
-    try:
-        waypoint_query = db.query(models.Waypoint).filter(
-            models.Waypoint.id == id)
+    waypoint_query = db.query(models.Waypoint).filter(
+        models.Waypoint.id == id)
 
-        if not waypoint_query.first():
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"The waypoint you're trying to delete is not in the database."
-            )
+    if not waypoint_query.first():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"The waypoint you're trying to delete is not in the database."
+        )
 
-        user_id = await user_queries.get_id_from(email=current_user.email, db=db)
-        if not waypoint_query.first().is_official and\
-                not int(waypoint_query.first().creator_id) == user_id:
-            raise common_responses.invalid_credentials(
-                ", or make sure you have permission to perform this operation"
-            )
+    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+    if not waypoint_query.first().is_official and\
+            not int(waypoint_query.first().creator_id) == user_id:
+        raise common_responses.invalid_credentials(
+            ", or make sure you have permission to perform this operation"
+        )
 
-        deleted = waypoint_query.delete(synchronize_session=False)
+    deleted = waypoint_query.delete(synchronize_session=False)
 
-        if not deleted:
-            raise common_responses.internal_server_error()
-
-        db.commit()
-    except IntegrityError:
+    if not deleted:
         raise common_responses.internal_server_error()
+
+    db.commit()

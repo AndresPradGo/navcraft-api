@@ -11,7 +11,7 @@ Usage:
 import sys
 
 from sqlalchemy import text
-from sqlalchemy.exc import OperationalError, IntegrityError
+from sqlalchemy.exc import OperationalError, IntegrityError, TimeoutError
 
 from auth.hasher import Hasher
 import models
@@ -74,7 +74,7 @@ def __create_master_user():
                 db.add(user)
                 db.commit()
 
-    except IntegrityError as e:
+    except (IntegrityError, TimeoutError, OperationalError) as e:
         print(f"Fatal Error! Could not create master user: {e}")
         sys.exit(1)
 

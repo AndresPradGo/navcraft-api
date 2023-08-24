@@ -8,8 +8,6 @@ Usage:
 
 """
 
-from fastapi import HTTPException
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 import models
@@ -33,12 +31,9 @@ async def get_id_from(email: str, db: Session):
     - HTTPException (500): if there is a server error. 
     """
 
-    try:
-        user_id = db.query(models.User.id).filter(
-            models.User.email == email).first()
-        if not user_id:
-            raise common_responses.invalid_credentials()
-    except IntegrityError:
-        raise common_responses.internal_server_error()
+    user_id = db.query(models.User.id).filter(
+        models.User.email == email).first()
+    if not user_id:
+        raise common_responses.invalid_credentials()
 
     return user_id[0]

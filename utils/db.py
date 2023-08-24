@@ -12,7 +12,7 @@ Usage:
 """
 
 from sqlalchemy import create_engine
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, TimeoutError, OperationalError
 from sqlalchemy.orm import sessionmaker, scoped_session
 
 from utils import common_responses, environ_variable_tools as environ
@@ -45,7 +45,8 @@ def get_db():
     try:
         yield database
 
-    except IntegrityError:
+    except (IntegrityError, TimeoutError, OperationalError):
+        database.rollback()
         raise common_responses.internal_server_error()
     finally:
         database.close()

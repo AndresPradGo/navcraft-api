@@ -10,7 +10,7 @@ Usage:
 import sys
 
 from sqlalchemy import create_engine, text
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, TimeoutError
 
 from utils import environ_variable_tools as environ
 
@@ -37,6 +37,6 @@ def create_database() -> None:
         with temp_engine.connect() as connection:
             connection.execute(
                 text(f"CREATE DATABASE IF NOT EXISTS {DB_NAME}"))
-    except OperationalError as e:
+    except (TimeoutError, OperationalError) as e:
         print(f"Fatal Error! Could not create database: {e}")
         sys.exit(1)
