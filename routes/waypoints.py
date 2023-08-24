@@ -31,11 +31,13 @@ async def post_waypoint(waypoint: schemas.WaypointData, db: Session, creator_id:
     or returns and error response.
 
     Parameters: 
-    - waypoint (waypoint pydantic schema): waypoint to be added to the database.
+    - waypoint (waypoint pydantic schema): waypoint data.
     - db (sqlalchemy Session): database session.
+    - creator_id (int): id of the user.
+    - officia (bool): true if the waypoint is official.
 
     Returns: 
-    dict: Object with the added waypoint 
+    dict: Object with the added waypoint data.
 
     Raise:
     - HTTPException (400): if waypoint already exists.
@@ -47,24 +49,16 @@ async def post_waypoint(waypoint: schemas.WaypointData, db: Session, creator_id:
     try:
         exists = db.query(models.Waypoint).filter(
             models.Waypoint.code == db_waypoint_code).first()
-    except IntegrityError:
-        raise common_responses.internal_server_error()
-
-    if exists:
-        try:
+        if exists:
             is_aerodrome = db.query(models.Aerodrome).filter_by(
                 waypoint_id=exists.id).first()
 
-        except IntegrityError:
-            raise common_responses.internal_server_error()
+            msg = f"{'Aerodrome' if is_aerodrome else 'Waypoint'} with code {waypoint.code} already exists. Try using a different code."
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=msg
+            )
 
-        msg = f"{'Aerodrome' if is_aerodrome else 'Waypoint'} with code {waypoint.code} already exists. Try using a different code."
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=msg
-        )
-
-    try:
         new_waypoint = models.Waypoint(
             code=db_waypoint_code,
             name=waypoint.name,
@@ -84,6 +78,72 @@ async def post_waypoint(waypoint: schemas.WaypointData, db: Session, creator_id:
         db.add(new_waypoint)
         db.commit()
         db.refresh(new_waypoint)
+    except IntegrityError:
+        raise common_responses.internal_server_error()
+
+    return new_waypoint.get_clean_waypoint()
+
+
+async def update_waypoint(waypoint: schemas.WaypointData, db: Session, creator_id: int, official: bool, id: int):
+    """
+    This function updates the waypoint in the database, after performing the necessary checks.
+
+    Parameters: 
+    - waypoint (waypoint pydantic schema): waypoint data.
+    - db (sqlalchemy Session): database session.
+    - creator_id (int): id of the user.
+    - officia (bool): true if the waypoint is official.
+    - id (int): waypoint id.
+
+    Returns: 
+    dict: Object with the updated waypoint data.
+
+    Raise:
+    - HTTPException (400): if waypoint code already exists.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    db_waypoint_code = f"{waypoint.code}{'' if official else f'@{creator_id}'}"
+
+    try:
+        exists = db.query(models.Waypoint).filter(and_(
+            models.Waypoint.code == db_waypoint_code,
+            not_(models.Waypoint.id == id)
+        )).first()
+
+        if exists:
+            is_aerodrome = db.query(models.Aerodrome).filter_by(
+                waypoint_id=exists.id).first()
+
+            msg = f"{'Aerodrome' if is_aerodrome else 'Waypoint'} with code {waypoint.code} already exists. Try using a different code."
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=msg
+            )
+
+        waypoint_query = db.query(models.Waypoint).filter(and_(
+            models.Waypoint.id == id,
+            or_(
+                models.Waypoint.creator_id == creator_id,
+                official
+            )
+        ))
+
+        if not waypoint_query.first():
+            raise common_responses.invalid_credentials()
+
+        if not waypoint_query.first().is_official == official:
+            official_text = 'official' if not official else 'unofficial'
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"This waypoint is {official_text}, please use the {official_text}-waypoint API endpoint."
+            )
+
+        waypoint.code = db_waypoint_code
+        waypoint_query.update(waypoint.model_dump())
+        db.commit()
+        new_waypoint = db.query(models.Waypoint).filter(
+            models.Waypoint.id == id).first()
     except IntegrityError:
         raise common_responses.internal_server_error()
 
@@ -253,3 +313,146 @@ async def post_aerodrome(
         raise common_responses.internal_server_error()
 
     return {**new_aerodrome.__dict__, **waypoint_result.__dict__}
+
+
+@router.put("/{id}", status_code=status.HTTP_200_OK, response_model=schemas.WaypointReturn)
+async def update_unofficial_waypoint(
+    id,
+    waypoint: schemas.WaypointData,
+    db: Session = Depends(get_db),
+    current_user: schemas.UserEmail = Depends(auth.validate_user)
+):
+    """
+    Update Waypoint Endpoint.
+
+    Parameters: 
+    - id (int): waypoint id
+    - waypoint (dict): the waypoint object to be added.
+
+    Returns: 
+    Dic: dictionary with the waypoint data.
+
+    Raise:
+    - HTTPException (400): if waypoint already exists.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    user_id = await user_queries.get_id_from(email=current_user["email"], db=db)
+    try:
+        result = await update_waypoint(waypoint=waypoint, db=db, creator_id=user_id, official=False, id=id)
+    except HTTPException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+    return result
+
+
+@router.put("/official/{id}", status_code=status.HTTP_200_OK, response_model=schemas.WaypointReturn)
+async def update_official_waypoint(
+    id,
+    waypoint: schemas.WaypointData,
+    db: Session = Depends(get_db),
+    current_user: schemas.UserEmail = Depends(auth.validate_admin_user)
+):
+    """
+    Update Official Waypoint Endpoint.
+
+    Parameters: 
+    - id (int): waypoint id
+    - waypoint (dict): the waypoint object to be added.
+
+    Returns: 
+    Dic: dictionary with the waypoint data.
+
+    Raise:
+    - HTTPException (400): if waypoint already exists.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    user_id = await user_queries.get_id_from(email=current_user["email"], db=db)
+    try:
+        is_aerodrome = db.query(models.Aerodrome).filter(
+            models.Aerodrome.waypoint_id == id).first()
+        if is_aerodrome:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You're trying to update and aerodrome, please go to the apropriate endpoint."
+            )
+        result = await update_waypoint(waypoint=waypoint, db=db, creator_id=user_id, official=True, id=id)
+    except HTTPException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+    return result
+
+
+@router.put("/aerodrome/{id}", status_code=status.HTTP_200_OK, response_model=schemas.AerodromeReturn)
+async def update_aerodrome(
+    id,
+    aerodrome: schemas.AerodromeData,
+    db: Session = Depends(get_db),
+    current_user: schemas.UserEmail = Depends(auth.validate_admin_user)
+):
+    """
+    Update Aerodrome Endpoint.
+
+    Parameters: 
+    - id (int): aerodrome id
+    - aerodrome (dict): the aerodrome object to be added.
+
+    Returns: 
+    Dic: dictionary with the aerodrome data.
+
+    Raise:
+    - HTTPException (400): if aerodrome already exists.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    user_id = await user_queries.get_id_from(email=current_user["email"], db=db)
+    try:
+        aerodrome_query = db.query(models.Aerodrome).filter(
+            models.Aerodrome.waypoint_id == id
+        )
+        if aerodrome_query.first():
+            HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid ID, please provide a valid aerodrome ID."
+            )
+
+        waypoint_data = schemas.WaypointData(
+            code=aerodrome.code,
+            name=aerodrome.name,
+            lat_degrees=aerodrome.lat_degrees,
+            lat_minutes=aerodrome.lat_minutes,
+            lat_seconds=aerodrome.lat_seconds,
+            lat_direction=aerodrome.lat_direction,
+            lon_degrees=aerodrome.lon_degrees,
+            lon_minutes=aerodrome.lon_minutes,
+            lon_seconds=aerodrome.lon_seconds,
+            lon_direction=aerodrome.lon_direction,
+            magnetic_variation=aerodrome.magnetic_variation
+        )
+        waypoint_result = await update_waypoint(
+            waypoint=waypoint_data,
+            db=db,
+            creator_id=user_id,
+            official=True,
+            id=id
+        )
+
+        aerodrome_data = schemas.AerodromeBase(
+            has_taf=aerodrome.has_taf,
+            has_metar=aerodrome.has_metar,
+            has_fds=aerodrome.has_fds,
+            elevation_ft=aerodrome.elevation_ft
+        )
+
+        aerodrome_query.update(aerodrome_data.model_dump())
+        db.commit()
+        new_aerodrome = db.query(models.Aerodrome).filter(
+            models.Aerodrome.waypoint_id == id).first()
+        new_waypoint = db.query(models.Waypoint).filter(
+            models.Waypoint.id == id).first().get_clean_waypoint()
+
+    except HTTPException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+    return {**new_aerodrome.__dict__, **new_waypoint.__dict__}
