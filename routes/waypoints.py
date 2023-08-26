@@ -155,6 +155,7 @@ async def update_vfr_waypoint(waypoint: schemas.WaypointData, db: Session, creat
 
 @router.get("/vfr", status_code=status.HTTP_200_OK, response_model=List[schemas.WaypointReturn])
 async def get_all_vfr_waypoints(
+    id: int = 0,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
@@ -169,17 +170,31 @@ async def get_all_vfr_waypoints(
     Raise:
     - HTTPException (500): if there is a server error. 
     """
-
+    a = models.Aerodrome
     v = models.VfrWaypoint
     w = models.Waypoint
 
-    query_results = db.query(w, v).join(v, w.id == v.waypoint_id).all()
+    aerodromes = [item[0] for item in db.query(a.vfr_waypoint_id).all()]
+
+    query_results = db.query(w, v)\
+        .filter(and_(
+            or_(
+                not_(id),
+                w.id == id
+            ),
+            not_(w.id.in_(aerodromes))
+        ))\
+        .join(v, w.id == v.waypoint_id).all()
 
     return [{**w.__dict__, **v.__dict__} for w, v in query_results]
 
 
 @router.get("/aerodromes", status_code=status.HTTP_200_OK, response_model=List[schemas.AerodromeReturn])
-async def get_all_aerodromes(db: Session = Depends(get_db), current_user: schemas.TokenData = Depends(auth.validate_user)):
+async def get_all_aerodromes(
+    id: int = 0,
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_user)
+):
     """
     Get All Aerodromes Endpoint.
 
@@ -198,6 +213,10 @@ async def get_all_aerodromes(db: Session = Depends(get_db), current_user: schema
     w = models.Waypoint
 
     query_results = db.query(w, v, a, s.status)\
+        .filter(or_(
+            not_(id),
+            w.id == id
+        ))\
         .join(v, w.id == v.waypoint_id)\
         .join(a, v.waypoint_id == a.vfr_waypoint_id)\
         .join(s, a.status_id == s.id).all()
@@ -206,7 +225,11 @@ async def get_all_aerodromes(db: Session = Depends(get_db), current_user: schema
 
 
 @router.get("/aerodromes-status", status_code=status.HTTP_200_OK, response_model=List[schemas.AerodromeStatusReturn])
-async def get_all_aerodrome_status(db: Session = Depends(get_db), _: schemas.TokenData = Depends(auth.validate_user)):
+async def get_all_aerodrome_status(
+    id: int = 0,
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_user)
+):
     """
     Get All Aerodrome Status Endpoint.
 
@@ -219,7 +242,10 @@ async def get_all_aerodrome_status(db: Session = Depends(get_db), _: schemas.Tok
     - HTTPException (500): if there is a server error. 
     """
 
-    return db.query(models.AerodromeStatus.id, models.AerodromeStatus.status).all()
+    return db.query(models.AerodromeStatus.id, models.AerodromeStatus.status).filter(or_(
+        not_(id),
+        models.AerodromeStatus.id == id
+    )).all()
 
 
 @router.post("/vfr", status_code=status.HTTP_201_CREATED, response_model=schemas.WaypointReturn)

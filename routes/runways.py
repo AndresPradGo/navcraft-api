@@ -10,7 +10,7 @@ Usage:
 from typing import List
 
 from fastapi import APIRouter, Depends, status, HTTPException
-from sqlalchemy import and_, not_
+from sqlalchemy import and_, or_, not_
 from sqlalchemy.orm import Session
 
 import auth
@@ -24,6 +24,7 @@ router = APIRouter(tags=["Runways"])
 
 @router.get("/surfaces", status_code=status.HTTP_200_OK, response_model=List[schemas.RunwaySurfaceReturn])
 async def get_all_runway_surfaces(
+    id: int = 0,
     db: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_user)
 ):
@@ -40,7 +41,10 @@ async def get_all_runway_surfaces(
     - HTTPException (500): if there is a server error. 
     """
 
-    return db.query(models.RunwaySurface).all()
+    return db.query(models.RunwaySurface).filter(or_(
+        not_(id),
+        models.RunwaySurface.id == id
+    )).all()
 
 
 @router.post("/surface", status_code=status.HTTP_201_CREATED, response_model=schemas.RunwaySurfaceReturn)

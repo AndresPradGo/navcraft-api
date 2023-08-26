@@ -11,7 +11,7 @@ Usage:
 from typing import List, Annotated
 
 from fastapi import APIRouter, Depends, status, HTTPException, Response
-from sqlalchemy import and_, not_
+from sqlalchemy import and_, or_, not_
 from sqlalchemy.orm import Session
 
 import auth
@@ -27,6 +27,7 @@ router = APIRouter(tags=["Users"])
 
 @router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.UserReturnBasic])
 async def get_all_users(
+    id: int = 0,
     db: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_master_user)
 ):
@@ -42,7 +43,10 @@ async def get_all_users(
     - HTTPException (401): if user is not master user.
     - HTTPException (500): if there is a server error. 
     """
-    return db.query(models.User).all()
+    return db.query(models.User).filter(or_(
+        not_(id),
+        models.User.id == id
+    )).all()
 
 
 @router.get("/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturn)
@@ -66,6 +70,36 @@ async def get_user_profile_data(
         models.User.email == current_user.email).first()
 
     return user
+
+
+@router.get("/passenger-profiles", status_code=status.HTTP_200_OK, response_model=List[schemas.PassengerProfileReturn])
+async def get_passenger_profiles(
+    id: int = 0,
+    db: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Get Passenger Profiles Endpoint.
+
+    Parameters:
+    id (int): optional profile id.
+
+    Returns: 
+    - list: list of dictionaries with the profiles.
+
+    Raise:
+    - HTTPException (401): validation fails.
+    - HTTPException (500): if there is a server error. 
+    """
+    profiles = db.query(models.PassengerProfile).filter(and_(
+        models.User.email == current_user.email,
+        or_(
+            not_(id),
+            models.PassengerProfile.id == id
+        )
+    )).all()
+
+    return profiles
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.UserReturnBasic)
