@@ -12,6 +12,8 @@ from typing import Optional
 
 from pydantic import BaseModel, constr, conint, confloat, conlist, NaiveDatetime, validator, model_validator
 
+from utils.functions import clean_string
+
 
 class WaypointBase(BaseModel):
     """
@@ -101,6 +103,21 @@ class WaypointData(WaypointBase):
 
         '''
         return round(value, 1)
+
+    @validator('name')
+    @classmethod
+    def clean_waypoint_name(clc, value: str) -> str:
+        '''
+        Classmethod to clean name string.
+
+        Parameters:
+        - value (str): the name string t to be validated.
+
+        Returns:
+        (str): cleaned name string.
+
+        '''
+        return clean_string(value)
 
     @model_validator(mode='after')
     @classmethod

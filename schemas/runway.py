@@ -10,7 +10,9 @@ Usage:
 
 from typing import Optional
 
-from pydantic import BaseModel, constr, conint, confloat, validator, model_validator
+from pydantic import BaseModel, constr, conint, confloat, validator
+
+from utils.functions import clean_string
 
 
 class RunwaySurfaceData(BaseModel):
@@ -26,8 +28,23 @@ class RunwaySurfaceData(BaseModel):
         strip_whitespace=True,
         min_length=2,
         max_length=50,
-        pattern='^[-a-zA-Z]+$',
+        pattern='^[-a-zA-Z ]+$',
     )
+
+    @validator('surface')
+    @classmethod
+    def clean_surface_string(clc, value: str) -> str:
+        '''
+        Classmethod to clean surface string.
+
+        Parameters:
+        - value (str): the surface string t to be validated.
+
+        Returns:
+        (str): cleaned surface string.
+
+        '''
+        return clean_string(value)
 
 
 class RunwaySurfaceReturn(RunwaySurfaceData):

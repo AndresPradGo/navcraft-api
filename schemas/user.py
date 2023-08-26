@@ -8,9 +8,11 @@ Usage:
 
 """
 
-from typing import Optional, List
+from typing import List
 
 from pydantic import BaseModel, constr, EmailStr, conint, confloat, NaiveDatetime, validator
+
+from utils.functions import clean_string
 
 
 class PassengerProfileData(BaseModel):
@@ -27,7 +29,8 @@ class PassengerProfileData(BaseModel):
         strip_whitespace=True,
         strict=True,
         min_length=2,
-        max_length=255
+        max_length=255,
+        pattern='^[-a-zA-Z0-9 ]+$',
     )
     weight_lb: confloat(ge=0)
 
@@ -68,7 +71,8 @@ class UserBase(UserEmail):
         strip_whitespace=True,
         strict=True,
         min_length=2,
-        max_length=255
+        max_length=255,
+        pattern='^[-a-zA-Z0-9 ]+$',
     )
     weight_lb: confloat(ge=0)
 
@@ -164,6 +168,21 @@ class UserData(UserBase):
 
         '''
         return round(value, 1)
+
+    @validator('name')
+    @classmethod
+    def clean_user_name(clc, value: str) -> str:
+        '''
+        Classmethod to clean name string.
+
+        Parameters:
+        - value (str): the name string t to be validated.
+
+        Returns:
+        (str): cleaned name string.
+
+        '''
+        return clean_string(value)
 
 
 class JWTData(BaseModel):

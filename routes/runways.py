@@ -16,8 +16,8 @@ from sqlalchemy.orm import Session
 import auth
 import models
 import schemas
-from utils.db import get_db
 from utils import common_responses
+from utils.db import get_db
 
 router = APIRouter(tags=["Runways"])
 
