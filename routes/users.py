@@ -212,7 +212,7 @@ async def edit_user_profile(
 
 @router.put("/admin-user/{id}", status_code=status.HTTP_200_OK, response_model=schemas.UserReturnBasic)
 async def grant_revoke_admin_privileges_or_deactivate(
-    id,
+    id: int,
     make_admin: bool,
     activate: bool,
     db: Session = Depends(get_db),
@@ -257,7 +257,7 @@ async def grant_revoke_admin_privileges_or_deactivate(
 
 @router.put("/passenger-profile/{id}", status_code=status.HTTP_200_OK, response_model=schemas.PassengerProfileReturn)
 async def edit_existing_passenger_profile(
-    id,
+    id: int,
     passenger_profile_data: schemas.PassengerProfileData,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -341,7 +341,7 @@ async def delete_account(
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
-    id,
+    id: int,
     db: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_master_user)
 ):
@@ -372,7 +372,7 @@ async def delete_user(
 
 @router.delete("/passenger-profile/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_passenger_profile(
-    id,
+    id: int,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):

@@ -353,7 +353,7 @@ async def post_aerodrome_status(
 
 @router.put("/vfr/{id}", status_code=status.HTTP_200_OK, response_model=schemas.WaypointReturn)
 async def edit_vfr_waypoint(
-    id,
+    id: int,
     waypoint: schemas.WaypointData,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_admin_user)
@@ -395,7 +395,7 @@ async def edit_vfr_waypoint(
 
 @router.put("/aerodrome/{id}", status_code=status.HTTP_200_OK, response_model=schemas.AerodromeReturn)
 async def edit_aerodrome(
-    id,
+    id: int,
     aerodrome: schemas.AerodromeData,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_admin_user)
@@ -481,7 +481,7 @@ async def edit_aerodrome(
 
 @router.delete("/official/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_vfr_waypoint_or_aerodrome(
-    id,
+    id: int,
     db: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
@@ -524,7 +524,7 @@ async def delete_vfr_waypoint_or_aerodrome(
 
 @router.delete("/aerodrome-status/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_aerodrome_status(
-    id,
+    id: int,
     db: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):

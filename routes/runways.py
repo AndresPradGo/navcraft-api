@@ -85,7 +85,7 @@ async def post_runway_surface(
 
 @router.put("/surface/{id}", status_code=status.HTTP_200_OK, response_model=schemas.RunwaySurfaceReturn)
 async def edit_runway_surface(
-    id,
+    id: int,
     surface_data: schemas.RunwaySurfaceData,
     db: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
@@ -137,7 +137,7 @@ async def edit_runway_surface(
 
 @router.delete("/surface/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_runway_surface(
-    id,
+    id: int,
     db: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
