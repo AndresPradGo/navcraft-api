@@ -10,7 +10,7 @@ Usage:
 
 from typing import Optional
 
-from pydantic import BaseModel, constr, conint, confloat, validator
+from pydantic import BaseModel, constr, conint, validator
 
 from utils.functions import clean_string
 
@@ -28,7 +28,7 @@ class RunwaySurfaceData(BaseModel):
         strip_whitespace=True,
         min_length=2,
         max_length=50,
-        pattern='^[-a-zA-Z ]+$',
+        pattern="^[-a-zA-Z ']+$",
     )
 
     @validator('surface')

@@ -90,7 +90,7 @@ def __add_ruway_surfaces():
 
     Returns: None
     """
-    pattern = r'^[-A-Za-z ]*$'
+    pattern = r"^[-A-Za-z ']*$"
     with open("config/runway_surfaces.json", "r") as json_file:
         surfaces = [clean_string(s) for s in json.load(json_file)[
             "surfaces"] if re.match(pattern, s) is not None]

@@ -30,7 +30,7 @@ class PassengerProfileData(BaseModel):
         strict=True,
         min_length=2,
         max_length=255,
-        pattern='^[-a-zA-Z0-9 ]+$',
+        pattern="^[-a-zA-Z0-9 ']+$",
     )
     weight_lb: confloat(ge=0)
 
@@ -72,7 +72,7 @@ class UserBase(UserEmail):
         strict=True,
         min_length=2,
         max_length=255,
-        pattern='^[-a-zA-Z0-9 ]+$',
+        pattern="^[-a-zA-Z0-9 ']+$",
     )
     weight_lb: confloat(ge=0)
 

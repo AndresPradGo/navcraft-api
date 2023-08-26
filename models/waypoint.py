@@ -131,6 +131,7 @@ class UserWaypoint(BaseModel):
     - code (String Column): waypoint code identifyer.
     - name (String Column): waypoint name.
     - creator_id (Integer Column): foreign key that points to the users table.
+    - aerodrome (Relationship): Defines the one-to-one relationship with the Aerodrome table.
     - creator (Relationship): defines the many-to-one relationship with the users table.
     - waypoint (Relationship): defines the one-to-one relationship with the waypoints parent-table.
     """
@@ -160,6 +161,13 @@ class UserWaypoint(BaseModel):
         nullable=False
     )
 
+    aerodrome = Relationship(
+        "Aerodrome",
+        back_populates="user_waypoint",
+        uselist=False,
+        passive_deletes=True,
+        passive_updates=True
+    )
     creator = Relationship("User", back_populates="user_waypoints")
     waypoint = Relationship("Waypoint", back_populates="user_waypoint")
 
@@ -209,7 +217,9 @@ class Aerodrome(BaseModel):
     This class defines the database aerodrome model.
 
     Attributes:
-    - waypoint_id (Integer Column): table primary key. Also a foreignkey with the waypoints table.
+    - id (Integer Column): table primary key.
+    - vfr_waypoint_id (Integer Column): foreignkey with the vfr_waypoints table.
+    - user_waypoint_id (Integer Column): foreignkey with the user_waypoints table.
     - has_taf (Boolean Column): True if the aerodrome has an official TAF.
     - has_metar(Boolean Column): True if the aerodrome has an official METAR.
     - has_fds (Boolean Column): True if the aerodrome has an official FDs.
@@ -224,6 +234,7 @@ class Aerodrome(BaseModel):
 
     __tablename__ = "aerodromes"
 
+    id = Column(Integer, primary_key=True, autoincrement=True)
     vfr_waypoint_id = Column(
         Integer,
         ForeignKey(
@@ -231,8 +242,15 @@ class Aerodrome(BaseModel):
             ondelete="CASCADE",
             onupdate="CASCADE"
         ),
-        primary_key=True,
-        nullable=False,
+        unique=True
+    )
+    user_waypoint_id = Column(
+        Integer,
+        ForeignKey(
+            "user_waypoints.waypoint_id",
+            ondelete="CASCADE",
+            onupdate="CASCADE"
+        ),
         unique=True
     )
     has_taf = Column(Boolean, nullable=False, default=False)
@@ -250,6 +268,7 @@ class Aerodrome(BaseModel):
     )
 
     vfr_waypoint = Relationship("VfrWaypoint", back_populates="aerodrome")
+    user_waypoint = Relationship("UserWaypoint", back_populates="aerodrome")
     status = Relationship("AerodromeStatus", back_populates="aerodromes")
     runways = Relationship(
         "Runway",

@@ -19,4 +19,5 @@ def clean_string(input_string: str) -> str:
     Returns:
     str: cleaned string.
     '''
-    return ' '.join(input_string.strip().lower().capitalize().split())
+
+    return ' '.join([word.capitalize() for word in input_string.strip().split()])
