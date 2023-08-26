@@ -7,6 +7,8 @@ Usage:
 - Import the router to add it to the FastAPI app.
 
 """
+
+import re
 from typing import List
 
 from fastapi import APIRouter, Depends, status, HTTPException
@@ -17,8 +19,9 @@ import auth
 import models
 from queries import user_queries
 import schemas
-from utils.db import get_db
 from utils import common_responses
+from utils.db import get_db
+from utils.functions import clean_string
 
 router = APIRouter(tags=["Waypoints"])
 
@@ -202,6 +205,23 @@ async def get_all_aerodromes(db: Session = Depends(get_db), current_user: schema
     return [{**w.__dict__, **v.__dict__, **a.__dict__, "status": s} for w, v, a, s in query_results]
 
 
+@router.get("/aerodromes-status", status_code=status.HTTP_200_OK, response_model=List[schemas.AerodromeStatusReturn])
+async def get_all_aerodrome_status(db: Session = Depends(get_db), _: schemas.TokenData = Depends(auth.validate_user)):
+    """
+    Get All Aerodrome Status Endpoint.
+
+    Parameters: None
+
+    Returns: 
+    - list: list of aerodrome status dictionaries with status and id.
+
+    Raise:
+    - HTTPException (500): if there is a server error. 
+    """
+
+    return db.query(models.AerodromeStatus.id, models.AerodromeStatus.status).all()
+
+
 @router.post("/vfr", status_code=status.HTTP_201_CREATED, response_model=schemas.WaypointReturn)
 async def post_new_vfr_waypoint(
     waypoint: schemas.WaypointData,
@@ -281,6 +301,54 @@ async def post_aerodrome(
         a.vfr_waypoint_id == waypoint_result["id"]).first()
 
     return {**new_aerodrome[0].__dict__, "status": new_aerodrome[1], **waypoint_result}
+
+
+@router.post("/aerodrome-status", status_code=status.HTTP_201_CREATED, response_model=schemas.AerodromeStatusReturn)
+async def post_aerodrome_status(
+    aerodrome_status: str,
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Post Aerodrome Status Endpoint.
+
+    Parameters: 
+    - status (dict): the aerodrom status to be added.
+
+    Returns: 
+    - Dic: dictionary with the aerodrome status and id.
+
+    Raise:
+    - HTTPException (400): if aerodrome status already exists, or it
+      contains characters other than letters, hyphen and white space.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    pattern = r'^[-A-Za-z ]*$'
+    status_matches_pattern = re.match(pattern, aerodrome_status) is not None
+    if not status_matches_pattern:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid aerodrome status format. Please use only letters, hyphens, and spaces. No line breaks, digits or special characters allowed."
+        )
+
+    clean_status = clean_string(aerodrome_status)
+
+    already_exists = db.query(models.AerodromeStatus).filter_by(
+        status=clean_status).first()
+    if already_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The aerodrome status youre trying to add, already exists, th ID is {already_exists.id}"
+        )
+
+    new_aerodrome_status = models.AerodromeStatus(status=clean_status)
+    db.add(new_aerodrome_status)
+    db.commit()
+    db.refresh(new_aerodrome_status)
+
+    return new_aerodrome_status
 
 
 @router.put("/vfr/{id}", status_code=status.HTTP_200_OK, response_model=schemas.WaypointReturn)
@@ -451,4 +519,39 @@ async def delete_vfr_waypoint_or_aerodrome(
     if not deleted:
         raise common_responses.internal_server_error()
 
+    db.commit()
+
+
+@router.delete("/aerodrome-status/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_aerodrome_status(
+    id,
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Delete Aerodrome Status.
+
+    Parameters: 
+    id (int): waypoint id.
+
+    Returns: None
+
+    Raise:
+    - HTTPException (401): invalid credentials.
+    - HTTPException (404): status not found.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    status_query = db.query(models.AerodromeStatus).filter(
+        models.AerodromeStatus.id == id)
+
+    if not status_query.first():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"The aerodrome status you're trying to delete is not in the database."
+        )
+
+    deleted = status_query.delete(synchronize_session=False)
+    if not deleted:
+        raise common_responses.internal_server_error()
     db.commit()

@@ -245,3 +245,11 @@ class AerodromeReturn(WaypointReturn, AerodromeBase):
     This class defines the pydantic aerodrome_return schema.
     """
     status: str
+
+
+class AerodromeStatusReturn(BaseModel):
+    """
+    This class defines the pydantic aerodrome_status_return schema.
+    """
+    id: int
+    status: str
