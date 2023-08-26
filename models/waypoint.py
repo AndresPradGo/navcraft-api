@@ -148,7 +148,7 @@ class UserWaypoint(BaseModel):
         nullable=False,
         unique=True
     )
-    code = Column(String(50), nullable=False, unique=True)
+    code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
     creator_id = Column(
         Integer,
@@ -189,7 +189,7 @@ class FlightWaypoint(BaseModel):
         nullable=False,
         unique=True
     )
-    code = Column(String(50), nullable=False, unique=True)
+    code = Column(String(50), nullable=False)
     leg_id = Column(
         Integer,
         ForeignKey(

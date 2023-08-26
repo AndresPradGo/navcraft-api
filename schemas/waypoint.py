@@ -70,11 +70,13 @@ class WaypointReturn(WaypointBase):
 
     Attributes:
     - id (Integer): waypoint id.
+    - name (Optional String): waypoint name.
     - created_at (DateTime): date time created.
     - last_updated (DateTime): date time last updated.
     """
 
     id: conint(gt=0)
+    name: Optional[constr(min_length=2, max_length=50)] = None
     created_at: NaiveDatetime
     last_updated: NaiveDatetime
 
@@ -176,6 +178,16 @@ class WaypointData(WaypointBase):
             raise ValueError(err_message['lon'])
 
         return values
+
+
+class FlightWaypointData(WaypointBase):
+    """
+    This class defines the pydantic flight_waypoint_with_validation schema.
+
+    Attributes: 
+     - name (Optional String): waypoint name.
+    """
+    name: Optional[constr(min_length=2, max_length=50)] = None
 
 
 class DataList(BaseModel):
