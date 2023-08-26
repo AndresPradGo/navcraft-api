@@ -28,6 +28,8 @@ class User(BaseModel):
     - name (String Column): user name.
     - password (String Column): user's hashed password.
     - weight_lb (Decimal Column): user weight in lbs.
+    - is_active (Boolean Column): false if you want to deactivate the account without deleting it.
+      Specially useful for admin user whoe are no longer active.
     - is_admin (Boolean Column): true if the user is admin. Admin users have privileges 
       like adding aerodromes and aircraft base models.
     - is_master (Boolean Column): true if the user is master. Only master users can add 
@@ -36,7 +38,8 @@ class User(BaseModel):
       flights (Relationship): defines the one-to-many relationship with the flights table.
     - passenger_profiles (Relationship): defines the one-to-many relationship with the 
       passenger_profile table.
-    - waypoints (Relationship): defines the one-to-many relationship with the waypoints table.
+    - user_waypoints (Relationship): defines the one-to-many relationship with the user_waypoints child-table.
+    - vfr_waypoints (Relationship): defines the one-to-many relationship with the vfr_waypoints child-table.
     """
 
     __tablename__ = "users"
@@ -46,6 +49,7 @@ class User(BaseModel):
     name = Column(String(255), nullable=False)
     weight_lb = Column(DECIMAL(4, 1), nullable=False, default=200.0)
     password = Column(String(255), nullable=False)
+    is_active = Column(Boolean, nullable=False, default=True)
     is_admin = Column(Boolean, nullable=False, default=False)
     is_master = Column(Boolean, nullable=False, default=False)
 
@@ -67,8 +71,14 @@ class User(BaseModel):
         passive_deletes=True,
         passive_updates=True
     )
-    waypoints = Relationship(
-        "Waypoint",
+    user_waypoints = Relationship(
+        "UserWaypoint",
+        back_populates="creator",
+        passive_deletes=True,
+        passive_updates=True
+    )
+    vfr_waypoints = Relationship(
+        "VfrWaypoint",
         back_populates="creator",
         passive_deletes=True,
         passive_updates=True
@@ -89,7 +99,8 @@ class User(BaseModel):
 
         permissions = ["admin", "master"] if self.is_admin and self.is_master else [
             "admin"] if self.is_admin else []
-        to_encode = {"email": self.email, "permissions": permissions}
+        to_encode = {"email": self.email,
+                     "permissions": permissions, "active": self.is_active}
 
         if expires_delta:
             expire = datetime.utcnow() + expires_delta

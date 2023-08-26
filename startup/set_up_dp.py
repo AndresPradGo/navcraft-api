@@ -106,6 +106,32 @@ def __add_ruway_surfaces():
         print(f"Error! could not add runway surfaces: {e}")
 
 
+def __add_aerodrome_status():
+    """
+    This function adds an initial list of aerodrome status.
+
+    Parameters: None
+
+    Returns: None
+    """
+    with open("config/aerodrome_status.json", "r") as json_file:
+        status = json.load(json_file)["status"]
+
+    try:
+        with Session() as db:
+            status_in_db = [result.status for result in db.query(models.AerodromeStatus).filter(
+                models.AerodromeStatus.status.in_(status)).all()]
+            status_to_add = [models.AerodromeStatus(
+                status=s
+            ) for s in status if s not in status_in_db]
+
+            db.add_all(status_to_add)
+            db.commit()
+
+    except (IntegrityError, TimeoutError, OperationalError) as e:
+        print(f"Error! could not add aerodrome status: {e}")
+
+
 def __populate_db():
     """
     This function populates the database with the minimum required data.
@@ -116,6 +142,7 @@ def __populate_db():
     """
     __create_master_user()
     __add_ruway_surfaces()
+    __add_aerodrome_status()
 
 
 def set_up_database():

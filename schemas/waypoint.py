@@ -10,7 +10,7 @@ Usage:
 
 from typing import Optional
 
-from pydantic import BaseModel, constr, conint, confloat, NaiveDatetime, validator, model_validator
+from pydantic import BaseModel, constr, conint, confloat, conlist, NaiveDatetime, validator, model_validator
 
 
 class WaypointBase(BaseModel):
@@ -35,7 +35,7 @@ class WaypointBase(BaseModel):
         strip_whitespace=True,
         to_upper=True,
         min_length=2,
-        max_length=10,
+        max_length=50,
         pattern='^[-a-zA-Z0-9]+$',
     )
     name: constr(min_length=2, max_length=50)
@@ -70,13 +70,11 @@ class WaypointReturn(WaypointBase):
     - id (Integer): waypoint id.
     - created_at (DateTime): date time created.
     - last_updated (DateTime): date time last updated.
-    - is_official (boolean): True if waypoint is an official aviation waypoint.
     """
 
     id: conint(gt=0)
     created_at: NaiveDatetime
     last_updated: NaiveDatetime
-    is_official: Optional[bool] = None
 
     class Config():
         from_attributes = True
@@ -163,6 +161,51 @@ class WaypointData(WaypointBase):
         return values
 
 
+class DataList(BaseModel):
+    """
+    This class defines the pydantic data_list schema, which is an abstract class to check if
+    the attribute "code" is repeated in any of the objects in the list.
+
+    Attributes: None
+    """
+
+    @model_validator(mode='after')
+    @classmethod
+    def validate_id_unique(cls, values):
+        '''
+        Classmethod to check that the code is unique in a list of waypoint data.
+
+        Parameters:
+        - values (list): The object with the values to be validated.
+
+        Returns:
+        (Any) : The object of validated values.
+
+        Raises:
+        ValueError: When a code is repeated.
+
+        '''
+
+        codes = [w.code for w in values.list]
+        if len(codes) != len(set(codes)):
+            raise ValueError(
+                "There are repeated codes in your data. Code must be unique")
+        return values
+
+    class Config:
+        abstract = True
+
+
+class WaypointDataList(DataList):
+    """
+    This class defines the pydantic waypoint_data_list schema.
+
+    Attributes: 
+    list: a list of waypoint_data objects.
+    """
+    list: conlist(item_type=WaypointData)
+
+
 class AerodromeBase(BaseModel):
     """
     This class defines the pydantic aerodrome_base schema.
@@ -184,11 +227,21 @@ class AerodromeData(WaypointData, AerodromeBase):
     """
     This class defines the pydantic aerodrome_data schema.
     """
-    ...
+    status: int
+
+
+class AerodromeDataList(DataList):
+    """
+    This class defines the pydantic aerodrome_data_list schema.
+
+    Attributes: 
+    list: a list of aerodrome_data objects.
+    """
+    list: conlist(item_type=AerodromeData)
 
 
 class AerodromeReturn(WaypointReturn, AerodromeBase):
     """
     This class defines the pydantic aerodrome_return schema.
     """
-    ...
+    status: str

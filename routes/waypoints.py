@@ -23,7 +23,7 @@ from utils import common_responses
 router = APIRouter(tags=["Waypoints"])
 
 
-async def post_waypoint(waypoint: schemas.WaypointData, db: Session, creator_id: int, official: bool):
+async def post_vfr_waypoint(waypoint: schemas.WaypointData, db: Session, creator_id: int):
     """
     This function checks if the waypoint passed as a parameter
     already exists in the database, and adds it to the database, 
@@ -43,13 +43,11 @@ async def post_waypoint(waypoint: schemas.WaypointData, db: Session, creator_id:
     - HTTPException (500): if there is a server error. 
     """
 
-    db_waypoint_code = f"{waypoint.code}{'' if official else f'@{creator_id}'}"
-
-    exists = db.query(models.Waypoint).filter(
-        models.Waypoint.code == db_waypoint_code).first()
+    exists = db.query(models.VfrWaypoint).filter(
+        models.VfrWaypoint.code == waypoint.code).first()
     if exists:
         is_aerodrome = db.query(models.Aerodrome).filter_by(
-            waypoint_id=exists.id).first()
+            vfr_waypoint_id=exists.waypoint_id).first()
 
         msg = f"{'Aerodrome' if is_aerodrome else 'Waypoint'} with code {waypoint.code} already exists. Try using a different code."
         raise HTTPException(
@@ -58,9 +56,6 @@ async def post_waypoint(waypoint: schemas.WaypointData, db: Session, creator_id:
         )
 
     new_waypoint = models.Waypoint(
-        code=db_waypoint_code,
-        name=waypoint.name,
-        is_official=official,
         lat_degrees=waypoint.lat_degrees,
         lat_minutes=waypoint.lat_minutes,
         lat_seconds=waypoint.lat_seconds,
@@ -70,17 +65,28 @@ async def post_waypoint(waypoint: schemas.WaypointData, db: Session, creator_id:
         lon_seconds=waypoint.lon_seconds,
         lon_direction=waypoint.lon_direction,
         magnetic_variation=waypoint.magnetic_variation,
-        creator_id=creator_id
     )
 
     db.add(new_waypoint)
     db.commit()
     db.refresh(new_waypoint)
 
-    return new_waypoint.get_clean_waypoint()
+    new_vfr_waypoint = models.VfrWaypoint(
+        waypoint_id=new_waypoint.id,
+        code=waypoint.code,
+        name=waypoint.name,
+        creator_id=creator_id
+    )
+
+    db.add(new_vfr_waypoint)
+    db.commit()
+    new_vfr_waypoint = db.query(models.VfrWaypoint).filter_by(
+        waypoint_id=new_waypoint.id).first()
+    resp = {**new_vfr_waypoint.__dict__, **new_waypoint.__dict__}
+    return resp
 
 
-async def update_waypoint(waypoint: schemas.WaypointData, db: Session, creator_id: int, official: bool, id: int):
+async def update_vfr_waypoint(waypoint: schemas.WaypointData, db: Session, creator_id: int, id: int):
     """
     This function updates the waypoint in the database, after performing the necessary checks.
 
@@ -92,23 +98,21 @@ async def update_waypoint(waypoint: schemas.WaypointData, db: Session, creator_i
     - id (int): waypoint id.
 
     Returns: 
-    dict: Object with the updated waypoint data.
+    Session: Sqlalchemy session qith changes to be commited.
 
     Raise:
     - HTTPException (400): if waypoint code already exists.
     - HTTPException (500): if there is a server error. 
     """
 
-    db_waypoint_code = f"{waypoint.code}{'' if official else f'@{creator_id}'}"
-
-    exists = db.query(models.Waypoint).filter(and_(
-        models.Waypoint.code == db_waypoint_code,
-        not_(models.Waypoint.id == id)
+    exists = db.query(models.VfrWaypoint).filter(and_(
+        models.VfrWaypoint.code == waypoint.code,
+        not_(models.VfrWaypoint.waypoint_id == id)
     )).first()
 
     if exists:
         is_aerodrome = db.query(models.Aerodrome).filter_by(
-            waypoint_id=exists.id).first()
+            vfr_waypoint_id=exists.id).first()
 
         msg = f"{'Aerodrome' if is_aerodrome else 'Waypoint'} with code {waypoint.code} already exists. Try using a different code."
         raise HTTPException(
@@ -116,42 +120,43 @@ async def update_waypoint(waypoint: schemas.WaypointData, db: Session, creator_i
             detail=msg
         )
 
-    waypoint_query = db.query(models.Waypoint).filter(and_(
-        models.Waypoint.id == id,
-        or_(
-            models.Waypoint.creator_id == creator_id,
-            official
-        )
-    ))
+    waypoint_query = db.query(models.Waypoint).filter(models.Waypoint.id == id)
 
     if not waypoint_query.first():
-        raise common_responses.invalid_credentials(
-            ", or make sure you have permission to perform this operation"
-        )
-
-    if not waypoint_query.first().is_official == official:
-        official_text = 'official' if not official else 'unofficial'
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"This waypoint is {official_text}, please use the {official_text}-waypoint API endpoint."
+            detail="The waypoint you're trying to update is not in the database."
         )
 
-    waypoint.code = db_waypoint_code
-    waypoint_query.update(waypoint.model_dump())
-    db.commit()
-    new_waypoint = db.query(models.Waypoint).filter(
-        models.Waypoint.id == id).first()
+    waypoint_query.update({
+        "lat_degrees": waypoint.lat_degrees,
+        "lat_minutes": waypoint.lat_minutes,
+        "lat_seconds": waypoint.lat_seconds,
+        "lat_direction": waypoint.lat_direction,
+        "lon_degrees": waypoint.lon_degrees,
+        "lon_minutes": waypoint.lon_minutes,
+        "lon_seconds": waypoint.lon_seconds,
+        "lon_direction": waypoint.lon_direction,
+        "magnetic_variation": waypoint.magnetic_variation
+    })
 
-    return new_waypoint.get_clean_waypoint()
+    db.query(models.VfrWaypoint).filter(
+        models.VfrWaypoint.waypoint_id == id).update({
+            "code": waypoint.code,
+            "name": waypoint.name,
+            "creator_id": creator_id
+        })
+
+    return db
 
 
-@router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.WaypointReturn])
-async def get_all_waypoints(
+@router.get("/vfr", status_code=status.HTTP_200_OK, response_model=List[schemas.WaypointReturn])
+async def get_all_vfr_waypoints(
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get All Waypoints Endpoint.
+    Get All VFR Waypoints Endpoint.
 
     Parameters: None
 
@@ -162,18 +167,12 @@ async def get_all_waypoints(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
-    query = text("SELECT waypoint_id FROM aerodromes")
-    aerodrome_ids = [id[0] for id in db.execute(query).fetchall()]
-    waypoints = db.query(models.Waypoint).filter(and_(
-        ~models.Waypoint.id.in_(aerodrome_ids),
-        or_(
-            models.Waypoint.creator.has(id=user_id),
-            models.Waypoint.is_official == True
-        )
-    )).all()
+    v = models.VfrWaypoint
+    w = models.Waypoint
 
-    return [w.get_clean_waypoint() for w in waypoints]
+    query_results = db.query(w, v).join(v, w.id == v.waypoint_id).all()
+
+    return [{**w.__dict__, **v.__dict__} for w, v in query_results]
 
 
 @router.get("/aerodromes", status_code=status.HTTP_200_OK, response_model=List[schemas.AerodromeReturn])
@@ -190,51 +189,27 @@ async def get_all_aerodromes(db: Session = Depends(get_db), current_user: schema
     - HTTPException (500): if there is a server error. 
     """
 
+    s = models.AerodromeStatus
     a = models.Aerodrome
+    v = models.VfrWaypoint
     w = models.Waypoint
 
-    query_results = db.query(w, a).join(a, w.id == a.waypoint_id).all()
+    query_results = db.query(w, v, a, s.status)\
+        .join(v, w.id == v.waypoint_id)\
+        .join(a, v.waypoint_id == a.vfr_waypoint_id)\
+        .join(s, a.status_id == s.id).all()
 
-    return [{**w.__dict__, **a.__dict__} for w, a in query_results]
-
-
-@router.post("/unofficial", status_code=status.HTTP_201_CREATED, response_model=schemas.WaypointReturn)
-async def post_unofficial_waypoint(
-    waypoint: schemas.WaypointData,
-    db: Session = Depends(get_db),
-    current_user: schemas.TokenData = Depends(auth.validate_user)
-):
-    """
-    Post Waypoint Endpoint.
-
-    Parameters: 
-    - waypoint (dict): the waypoint object to be added.
-
-    Returns: 
-    Dic: dictionary with the waypoint data.
-
-    Raise:
-    - HTTPException (400): if waypoint already exists.
-    - HTTPException (500): if there is a server error. 
-    """
-
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
-    try:
-        result = await post_waypoint(waypoint=waypoint, db=db, creator_id=user_id, official=False)
-    except HTTPException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
-
-    return result
+    return [{**w.__dict__, **v.__dict__, **a.__dict__, "status": s} for w, v, a, s in query_results]
 
 
-@router.post("/official", status_code=status.HTTP_201_CREATED, response_model=schemas.WaypointReturn)
-async def post_official_waypoint(
+@router.post("/vfr", status_code=status.HTTP_201_CREATED, response_model=schemas.WaypointReturn)
+async def post_new_vfr_waypoint(
     waypoint: schemas.WaypointData,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Post Official Waypoint Endpoint.
+    Post VFR Waypoint Endpoint.
 
     Parameters: 
     - waypoint (dict): the waypoint object to be added.
@@ -249,10 +224,7 @@ async def post_official_waypoint(
     """
 
     user_id = await user_queries.get_id_from(email=current_user.email, db=db)
-    try:
-        result = await post_waypoint(waypoint=waypoint, db=db, creator_id=user_id, official=True)
-    except HTTPException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    result = await post_vfr_waypoint(waypoint=waypoint, db=db, creator_id=user_id)
 
     return result
 
@@ -279,68 +251,47 @@ async def post_aerodrome(
     - HTTPException (500): if there is a server error. 
     """
 
+    status_exists = db.query(models.AerodromeStatus).filter_by(
+        id=aerodrome.status).first()
+    if not status_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Please provide a valid status ID."
+        )
+
     user_id = await user_queries.get_id_from(email=current_user.email, db=db)
-    try:
-        waypoint_result = await post_waypoint(waypoint=aerodrome, db=db, creator_id=user_id, official=True)
-    except HTTPException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+    waypoint_result = await post_vfr_waypoint(waypoint=aerodrome, db=db, creator_id=user_id)
 
     new_aerodrome = models.Aerodrome(
-        waypoint_id=waypoint_result.id,
+        vfr_waypoint_id=waypoint_result["id"],
         has_taf=aerodrome.has_taf,
         has_metar=aerodrome.has_metar,
         has_fds=aerodrome.has_fds,
-        elevation_ft=aerodrome.elevation_ft
+        elevation_ft=aerodrome.elevation_ft,
+        status_id=aerodrome.status
     )
 
     db.add(new_aerodrome)
     db.commit()
-    db.refresh(new_aerodrome)
-    db.refresh(waypoint_result)
 
-    return {**new_aerodrome.__dict__, **waypoint_result.__dict__}
+    a = models.Aerodrome
+    s = models.AerodromeStatus
+    new_aerodrome = db.query(a, s.status).join(a, a.status_id == s.id).filter(
+        a.vfr_waypoint_id == waypoint_result["id"]).first()
 
-
-@router.put("/unofficial/{id}", status_code=status.HTTP_200_OK, response_model=schemas.WaypointReturn)
-async def edit_unofficial_waypoint(
-    id,
-    waypoint: schemas.WaypointData,
-    db: Session = Depends(get_db),
-    current_user: schemas.TokenData = Depends(auth.validate_user)
-):
-    """
-    Edit Waypoint Endpoint.
-
-    Parameters: 
-    - id (int): waypoint id
-    - waypoint (dict): the waypoint object to be added.
-
-    Returns: 
-    Dic: dictionary with the waypoint data.
-
-    Raise:
-    - HTTPException (400): if waypoint already exists.
-    - HTTPException (500): if there is a server error. 
-    """
-
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
-    try:
-        result = await update_waypoint(waypoint=waypoint, db=db, creator_id=user_id, official=False, id=id)
-    except HTTPException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
-
-    return result
+    return {**new_aerodrome[0].__dict__, "status": new_aerodrome[1], **waypoint_result}
 
 
-@router.put("/official/{id}", status_code=status.HTTP_200_OK, response_model=schemas.WaypointReturn)
-async def edit_official_waypoint(
+@router.put("/vfr/{id}", status_code=status.HTTP_200_OK, response_model=schemas.WaypointReturn)
+async def edit_vfr_waypoint(
     id,
     waypoint: schemas.WaypointData,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Edit Official Waypoint Endpoint.
+    Edit VFR Waypoint Endpoint.
 
     Parameters: 
     - id (int): waypoint id
@@ -355,19 +306,23 @@ async def edit_official_waypoint(
     """
 
     user_id = await user_queries.get_id_from(email=current_user.email, db=db)
-    try:
-        is_aerodrome = db.query(models.Aerodrome).filter(
-            models.Aerodrome.waypoint_id == id).first()
-        if is_aerodrome:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="You're trying to update and aerodrome, please go to the apropriate endpoint."
-            )
-        result = await update_waypoint(waypoint=waypoint, db=db, creator_id=user_id, official=True, id=id)
-    except HTTPException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    is_aerodrome = db.query(models.Aerodrome).filter(
+        models.Aerodrome.vfr_waypoint_id == id).first()
+    if is_aerodrome:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You're trying to update and aerodrome, please use the apropriate API-endpoint."
+        )
+    db = await update_vfr_waypoint(waypoint=waypoint, db=db, creator_id=user_id, id=id)
 
-    return result
+    db.commit()
+
+    w = models.Waypoint
+    v = models.VfrWaypoint
+
+    new_waypoint = db.query(w, v).join(
+        w, v.waypoint_id == w.id).filter(v.waypoint_id == id).first()
+    return {**new_waypoint[0].__dict__, **new_waypoint[1].__dict__}
 
 
 @router.put("/aerodrome/{id}", status_code=status.HTTP_200_OK, response_model=schemas.AerodromeReturn)
@@ -392,120 +347,78 @@ async def edit_aerodrome(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
-    try:
-        aerodrome_query = db.query(models.Aerodrome).filter(
-            models.Aerodrome.waypoint_id == id
-        )
-        if aerodrome_query.first():
-            HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid ID, please provide a valid aerodrome ID."
-            )
-
-        waypoint_data = schemas.WaypointData(
-            code=aerodrome.code,
-            name=aerodrome.name,
-            lat_degrees=aerodrome.lat_degrees,
-            lat_minutes=aerodrome.lat_minutes,
-            lat_seconds=aerodrome.lat_seconds,
-            lat_direction=aerodrome.lat_direction,
-            lon_degrees=aerodrome.lon_degrees,
-            lon_minutes=aerodrome.lon_minutes,
-            lon_seconds=aerodrome.lon_seconds,
-            lon_direction=aerodrome.lon_direction,
-            magnetic_variation=aerodrome.magnetic_variation
-        )
-        waypoint_result = await update_waypoint(
-            waypoint=waypoint_data,
-            db=db,
-            creator_id=user_id,
-            official=True,
-            id=id
-        )
-
-        aerodrome_data = schemas.AerodromeBase(
-            has_taf=aerodrome.has_taf,
-            has_metar=aerodrome.has_metar,
-            has_fds=aerodrome.has_fds,
-            elevation_ft=aerodrome.elevation_ft
-        )
-
-        aerodrome_query.update(aerodrome_data.model_dump())
-        db.commit()
-        new_aerodrome = db.query(models.Aerodrome).filter(
-            models.Aerodrome.waypoint_id == id).first()
-        new_waypoint = db.query(models.Waypoint).filter(
-            models.Waypoint.id == id).first().get_clean_waypoint()
-
-    except HTTPException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
-
-    return {**new_aerodrome.__dict__, **new_waypoint.__dict__}
-
-
-@router.delete("/unofficial/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_unofficial_waypoint(
-    id,
-    db: Session = Depends(get_db),
-    current_user: schemas.TokenData = Depends(auth.validate_user)
-):
-    """
-    Delete Unofficial Waypoint.
-
-    Parameters: 
-    id (int): waypoint id.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (401): invalid credentials.
-    - HTTPException (404): passenger profile not found.
-    - HTTPException (500): if there is a server error. 
-    """
-
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
-    waypoint_query = db.query(models.Waypoint).filter(
-        models.Waypoint.id == id)
-
-    if not waypoint_query.first():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"The waypoint you're trying to delete is not in the database."
-        )
-
-    if waypoint_query.first().is_official:
-        if not current_user.is_admin:
-            raise common_responses.invalid_credentials(
-                " to perform this operation."
-            )
+    aerodrome_query = db.query(models.Aerodrome).filter(
+        models.Aerodrome.vfr_waypoint_id == id
+    )
+    if not aerodrome_query.first():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Request was unsuccessful. If you're trying to delete an official waypoint, please use the 'Delete Official Waypoint' endpoint."
+            detail="Invalid ID, the waypoint ID you provided is not an aerodrome."
         )
 
-    if not waypoint_query.first().creator_id == user_id:
+    status_exists = db.query(models.AerodromeStatus).filter_by(
+        id=aerodrome.status).first()
+    if not status_exists:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"You do not have valid permissions to delete this waypoint."
+            detail="Please provide a valid status ID."
         )
 
-    deleted = waypoint_query.delete(synchronize_session=False)
+    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+    waypoint_data = schemas.WaypointData(
+        code=aerodrome.code,
+        name=aerodrome.name,
+        lat_degrees=aerodrome.lat_degrees,
+        lat_minutes=aerodrome.lat_minutes,
+        lat_seconds=aerodrome.lat_seconds,
+        lat_direction=aerodrome.lat_direction,
+        lon_degrees=aerodrome.lon_degrees,
+        lon_minutes=aerodrome.lon_minutes,
+        lon_seconds=aerodrome.lon_seconds,
+        lon_direction=aerodrome.lon_direction,
+        magnetic_variation=aerodrome.magnetic_variation
+    )
+    db = await update_vfr_waypoint(
+        waypoint=waypoint_data,
+        db=db,
+        creator_id=user_id,
+        id=id
+    )
 
-    if not deleted:
-        raise common_responses.internal_server_error()
+    aerodrome_data = {
+        "has_taf": aerodrome.has_taf,
+        "has_metar": aerodrome.has_metar,
+        "has_fds": aerodrome.has_fds,
+        "elevation_ft": aerodrome.elevation_ft
+    }
 
+    db.query(models.Aerodrome).filter(
+        models.Aerodrome.vfr_waypoint_id == id
+    ).update({**aerodrome_data, "status_id": aerodrome.status})
     db.commit()
+
+    s = models.AerodromeStatus
+    a = models.Aerodrome
+    v = models.VfrWaypoint
+    w = models.Waypoint
+
+    data = db.query(w, v, a, s.status)\
+        .join(v, w.id == v.waypoint_id)\
+        .join(a, v.waypoint_id == a.vfr_waypoint_id)\
+        .join(s, a.status_id == s.id)\
+        .filter(w.id == id).first()
+
+    return {**data[0].__dict__, **data[1].__dict__, **data[2].__dict__, "status": data[3]}
 
 
 @router.delete("/official/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_official_waypoint_or_aerodrome(
+async def delete_vfr_waypoint_or_aerodrome(
     id,
     db: Session = Depends(get_db),
-    current_user: schemas.TokenData = Depends(auth.validate_admin_user)
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Delete Official Waypoint or Aerodrome.
+    Delete VFR Waypoint or Aerodrome.
 
     Parameters: 
     id (int): waypoint id.
@@ -521,18 +434,17 @@ async def delete_official_waypoint_or_aerodrome(
     waypoint_query = db.query(models.Waypoint).filter(
         models.Waypoint.id == id)
 
+    not_found_exception = HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"The VFR waypoint you're trying to delete is not in the database."
+    )
     if not waypoint_query.first():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"The waypoint you're trying to delete is not in the database."
-        )
+        raise not_found_exception
 
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
-    if not waypoint_query.first().is_official and\
-            not int(waypoint_query.first().creator_id) == user_id:
-        raise common_responses.invalid_credentials(
-            ", or make sure you have permission to perform this operation"
-        )
+    is_vfr_waypoint = db.query(models.VfrWaypoint).filter(
+        models.VfrWaypoint.waypoint_id == id).first()
+    if not is_vfr_waypoint:
+        raise not_found_exception
 
     deleted = waypoint_query.delete(synchronize_session=False)
 

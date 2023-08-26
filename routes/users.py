@@ -210,10 +210,11 @@ async def edit_user_profile(
     return new_user
 
 
-@router.put("/make-admin/{id}", status_code=status.HTTP_200_OK, response_model=schemas.UserReturnBasic)
-async def grant_revoke_admin_privileges(
+@router.put("/admin-user/{id}", status_code=status.HTTP_200_OK, response_model=schemas.UserReturnBasic)
+async def grant_revoke_admin_privileges_or_deactivate(
     id,
     make_admin: bool,
+    activate: bool,
     db: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_master_user)
 ):
@@ -246,7 +247,7 @@ async def grant_revoke_admin_privileges(
             detail=f"The user you're trying to update, is a master user."
         )
 
-    user.update({"is_admin": make_admin})
+    user.update({"is_admin": make_admin, "is_active": activate})
     db.commit()
     new_user = user.first()
     db.refresh(new_user)

@@ -10,7 +10,7 @@ Usage:
 
 from typing import Optional, List
 
-from pydantic import BaseModel, constr, EmailStr, conint, confloat, NaiveDatetime, validator, model_validator
+from pydantic import BaseModel, constr, EmailStr, conint, confloat, NaiveDatetime, validator
 
 
 class PassengerProfileData(BaseModel):
@@ -89,6 +89,7 @@ class UserReturnBasic(UserBase):
     id: conint(gt=0)
     is_admin: bool
     is_master: bool
+    is_active: bool
 
 
 class UserReturn(UserReturnBasic):
@@ -187,7 +188,9 @@ class TokenData(BaseModel):
     - email (String): user email.
     - is_admin (Boolean): true if user is admin.
     - is_master (Boolean): true if user is master.
+    - is_active (Boolean): true if user is active.
     """
     email: str | None = None
     is_admin: bool
     is_master: bool
+    is_active: bool

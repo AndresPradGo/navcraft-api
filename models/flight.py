@@ -142,7 +142,7 @@ class DepartureAndArrival(BaseModel):
     - altimeter_inhg (Decimal Column): altimeter setting at aerodrome, in inHg
     - weather_valid_from (DateTime Column): start-time of validity of weather forecast.
     - weather_valid_to (DateTime Column): end-time of validity of weather forecast.
-    - runway_id (Integer Column): foreignkey pointing to the ranway of departure/arrival.
+    - aerodrome_id (Integer Column): foreignkey pointing to the parent table aerodrome of departure/arrival.
     """
 
     __abstract__ = True
@@ -174,14 +174,13 @@ class DepartureAndArrival(BaseModel):
         default=datetime.utcnow(),
         onupdate=datetime.utcnow()
     )
-    runway_id = Column(
+    aerodrome_id = Column(
         Integer,
         ForeignKey(
-            "runways.id",
-            ondelete="RESTRICT",
+            "aerodromes.vfr_waypoint_id",
+            ondelete="SET NULL",
             onupdate="CASCADE"
-        ),
-        nullable=False
+        )
     )
 
 
@@ -191,13 +190,13 @@ class Departure(DepartureAndArrival):
 
     Attributes:
     - flight (Relationship): Defines the one-to-one relationship with the flights table.
-    - runway (Relationship): Defines the many-to-one relationship with the runways table.
+    - aerodrome (Relationship): Defines the many-to-one relationship with the aerodromes parent-table.
     """
 
     __tablename__ = "departures"
 
     flight = Relationship("Flight", back_populates="departure")
-    runway = Relationship("Runway", back_populates="departures")
+    aerodrome = Relationship("Aerodrome", back_populates="departures")
 
 
 class Arrival(DepartureAndArrival):
@@ -206,13 +205,13 @@ class Arrival(DepartureAndArrival):
 
     Attributes:
     - flight (Relationship): Defines the one-to-one relationship with the flights table.
-    - runway (Relationship): Defines the many-to-one relationship with the runways table.
+    - aerodrome (Relationship): Defines the many-to-one relationship with the aerodromes parent-table.
     """
 
     __tablename__ = "arrivals"
 
     flight = Relationship("Flight", back_populates="arrival")
-    runway = Relationship("Runway", back_populates="arrivals")
+    aerodrome = Relationship("Aerodrome", back_populates="arrivals")
 
 
 class Leg(BaseModel):
@@ -231,9 +230,8 @@ class Leg(BaseModel):
     - wind_magnitude_knot (Integer Column): wind magnitude in knots.
     - magnetic_variation (Decimal Column): magnetic variation for the leg.
     - flight_id (Integer Column): foreign key that points to the flights table.
-    - waypoint_id (Integer Column): foreign key that points to the waypoints table.
     - flight (Relationship): Defines the many-to-one relationship with the flight table.
-    - waypoint (Relationship): Defines the many-to-one relationship with the waypoint table.
+    - flight_waypoint (Relationship): Defines the one-to-one relationship with the waypoint child-table.
     """
 
     __tablename__ = "legs"
@@ -273,18 +271,15 @@ class Leg(BaseModel):
         ),
         nullable=False
     )
-    waypoint_id = Column(
-        Integer,
-        ForeignKey(
-            "waypoints.id",
-            ondelete="CASCADE",
-            onupdate="CASCADE"
-        ),
-        nullable=False
-    )
 
     flight = Relationship("Flight", back_populates="legs")
-    waypoint = Relationship("Waypoint", back_populates="legs")
+    flight_waypoint = Relationship(
+        "FlightWaypoint",
+        back_populates="leg",
+        uselist=False,
+        passive_deletes=True,
+        passive_updates=True
+    )
 
 
 class FlightStatus(BaseModel):

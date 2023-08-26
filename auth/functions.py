@@ -69,6 +69,7 @@ def validate_user(
 
     jwt_payload = get_jwt_payload(token)
     user_email: str = jwt_payload.get("email")
+    active: bool = jwt_payload.get("active")
     permissions: List[str] = jwt_payload.get("permissions")
 
     if user_email is None or permissions is None:
@@ -77,7 +78,8 @@ def validate_user(
     token_data = schemas.TokenData(
         email=user_email,
         is_admin="admin" in permissions,
-        is_master="master" in permissions
+        is_master="master" in permissions,
+        is_active=active
     )
 
     return token_data
@@ -104,7 +106,7 @@ def validate_admin_user(
 
     token_data = validate_user(token)
 
-    if not token_data.is_admin:
+    if not token_data.is_admin or not token_data.is_active:
         raise common_responses.invalid_credentials()
 
     return token_data
