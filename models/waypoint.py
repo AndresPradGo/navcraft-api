@@ -80,6 +80,9 @@ class VfrWaypoint(BaseModel):
 
     Attributes:
     - waypoint_id (Integer Column): table primary key. Also a foreignkey with the waypoints table.
+    - code (String Column): waypoint code identifyer.
+    - name (String Column): waypoint name.
+    - hidden (Boolean Column): if true, do not show waypoint to users.
     - creator_id (Integer Column): foreign key that points to the users table.
     - creator (Relationship): defines the many-to-one relationship with the users table.
     - aerodrome (Relationship): Defines the one-to-one relationship with the Aerodrome table.
@@ -101,6 +104,7 @@ class VfrWaypoint(BaseModel):
     )
     code = Column(String(50), nullable=False, unique=True)
     name = Column(String(255), nullable=False)
+    hidden = Column(Boolean, nullable=False, default=True)
     creator_id = Column(
         Integer,
         ForeignKey(

@@ -12,6 +12,7 @@ import re
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy import text, and_, or_, not_
 from sqlalchemy.orm import Session
 
@@ -19,14 +20,15 @@ import auth
 import models
 from queries import user_queries
 import schemas
-from utils import common_responses
+from utils import common_responses, csv_tools as csv
+
 from utils.db import get_db
 from utils.functions import clean_string
 
 router = APIRouter(tags=["Waypoints"])
 
 
-async def post_vfr_waypoint(waypoint: schemas.WaypointData, db: Session, creator_id: int):
+async def post_vfr_waypoint(waypoint: schemas.VfrWaypointData, db: Session, creator_id: int):
     """
     This function checks if the waypoint passed as a parameter
     already exists in the database, and adds it to the database, 
@@ -77,6 +79,7 @@ async def post_vfr_waypoint(waypoint: schemas.WaypointData, db: Session, creator
         waypoint_id=new_waypoint.id,
         code=waypoint.code,
         name=waypoint.name,
+        hidden=waypoint.hidden,
         creator_id=creator_id
     )
 
@@ -88,7 +91,7 @@ async def post_vfr_waypoint(waypoint: schemas.WaypointData, db: Session, creator
     return {**new_vfr_waypoint.__dict__, **new_waypoint.__dict__}
 
 
-async def update_vfr_waypoint(waypoint: schemas.WaypointData, db: Session, creator_id: int, id: int):
+async def update_vfr_waypoint(waypoint: schemas.VfrWaypointData, db: Session, creator_id: int, id: int):
     """
     This function updates the waypoint in the database, after performing the necessary checks.
 
@@ -147,13 +150,14 @@ async def update_vfr_waypoint(waypoint: schemas.WaypointData, db: Session, creat
         models.VfrWaypoint.waypoint_id == id).update({
             "code": waypoint.code,
             "name": waypoint.name,
-            "creator_id": creator_id
+            "creator_id": creator_id,
+            "hidden": waypoint.hidden
         })
 
     return db
 
 
-@router.get("/user", status_code=status.HTTP_200_OK, response_model=List[schemas.WaypointReturn])
+@router.get("/user", status_code=status.HTTP_200_OK, response_model=List[schemas.UserWaypointReturn])
 async def get_all_user_waypoints(
     id: Optional[int] = 0,
     db: Session = Depends(get_db),
@@ -190,11 +194,70 @@ async def get_all_user_waypoints(
     return [{**w.__dict__, **v.__dict__} for w, v in query_results]
 
 
-@router.get("/vfr", status_code=status.HTTP_200_OK, response_model=List[schemas.WaypointReturn])
+@router.get("/vfr/csv", status_code=status.HTTP_200_OK)
+async def get_csv_file_with_all_vfr_waypoints(
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Get CSV File With All VFR Waypoints Endpoint.
+
+    Parameters: None
+
+    Returns: 
+    - CSV file: csv file with a list of VFR Waypoints.
+
+    Raise:
+    - HTTPException (500): if there is a server error. 
+    """
+
+    a = models.Aerodrome
+    v = models.VfrWaypoint
+    w = models.Waypoint
+
+    aerodromes = [item[0] for item in db.query(
+        a.vfr_waypoint_id).filter(not_(a.vfr_waypoint_id.is_(None))).all()]
+
+    query_results = db.query(w, v)\
+        .filter(and_(
+            or_(
+                not_(id),
+                w.id == id
+            ),
+            not_(w.id.in_(aerodromes))
+        ))\
+        .join(v, w.id == v.waypoint_id).all()
+
+    data = [{
+        "code": v.code,
+        "name": v.name,
+        "lat_degrees": w.lat_degrees,
+        "lat_minutes": w.lat_minutes,
+        "lat_seconds": w.lat_seconds,
+        "lat_direction": w.lat_direction,
+        "lon_degrees": w.lon_degrees,
+        "lon_minutes": w.lon_minutes,
+        "lon_seconds": w.lon_seconds,
+        "lon_direction": w.lon_direction,
+        "magnetic_variation": w.magnetic_variation,
+        "hidden": v.hidden
+    } for w, v in query_results]
+
+    buffer = csv.from_list(data=data)
+
+    response = StreamingResponse(
+        iter([buffer.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=data.csv"}
+    )
+    return response
+
+
+@router.get("/vfr", status_code=status.HTTP_200_OK, response_model=List[schemas.UserWaypointReturn])
 async def get_all_vfr_waypoints(
     id: Optional[int] = 0,
     db: Session = Depends(get_db),
-    _: schemas.TokenData = Depends(auth.validate_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Get All VFR Waypoints Endpoint.
@@ -213,19 +276,83 @@ async def get_all_vfr_waypoints(
     w = models.Waypoint
 
     aerodromes = [item[0] for item in db.query(
-        a.vfr_waypoint_id).filter_by(a.vfr_waypoint_id).all()]
+        a.vfr_waypoint_id).filter(not_(a.vfr_waypoint_id.is_(None))).all()]
 
+    user_is_active_admin = current_user.is_active and current_user.is_admin
     query_results = db.query(w, v)\
         .filter(and_(
             or_(
                 not_(id),
                 w.id == id
             ),
-            not_(w.id.in_(aerodromes))
+            not_(w.id.in_(aerodromes)),
+            or_(
+                not_(v.hidden),
+                user_is_active_admin
+            )
         ))\
         .join(v, w.id == v.waypoint_id).all()
 
     return [{**w.__dict__, **v.__dict__} for w, v in query_results]
+
+
+@router.get("/aerodromes/csv", status_code=status.HTTP_200_OK)
+async def get_csv_file_with_all_aerodromes(
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Get CSV File With All Aerodromes Endpoint.
+
+    Parameters: None
+
+    Returns: 
+    - CSV file: csv file with a list of aerodromes (does not include the runways).
+
+    Raise:
+    - HTTPException (500): if there is a server error. 
+    """
+
+    a = models.Aerodrome
+    v = models.VfrWaypoint
+    w = models.Waypoint
+
+    aerodromes = db.query(w, v, a)\
+        .filter(or_(
+                not_(id),
+                w.id == id
+                ))\
+        .join(v, w.id == v.waypoint_id)\
+        .join(a, v.waypoint_id == a.vfr_waypoint_id).all()
+
+    data = [{
+        "code": v.code,
+        "name": v.name,
+        "lat_degrees": w.lat_degrees,
+        "lat_minutes": w.lat_minutes,
+        "lat_seconds": w.lat_seconds,
+        "lat_direction": w.lat_direction,
+        "lon_degrees": w.lon_degrees,
+        "lon_minutes": w.lon_minutes,
+        "lon_seconds": w.lon_seconds,
+        "lon_direction": w.lon_direction,
+        "elevation_ft": a.elevation_ft,
+        "magnetic_variation": w.magnetic_variation,
+        "has_taf": a.has_taf,
+        "has_metar": a.has_metar,
+        "has_fds": a.has_fds,
+        "hidden": v.hidden,
+        "status_id": a.status_id
+    } for w, v, a in aerodromes]
+
+    buffer = csv.from_list(data=data)
+
+    response = StreamingResponse(
+        iter([buffer.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=data.csv"}
+    )
+    return response
 
 
 @router.get("/aerodromes", status_code=status.HTTP_200_OK, response_model=List[schemas.AerodromeReturnWithRunways])
@@ -238,7 +365,7 @@ async def get_all_aerodromes(
     Get All Aerodromes Endpoint.
 
     Parameters: 
-    - id (optional int): waypoint id.
+    - id (optional int): aerodrome id.
 
     Returns: 
     - list: list of aerodrome dictionaries.
@@ -256,11 +383,18 @@ async def get_all_aerodromes(
     u = models.UserWaypoint
     w = models.Waypoint
 
+    user_is_active_admin = current_user.is_active and current_user.is_admin
     registered_aerodromes = db.query(w, v, a, s.status)\
-        .filter(or_(
+        .filter(and_(
+            or_(
+                not_(v.hidden),
+                user_is_active_admin
+            ),
+            or_(
                 not_(id),
                 w.id == id
-                ))\
+            )
+        ))\
         .join(v, w.id == v.waypoint_id)\
         .join(a, v.waypoint_id == a.vfr_waypoint_id)\
         .join(s, a.status_id == s.id).all()
@@ -328,9 +462,9 @@ async def get_all_aerodrome_status(
     )).all()
 
 
-@router.post("/vfr", status_code=status.HTTP_201_CREATED, response_model=schemas.WaypointReturn)
+@router.post("/vfr", status_code=status.HTTP_201_CREATED, response_model=schemas.VfrWaypointReturn)
 async def post_new_vfr_waypoint(
-    waypoint: schemas.WaypointData,
+    waypoint: schemas.VfrWaypointData,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
@@ -355,9 +489,9 @@ async def post_new_vfr_waypoint(
     return result
 
 
-@router.post("/user", status_code=status.HTTP_201_CREATED, response_model=schemas.WaypointReturn)
+@router.post("/user", status_code=status.HTTP_201_CREATED, response_model=schemas.UserWaypointReturn)
 async def post_new_user_waypoint(
-    waypoint: schemas.WaypointData,
+    waypoint: schemas.UserWaypointData,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
@@ -419,9 +553,9 @@ async def post_new_user_waypoint(
     return {**new_user_waypoint.__dict__, **new_waypoint.__dict__}
 
 
-@router.post("/private-aerodrome", status_code=status.HTTP_201_CREATED, response_model=schemas.AerodromeReturn)
+@router.post("/private-aerodrome", status_code=status.HTTP_201_CREATED, response_model=schemas.PrivateAerodromeReturn)
 async def post_private_aerodrome(
-    aerodrome: schemas.AerodromeData,
+    aerodrome: schemas.PrivateAerodromeData,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
@@ -512,9 +646,9 @@ async def post_private_aerodrome(
     return {**r[0].__dict__, **r[1].__dict__, **r[2].__dict__, "status": r[3], "registered": False}
 
 
-@router.post("/registered-aerodrome", status_code=status.HTTP_201_CREATED, response_model=schemas.AerodromeReturn)
+@router.post("/registered-aerodrome", status_code=status.HTTP_201_CREATED, response_model=schemas.RegisteredAerodromeReturn)
 async def post_registered_aerodrome(
-    aerodrome: schemas.AerodromeData,
+    aerodrome: schemas.RegisteredAerodromeData,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
@@ -615,10 +749,10 @@ async def post_aerodrome_status(
     return new_aerodrome_status
 
 
-@router.put("/user/{id}", status_code=status.HTTP_200_OK, response_model=schemas.WaypointReturn)
+@router.put("/user/{id}", status_code=status.HTTP_200_OK, response_model=schemas.UserWaypointReturn)
 async def edit_user_waypoint(
     id: int,
-    waypoint: schemas.WaypointData,
+    waypoint: schemas.UserWaypointData,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
@@ -690,10 +824,10 @@ async def edit_user_waypoint(
     return {**new_waypoint[0].__dict__, **new_waypoint[1].__dict__}
 
 
-@router.put("/vfr/{id}", status_code=status.HTTP_200_OK, response_model=schemas.WaypointReturn)
+@router.put("/vfr/{id}", status_code=status.HTTP_200_OK, response_model=schemas.VfrWaypointReturn)
 async def edit_vfr_waypoint(
     id: int,
-    waypoint: schemas.WaypointData,
+    waypoint: schemas.VfrWaypointData,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
@@ -732,10 +866,10 @@ async def edit_vfr_waypoint(
     return {**new_waypoint[0].__dict__, **new_waypoint[1].__dict__}
 
 
-@router.put("/registered-aerodrome/{id}", status_code=status.HTTP_200_OK, response_model=schemas.AerodromeReturn)
+@router.put("/registered-aerodrome/{id}", status_code=status.HTTP_200_OK, response_model=schemas.RegisteredAerodromeReturn)
 async def edit_registered_aerodrome(
     id: int,
-    aerodrome: schemas.AerodromeData,
+    aerodrome: schemas.RegisteredAerodromeData,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
@@ -818,10 +952,10 @@ async def edit_registered_aerodrome(
     return {**data[0].__dict__, **data[1].__dict__, **data[2].__dict__, "status": data[3], "registered": True}
 
 
-@router.put("/private-aerodrome/{id}", status_code=status.HTTP_200_OK, response_model=schemas.AerodromeReturn)
+@router.put("/private-aerodrome/{id}", status_code=status.HTTP_200_OK, response_model=schemas.PrivateAerodromeReturn)
 async def edit_private_aerodrome(
     id: int,
-    aerodrome: schemas.AerodromeData,
+    aerodrome: schemas.PrivateAerodromeData,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):

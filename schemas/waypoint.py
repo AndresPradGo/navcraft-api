@@ -64,7 +64,7 @@ class WaypointBase(BaseModel):
     magnetic_variation: Optional[confloat(allow_inf_nan=False)] = None
 
 
-class WaypointReturn(WaypointBase):
+class UserWaypointReturn(WaypointBase):
     """
     This class defines the pydantic waypoint_return schema.
 
@@ -84,7 +84,18 @@ class WaypointReturn(WaypointBase):
         from_attributes = True
 
 
-class WaypointData(WaypointBase):
+class VfrWaypointReturn(UserWaypointReturn):
+    """
+    This class defines the pydantic vfr_waypoint_return schema.
+
+   Attributes:
+    - hidden (boolean): if true, do not show waypoint to users.
+    """
+
+    hidden: bool
+
+
+class UserWaypointData(WaypointBase):
     """
     This class defines the pydantic waypoint_with_validation schema.
 
@@ -180,6 +191,17 @@ class WaypointData(WaypointBase):
         return values
 
 
+class VfrWaypointData(UserWaypointData):
+    """
+    This class defines the pydantic vfr_waypoint_data schema.
+
+   Attributes:
+    - hidden (boolean): if true, do not show waypoint to users.
+    """
+
+    hidden: bool
+
+
 class FlightWaypointData(WaypointBase):
     """
     This class defines the pydantic flight_waypoint_with_validation schema.
@@ -188,51 +210,6 @@ class FlightWaypointData(WaypointBase):
      - name (Optional String): waypoint name.
     """
     name: Optional[constr(min_length=2, max_length=50)] = None
-
-
-class DataList(BaseModel):
-    """
-    This class defines the pydantic data_list schema, which is an abstract class to check if
-    the attribute "code" is repeated in any of the objects in the list.
-
-    Attributes: None
-    """
-
-    @model_validator(mode='after')
-    @classmethod
-    def validate_id_unique(cls, values):
-        '''
-        Classmethod to check that the code is unique in a list of waypoint data.
-
-        Parameters:
-        - values (list): The object with the values to be validated.
-
-        Returns:
-        (Any) : The object of validated values.
-
-        Raises:
-        ValueError: When a code is repeated.
-
-        '''
-
-        codes = [w.code for w in values.list]
-        if len(codes) != len(set(codes)):
-            raise ValueError(
-                "There are repeated codes in your data. Code must be unique")
-        return values
-
-    class Config:
-        abstract = True
-
-
-class WaypointDataList(DataList):
-    """
-    This class defines the pydantic waypoint_data_list schema.
-
-    Attributes: 
-    list: a list of waypoint_data objects.
-    """
-    list: conlist(item_type=WaypointData)
 
 
 class AerodromeBase(BaseModel):
@@ -252,26 +229,31 @@ class AerodromeBase(BaseModel):
     elevation_ft: int
 
 
-class AerodromeData(WaypointData, AerodromeBase):
+class RegisteredAerodromeData(VfrWaypointData, AerodromeBase):
     """
-    This class defines the pydantic aerodrome_data schema.
+    This class defines the pydantic registered_aerodrome_data schema.
     """
     status: int
 
 
-class AerodromeDataList(DataList):
+class PrivateAerodromeData(UserWaypointData, AerodromeBase):
     """
-    This class defines the pydantic aerodrome_data_list schema.
-
-    Attributes: 
-    list: a list of aerodrome_data objects.
+    This class defines the pydantic private_aerodrome_data schema.
     """
-    list: conlist(item_type=AerodromeData)
+    status: int
 
 
-class AerodromeReturn(WaypointReturn, AerodromeBase):
+class RegisteredAerodromeReturn(VfrWaypointReturn, AerodromeBase):
     """
-    This class defines the pydantic aerodrome_return schema.
+    This class defines the pydantic registered_aerodrome_return schema.
+    """
+    status: str
+    registered: bool
+
+
+class PrivateAerodromeReturn(UserWaypointReturn, AerodromeBase):
+    """
+    This class defines the pydantic private_aerodrome_return schema.
     """
     status: str
     registered: bool
@@ -303,7 +285,7 @@ class RunwayInAerodromeReturn(BaseModel):
     surface_id: int
 
 
-class AerodromeReturnWithRunways(AerodromeReturn):
+class AerodromeReturnWithRunways(PrivateAerodromeReturn):
     """
     This class defines the pydantic schema to return aerodrome data with a list of runways.
     """

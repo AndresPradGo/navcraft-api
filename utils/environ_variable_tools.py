@@ -15,7 +15,7 @@ from os import environ
 
 def get(var_key: str):
     """
-    This method gets the value of the environment variable and returns it.
+    This function gets the value of the environment variable and returns it.
 
     Parameters:
     - var_key (str): key to get the name of the environme variable, 
