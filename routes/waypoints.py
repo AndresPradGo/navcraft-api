@@ -228,7 +228,7 @@ async def get_all_vfr_waypoints(
     return [{**w.__dict__, **v.__dict__} for w, v in query_results]
 
 
-@router.get("/aerodromes", status_code=status.HTTP_200_OK, response_model=List[schemas.AerodromeReturn])
+@router.get("/aerodromes", status_code=status.HTTP_200_OK, response_model=List[schemas.AerodromeReturnWithRunways])
 async def get_all_aerodromes(
     id: int = 0,
     db: Session = Depends(get_db),
@@ -247,7 +247,10 @@ async def get_all_aerodromes(
     - HTTPException (500): if there is a server error. 
     """
     user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+
+    rs = models.RunwaySurface
     s = models.AerodromeStatus
+    r = models.Runway
     a = models.Aerodrome
     v = models.VfrWaypoint
     u = models.UserWaypoint
@@ -274,15 +277,30 @@ async def get_all_aerodromes(
         .join(a, u.waypoint_id == a.user_waypoint_id)\
         .join(s, a.status_id == s.id).all()
 
-    results = registered_aerodromes + private_aerodromes
+    aerodromes = registered_aerodromes + private_aerodromes
+    aerodrome_ids = [a[2].id for a in aerodromes]
+
+    runways = db.query(r, rs.surface)\
+        .filter(r.aerodrome_id.in_(aerodrome_ids))\
+        .join(rs, r.surface_id == rs.id).all()
 
     return [{
         **w.__dict__,
         **v.__dict__,
         **a.__dict__,
         "status": s,
-        "registered": a.vfr_waypoint_id is not None
-    } for w, v, a, s in results]
+        "registered": a.vfr_waypoint_id is not None,
+        "runways": [
+            schemas.RunwayInAerodromeReturn(
+                id=r.id,
+                number=r.number,
+                position=r.position,
+                length_ft=r.length_ft,
+                surface=rs,
+                surface_id=r.surface_id
+            ) for r, rs in filter(lambda i: i[0].aerodrome_id == a.id, runways)
+        ]
+    } for w, v, a, s in aerodromes]
 
 
 @router.get("/aerodromes-status", status_code=status.HTTP_200_OK, response_model=List[schemas.AerodromeStatusReturn])

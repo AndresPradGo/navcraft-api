@@ -277,6 +277,39 @@ class AerodromeReturn(WaypointReturn, AerodromeBase):
     registered: bool
 
 
+class RunwayInAerodromeReturn(BaseModel):
+    """
+    This class defines the pydantic schema to return a list 
+    of runways inside an aerodrome_return_with_runways model.
+    """
+    id: conint(gt=0)
+    number: conint(
+        ge=1,
+        le=36
+    )
+    position: Optional[constr(
+        to_upper=True,
+        min_length=1,
+        max_length=1,
+        pattern="^[rRlLcC]$"
+    )] = None
+    length_ft: int
+    surface: constr(
+        strip_whitespace=True,
+        min_length=2,
+        max_length=50,
+        pattern="^[-a-zA-Z ']+$",
+    )
+    surface_id: int
+
+
+class AerodromeReturnWithRunways(AerodromeReturn):
+    """
+    This class defines the pydantic schema to return aerodrome data with a list of runways.
+    """
+    runways: Optional[conlist(item_type=RunwayInAerodromeReturn)] = []
+
+
 class AerodromeStatusReturn(BaseModel):
     """
     This class defines the pydantic aerodrome_status_return schema.
