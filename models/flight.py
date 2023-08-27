@@ -177,7 +177,7 @@ class DepartureAndArrival(BaseModel):
     aerodrome_id = Column(
         Integer,
         ForeignKey(
-            "aerodromes.vfr_waypoint_id",
+            "aerodromes.id",
             ondelete="SET NULL",
             onupdate="CASCADE"
         )

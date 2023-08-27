@@ -174,7 +174,8 @@ async def get_all_user_waypoints(
     u = models.UserWaypoint
     w = models.Waypoint
     user_id = await user_queries.get_id_from(email=current_user.email, db=db)
-    print(user_id)
+
+    user_aerodromes = db.query
 
     query_results = db.query(w, u)\
         .filter(and_(
@@ -213,7 +214,6 @@ async def get_all_vfr_waypoints(
 
     aerodromes = [item[0] for item in db.query(
         a.vfr_waypoint_id).filter_by(a.vfr_waypoint_id).all()]
-    print(aerodromes)
 
     query_results = db.query(w, v)\
         .filter(and_(
@@ -246,14 +246,23 @@ async def get_all_aerodromes(
     Raise:
     - HTTPException (500): if there is a server error. 
     """
-    user_id = user_queries.get_id_from(email=current_user.email, db=db)
+    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
     s = models.AerodromeStatus
     a = models.Aerodrome
     v = models.VfrWaypoint
     u = models.UserWaypoint
     w = models.Waypoint
 
-    query_results = db.query(w, v, u, a, s.status)\
+    registered_aerodromes = db.query(w, v, a, s.status)\
+        .filter(or_(
+                not_(id),
+                w.id == id
+                ))\
+        .join(v, w.id == v.waypoint_id)\
+        .join(a, v.waypoint_id == a.vfr_waypoint_id)\
+        .join(s, a.status_id == s.id).all()
+
+    private_aerodromes = db.query(w, u, a, s.status)\
         .filter(and_(
             or_(
                 not_(id),
@@ -261,12 +270,19 @@ async def get_all_aerodromes(
             ),
             u.creator_id == user_id
         ))\
-        .join(v, w.id == v.waypoint_id)\
-        .join(a, v.waypoint_id == a.vfr_waypoint_id)\
+        .join(u, w.id == u.waypoint_id)\
         .join(a, u.waypoint_id == a.user_waypoint_id)\
         .join(s, a.status_id == s.id).all()
 
-    return [{**w.__dict__, **v.__dict__, **v.__dict__, **a.__dict__, "status": s} for w, v, u, a, s in query_results]
+    results = registered_aerodromes + private_aerodromes
+
+    return [{
+        **w.__dict__,
+        **v.__dict__,
+        **a.__dict__,
+        "status": s,
+        "registered": a.vfr_waypoint_id is not None
+    } for w, v, a, s in results]
 
 
 @router.get("/aerodromes-status", status_code=status.HTTP_200_OK, response_model=List[schemas.AerodromeStatusReturn])
@@ -475,7 +491,7 @@ async def post_private_aerodrome(
         .join(a, u.waypoint_id == a.user_waypoint_id)\
         .join(s, a.status_id == s.id).first()
 
-    return {**r[0].__dict__, **r[1].__dict__, **r[2].__dict__, "status": r[3]}
+    return {**r[0].__dict__, **r[1].__dict__, **r[2].__dict__, "status": r[3], "registered": False}
 
 
 @router.post("/registered-aerodrome", status_code=status.HTTP_201_CREATED, response_model=schemas.AerodromeReturn)
@@ -530,7 +546,7 @@ async def post_registered_aerodrome(
     new_aerodrome = db.query(a, s.status).join(a, a.status_id == s.id).filter(
         a.vfr_waypoint_id == waypoint_result["id"]).first()
 
-    return {**new_aerodrome[0].__dict__, "status": new_aerodrome[1], **waypoint_result}
+    return {**new_aerodrome[0].__dict__, "status": new_aerodrome[1], **waypoint_result, "registered": True}
 
 
 @router.post("/aerodrome-status", status_code=status.HTTP_201_CREATED, response_model=schemas.AerodromeStatusReturn)
@@ -781,7 +797,7 @@ async def edit_registered_aerodrome(
         .join(s, a.status_id == s.id)\
         .filter(w.id == id).first()
 
-    return {**data[0].__dict__, **data[1].__dict__, **data[2].__dict__, "status": data[3]}
+    return {**data[0].__dict__, **data[1].__dict__, **data[2].__dict__, "status": data[3], "registered": True}
 
 
 @router.put("/private-aerodrome/{id}", status_code=status.HTTP_200_OK, response_model=schemas.AerodromeReturn)
@@ -891,7 +907,7 @@ async def edit_private_aerodrome(
         .join(s, a.status_id == s.id)\
         .filter(w.id == id).first()
 
-    return {**data[0].__dict__, **data[1].__dict__, **data[2].__dict__, "status": data[3]}
+    return {**data[0].__dict__, **data[1].__dict__, **data[2].__dict__, "status": data[3], "registered": False}
 
 
 @router.delete("/user/{id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -914,7 +930,7 @@ async def delete_user_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = user_queries.get_id_from(email=current_user.email, db=db)
+    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
     waypoint_exists = db.query(models.UserWaypoint).filter(and_(
         models.UserWaypoint.waypoint_id == id,
         models.UserWaypoint.creator_id == user_id

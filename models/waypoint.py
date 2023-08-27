@@ -112,7 +112,7 @@ class VfrWaypoint(BaseModel):
     )
 
     creator = Relationship("User", back_populates="vfr_waypoints")
-    aerodrome = Relationship(
+    registered_aerodrome = Relationship(
         "Aerodrome",
         back_populates="vfr_waypoint",
         uselist=False,
@@ -161,7 +161,7 @@ class UserWaypoint(BaseModel):
         nullable=False
     )
 
-    aerodrome = Relationship(
+    private_aerodrome = Relationship(
         "Aerodrome",
         back_populates="user_waypoint",
         uselist=False,
@@ -267,8 +267,10 @@ class Aerodrome(BaseModel):
         nullable=False
     )
 
-    vfr_waypoint = Relationship("VfrWaypoint", back_populates="aerodrome")
-    user_waypoint = Relationship("UserWaypoint", back_populates="aerodrome")
+    vfr_waypoint = Relationship(
+        "VfrWaypoint", back_populates="registered_aerodrome")
+    user_waypoint = Relationship(
+        "UserWaypoint", back_populates="private_aerodrome")
     status = Relationship("AerodromeStatus", back_populates="aerodromes")
     runways = Relationship(
         "Runway",
@@ -325,12 +327,11 @@ class Runway(BaseModel):
     aerodrome_id = Column(
         Integer,
         ForeignKey(
-            "aerodromes.vfr_waypoint_id",
+            "aerodromes.id",
             ondelete="CASCADE",
             onupdate="CASCADE"
         ),
-        nullable=False,
-        unique=True
+        nullable=False
     )
 
     surface = Relationship("RunwaySurface", back_populates="runways")

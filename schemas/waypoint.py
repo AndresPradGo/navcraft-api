@@ -274,6 +274,7 @@ class AerodromeReturn(WaypointReturn, AerodromeBase):
     This class defines the pydantic aerodrome_return schema.
     """
     status: str
+    registered: bool
 
 
 class AerodromeStatusReturn(BaseModel):
