@@ -15,16 +15,15 @@ from pydantic import BaseModel, constr, conint, validator
 from utils.functions import clean_string
 
 
-class RunwayData(BaseModel):
+class RunwayDataEdit(BaseModel):
     """
-    This class defines the pydantic runway_data schema, for data input to endpoints.
+    This class defines the pydantic runway_data schema, for data input to put endpoints.
 
    Attributes:
    - length (int): runway surface id.
    - number (int): runway number.
    - position (str): runway position could be right, left, center or None.
    - surface_id (int): runway surface id.
-    - aerodrome_id (int): runway surface id.
     """
 
     length_ft: int
@@ -39,6 +38,17 @@ class RunwayData(BaseModel):
         pattern="^[rRlLcC]$"
     )] = None
     surface_id: int
+
+
+class RunwayData(RunwayDataEdit):
+    """
+    This class defines the pydantic runway_data schema, for data input to post endpoints.
+
+   Attributes:
+    - aerodrome_id (int): runway surface id.
+
+    """
+
     aerodrome_id: int
 
 
@@ -66,9 +76,6 @@ class RunwayReturn(RunwayData):
         max_length=50,
         pattern='^[-a-zA-Z0-9]+$',
     )
-
-    class Config():
-        exclude = {'surface_id', 'aerodrome_id'}
 
 
 class RunwaySurfaceData(BaseModel):
