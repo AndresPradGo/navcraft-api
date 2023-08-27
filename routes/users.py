@@ -8,7 +8,7 @@ Usage:
 
 """
 
-from typing import List, Annotated
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException, Response
 from sqlalchemy import and_, or_, not_
@@ -27,7 +27,7 @@ router = APIRouter(tags=["Users"])
 
 @router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.UserReturnBasic])
 async def get_all_users(
-    id: int = 0,
+    id: Optional[int] = 0,
     db: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_master_user)
 ):
@@ -74,7 +74,7 @@ async def get_user_profile_data(
 
 @router.get("/passenger-profiles", status_code=status.HTTP_200_OK, response_model=List[schemas.PassengerProfileReturn])
 async def get_passenger_profiles(
-    id: int = 0,
+    id: Optional[int] = 0,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):

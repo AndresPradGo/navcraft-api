@@ -9,7 +9,7 @@ Usage:
 """
 
 import re
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy import text, and_, or_, not_
@@ -155,7 +155,7 @@ async def update_vfr_waypoint(waypoint: schemas.WaypointData, db: Session, creat
 
 @router.get("/user", status_code=status.HTTP_200_OK, response_model=List[schemas.WaypointReturn])
 async def get_all_user_waypoints(
-    id: int = 0,
+    id: Optional[int] = 0,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
@@ -192,7 +192,7 @@ async def get_all_user_waypoints(
 
 @router.get("/vfr", status_code=status.HTTP_200_OK, response_model=List[schemas.WaypointReturn])
 async def get_all_vfr_waypoints(
-    id: int = 0,
+    id: Optional[int] = 0,
     db: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_user)
 ):
@@ -230,7 +230,7 @@ async def get_all_vfr_waypoints(
 
 @router.get("/aerodromes", status_code=status.HTTP_200_OK, response_model=List[schemas.AerodromeReturnWithRunways])
 async def get_all_aerodromes(
-    id: int = 0,
+    id: Optional[int] = 0,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
@@ -305,7 +305,7 @@ async def get_all_aerodromes(
 
 @router.get("/aerodromes-status", status_code=status.HTTP_200_OK, response_model=List[schemas.AerodromeStatusReturn])
 async def get_all_aerodrome_status(
-    id: int = 0,
+    id: Optional[int] = 0,
     db: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_user)
 ):

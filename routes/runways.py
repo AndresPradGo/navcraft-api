@@ -7,7 +7,7 @@ Usage:
 - Import the router to add it to the FastAPI app.
 
 """
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy import and_, or_, not_
@@ -25,7 +25,7 @@ router = APIRouter(tags=["Runways"])
 
 @router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.RunwayReturn])
 async def get_all_runways(
-    id: int = 0,
+    id: Optional[int] = 0,
     db: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
@@ -79,7 +79,7 @@ async def get_all_runways(
 
 @router.get("/surfaces", status_code=status.HTTP_200_OK, response_model=List[schemas.RunwaySurfaceReturn])
 async def get_all_runway_surfaces(
-    id: int = 0,
+    id: Optional[int] = 0,
     db: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_user)
 ):
