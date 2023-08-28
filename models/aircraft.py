@@ -50,7 +50,6 @@ class Aircraft(BaseModel):
     Attributes:
     - id (Integer Column): table primary key.
     - registration (String Column):
-    - is_model (Boolean Column): true if the aircraft profile is a general model.
     - center_of_gravity_in (Decimal Column): center of gravity of empty aircraft 
       in inches from datum.
     - empty_weight_lb (Decimal Column): empty weight of the aircraft in lbs.
@@ -84,6 +83,7 @@ class Aircraft(BaseModel):
     - climb_performance_data (Relationship): climb performance data table.
     - cruise_performance_data (Relationship): cruise performance data table.
     - fuel_type (Relationship): Defines the many-to-one relationship with the fuel_types table.
+     - fuel_capacities (Relationship): Defines the one-to-many relationship with the fuel_capacities table.
     - owner (Relationship): defines the many-to-one relationship with the users table.
     - compass_card_data (Relationship): compass card data table.
     - airspeed_calibration_data (Relationship): airspeed calibration data table.
@@ -93,7 +93,6 @@ class Aircraft(BaseModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     registration = Column(String(10), nullable=False, default="Model")
-    is_model = Column(Boolean, nullable=False, default=False)
     center_of_gravity_in = Column(DECIMAL(5, 2), nullable=False, default=0)
     empty_weight_lb = Column(DECIMAL(7, 2), nullable=False, default=0)
     fuel_capacity_gallons = Column(DECIMAL(5, 2), nullable=False)
@@ -212,6 +211,12 @@ class Aircraft(BaseModel):
     fuel_type = Relationship(
         "FuelType",
         back_populates="aircraft"
+    )
+    fuel_capacities = Relationship(
+        "FuelCapacity",
+        back_populates="aircraft",
+        passive_deletes=True,
+        passive_updates=True
     )
     owner = Relationship("User", back_populates="aircraft")
     compass_card_data = Relationship(
@@ -647,6 +652,38 @@ class CruisePerformance(BaseModel):
             passive_deletes=True,
             passive_updates=True
         )
+
+
+class FuelCapacity(BaseModel):
+    """
+    This class defines the database fuel_capacity model.
+
+    Attributes:
+    - id (Integer Column): table primary key.
+    - total_gallons (Decimal Column): density of the fuel in lbs per gallon.
+    - usable_gallons (Decimal Column): Defines the one_to_many relationship with the aircraft table.
+    - aircraft (Relationship): Defines the many_to_one relationship with the aircraft table.
+    """
+
+    __tablename__ = "fuel_capacities"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    total_gallons = Column(DECIMAL(7, 2), nullable=False)
+    usable_gallons = Column(DECIMAL(7, 2), nullable=False)
+    aircraft_id = Column(
+        Integer,
+        ForeignKey(
+            "aircraft.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE"
+        ),
+        nullable=False
+    )
+
+    aircraft = Relationship(
+        "Aircraft",
+        back_populates="fuel_capacities"
+    )
 
 
 class CompassCard(BaseModel):
