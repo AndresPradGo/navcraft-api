@@ -453,16 +453,16 @@ async def edit_runway_surface(
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_runway(
-    id: int,
+async def delete_runways(
+    ids: List[int],
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Delete Runway.
+    Delete Runways.
 
     Parameters: 
-    id (int): runway id.
+    ids (List[int]): list of runway ids to be deleted.
 
     Returns: None
 
@@ -473,41 +473,48 @@ async def delete_runway(
     """
 
     # Check if runway exists
-    runway_query = db.query(models.Runway).filter(models.Runway.id == id)
-    if not runway_query.first():
+    db_runway_ids = {r.id for r in db.query(
+        models.Runway).filter(models.Runway.id.in_(ids)).all()}
+
+    if not all(id in db_runway_ids for id in ids):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Please provide a valid runway ID."
+            detail="Not all the Runways you're trying to delete are in the database."
         )
 
-     # Check if user has permission to update this aerodrome
+    # Define some variables
     user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
-    aerodrome_id = runway_query.first().aerodrome_id
-
-    no_permission_exception = HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail=f"You do not have permission to update aerodrome with id {aerodrome_id}."
-    )
-
-    aerodrome_is_registered = db.query(models.Aerodrome.vfr_waypoint_id).filter_by(
-        id=aerodrome_id).first()[0] is not None
     user_is_active_admin = current_user.is_active and current_user.is_admin
 
-    if aerodrome_is_registered and not user_is_active_admin:
-        raise no_permission_exception
+    # Loop thorugh ids
+    for id in ids:
+        # Check if user has permission to update this aerodrome
+        runway_query = db.query(models.Runway).filter_by(id=id)
+        aerodrome_id = runway_query.first().aerodrome_id
 
-    aerodrome_created_by_user = db.query(models.UserWaypoint).filter(and_(
-        models.UserWaypoint.waypoint_id == aerodrome_id,
-        models.UserWaypoint.creator_id == user_id
-    )).first()
+        no_permission_exception = HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"You do not have permission to update aerodrome with id {aerodrome_id}."
+        )
 
-    if not aerodrome_is_registered and not aerodrome_created_by_user:
-        raise no_permission_exception
+        aerodrome_is_registered = db.query(models.Aerodrome.vfr_waypoint_id).filter_by(
+            id=aerodrome_id).first()[0] is not None
 
-    deleted = runway_query.delete(synchronize_session=False)
+        if aerodrome_is_registered and not user_is_active_admin:
+            raise no_permission_exception
 
-    if not deleted:
-        raise common_responses.internal_server_error()
+        aerodrome_created_by_user = db.query(models.UserWaypoint).filter(and_(
+            models.UserWaypoint.waypoint_id == aerodrome_id,
+            models.UserWaypoint.creator_id == user_id
+        )).first()
+
+        if not aerodrome_is_registered and not aerodrome_created_by_user:
+            raise no_permission_exception
+
+        deleted = runway_query.delete(synchronize_session=False)
+
+        if not deleted:
+            raise common_responses.internal_server_error()
 
     db.commit()
 

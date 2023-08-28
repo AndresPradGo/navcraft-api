@@ -1377,8 +1377,8 @@ async def delete_user_waypoint(
 
 
 @router.delete("/registered/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_vfr_waypoint_or_aerodrome(
-    id: int,
+async def delete_vfr_waypoints_or_aerodromes(
+    ids: List[int],
     db: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
@@ -1386,7 +1386,7 @@ async def delete_vfr_waypoint_or_aerodrome(
     Delete VFR Waypoint or Aerodrome.
 
     Parameters: 
-    id (int): waypoint id.
+    ids (List[int]): list of waypoint ids to be deleted.
 
     Returns: None
 
@@ -1397,19 +1397,21 @@ async def delete_vfr_waypoint_or_aerodrome(
     """
 
     waypoint_query = db.query(models.VfrWaypoint).filter(
-        models.VfrWaypoint.waypoint_id == id)
+        models.VfrWaypoint.waypoint_id.in_(ids))
+    db_waypoint_ids = {w.waypoint_id for w in waypoint_query.all()}
 
-    if not waypoint_query.first():
+    if not all(id in db_waypoint_ids for id in ids):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"The VFR waypoint you're trying to delete is not in the database."
+            detail="Not all the VFR waypoint you're trying to delete are in the database."
         )
 
-    deleted = db.query(models.Waypoint).filter(
-        models.Waypoint.id == id).delete(synchronize_session=False)
+    for id in ids:
+        deleted = db.query(models.Waypoint).filter(
+            models.Waypoint.id == id).delete(synchronize_session=False)
 
-    if not deleted:
-        raise common_responses.internal_server_error()
+        if not deleted:
+            raise common_responses.internal_server_error()
 
     db.commit()
 
