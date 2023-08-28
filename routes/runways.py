@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 import auth
 import models
-from queries import user_queries
+from utils import queries
 import schemas
 from utils import common_responses, csv_tools as csv
 from utils.db import get_db
@@ -169,7 +169,7 @@ async def post_runway_(
     """
 
     # Check if aerodrome exists
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
     aerodrome = db.query(models.Aerodrome).filter_by(
         id=runway_data.aerodrome_id).first()
 
@@ -325,7 +325,7 @@ async def edit_runway(
         )
 
     # Check if user has permission to update this aerodrome
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
     aerodrome_id = runway_query.first().aerodrome_id
 
     no_permission_exception = HTTPException(
@@ -481,7 +481,7 @@ async def delete_runway(
         )
 
      # Check if user has permission to update this aerodrome
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
     aerodrome_id = runway_query.first().aerodrome_id
 
     no_permission_exception = HTTPException(

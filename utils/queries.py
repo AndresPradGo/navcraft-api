@@ -1,7 +1,7 @@
 """
-User query functions
+Reusable query functions
 
-This module holds reusable user query functions.
+This module holds reusable query functions.
 
 Usage: 
 - Import the required functions.
@@ -14,7 +14,7 @@ import models
 from utils import common_responses
 
 
-async def get_id_from(email: str, db: Session):
+async def get_user_id_from_email(email: str, db: Session):
     """
     This method queries the db for the user with the provided email, 
     and returns the user id.

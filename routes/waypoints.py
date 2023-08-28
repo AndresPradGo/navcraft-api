@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 
 import auth
 import models
-from queries import user_queries
+from utils import queries
 import schemas
 from utils import common_responses, csv_tools as csv
 
@@ -177,7 +177,7 @@ async def get_all_user_waypoints(
     """
     u = models.UserWaypoint
     w = models.Waypoint
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
 
     user_aerodromes = db.query
 
@@ -364,7 +364,7 @@ async def get_all_aerodromes(
     Raise:
     - HTTPException (500): if there is a server error. 
     """
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
 
     rs = models.RunwaySurface
     s = models.AerodromeStatus
@@ -474,7 +474,7 @@ async def post_new_vfr_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
     result = await post_vfr_waypoint(waypoint=waypoint, db=db, creator_id=user_id)
 
     return result
@@ -501,7 +501,7 @@ async def post_new_user_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
 
     exists = db.query(models.UserWaypoint).filter(and_(
         models.UserWaypoint.creator_id == user_id,
@@ -574,7 +574,7 @@ async def post_private_aerodrome(
             detail="Please provide a valid status ID."
         )
 
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
 
     waypoint_exists = db.query(models.UserWaypoint).filter(and_(
         models.UserWaypoint.creator_id == user_id,
@@ -667,7 +667,7 @@ async def post_registered_aerodrome(
             detail="Please provide a valid status ID."
         )
 
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
 
     waypoint_result = await post_vfr_waypoint(waypoint=aerodrome, db=db, creator_id=user_id)
 
@@ -762,7 +762,7 @@ async def edit_user_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
 
     user_waypoint_exists = db.query(models.UserWaypoint).filter(and_(
         models.UserWaypoint.waypoint_id == id,
@@ -837,7 +837,7 @@ async def edit_vfr_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
     is_aerodrome = db.query(models.Aerodrome).filter(
         models.Aerodrome.vfr_waypoint_id == id).first()
     if is_aerodrome:
@@ -896,7 +896,7 @@ async def edit_registered_aerodrome(
             detail="Please provide a valid status ID."
         )
 
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
     waypoint_data = schemas.WaypointData(
         code=aerodrome.code,
         name=aerodrome.name,
@@ -974,7 +974,7 @@ async def edit_private_aerodrome(
             detail="Invalid ID, the waypoint ID you provided is not an aerodrome."
         )
 
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
     user_waypoint_query = db.query(models.UserWaypoint).filter(
         and_(
             models.UserWaypoint.waypoint_id == id,
@@ -1073,7 +1073,7 @@ async def delete_user_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await user_queries.get_id_from(email=current_user.email, db=db)
+    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
     waypoint_exists = db.query(models.UserWaypoint).filter(and_(
         models.UserWaypoint.waypoint_id == id,
         models.UserWaypoint.creator_id == user_id
