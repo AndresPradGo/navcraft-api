@@ -64,7 +64,6 @@ class UserBase(UserEmail):
 
    Attributes:
     - name (String): user name.
-    - weight_lb (Decimal): user weight in lbs.
     """
 
     name: constr(
@@ -74,7 +73,6 @@ class UserBase(UserEmail):
         max_length=255,
         pattern="^[-a-zA-Z0-9 ]+$",
     )
-    weight_lb: confloat(ge=0)
 
 
 class UserReturnBasic(UserBase):
@@ -88,12 +86,14 @@ class UserReturnBasic(UserBase):
       like adding aerodromes and aircraft base models.
     - is_master (Boolean): true if the user is master. Only master users can add 
       new admin users. Master users have to be Admin Users.
+    - weight_lb (Decimal): user weight in lbs.
     """
 
     id: conint(gt=0)
     is_admin: bool
     is_master: bool
     is_active: bool
+    weight_lb: confloat(ge=0)
 
 
 class UserReturn(UserReturnBasic):
@@ -108,7 +108,7 @@ class UserReturn(UserReturnBasic):
     passenger_profiles: List[PassengerProfileReturn]
 
 
-class UserData(UserBase):
+class UserSigin(UserBase):
     """
     This class defines the pydantic user_data schema.
 
@@ -154,21 +154,6 @@ class UserData(UserBase):
 
         return password
 
-    @validator('weight_lb')
-    @classmethod
-    def round_user_weight(clc, value: float) -> float:
-        '''
-        Classmethod to round weight_lb input value to 1 decimal place.
-
-        Parameters:
-        - value (float): the weight to be validated.
-
-        Returns:
-        (float): weight value rounded to 1 decimal place.
-
-        '''
-        return round(value, 1)
-
     @validator('name')
     @classmethod
     def clean_user_name(clc, value: str) -> str:
@@ -183,6 +168,31 @@ class UserData(UserBase):
 
         '''
         return clean_string(value)
+
+
+class UserData(UserSigin):
+    """
+    This class defines the pydantic user_data schema.
+
+   Attributes:
+    - weight_lb (Decimal): user weight in lbs.
+    """
+    weight_lb: confloat(ge=0)
+
+    @validator('weight_lb')
+    @classmethod
+    def round_user_weight(clc, value: float) -> float:
+        '''
+        Classmethod to round weight_lb input value to 1 decimal place.
+
+        Parameters:
+        - value (float): the weight to be validated.
+
+        Returns:
+        (float): weight value rounded to 1 decimal place.
+
+        '''
+        return round(value, 1)
 
 
 class JWTData(BaseModel):

@@ -104,7 +104,7 @@ async def get_passenger_profiles(
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.UserReturnBasic)
 async def sign_in(
-    user: schemas.UserData,
+    user: schemas.UserSigin,
     response: Response,
     db: Session = Depends(get_db)
 ):
