@@ -219,13 +219,7 @@ async def get_csv_file_with_all_vfr_waypoints(
         a.vfr_waypoint_id).filter(not_(a.vfr_waypoint_id.is_(None))).all()]
 
     query_results = db.query(w, v)\
-        .filter(and_(
-            or_(
-                not_(id),
-                w.id == id
-            ),
-            not_(w.id.in_(aerodromes))
-        ))\
+        .filter(not_(w.id.in_(aerodromes)))\
         .join(v, w.id == v.waypoint_id).all()
 
     data = [{
@@ -318,10 +312,7 @@ async def get_csv_file_with_all_aerodromes(
     w = models.Waypoint
 
     aerodromes = db.query(w, v, a)\
-        .filter(or_(
-                not_(id),
-                w.id == id
-                ))\
+        .filter(not_(a.vfr_waypoint_id.is_(None)))\
         .join(v, w.id == v.waypoint_id)\
         .join(a, v.waypoint_id == a.vfr_waypoint_id).all()
 

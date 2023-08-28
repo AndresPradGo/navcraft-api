@@ -10,6 +10,7 @@ Usage:
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy import and_, or_, not_
 from sqlalchemy.orm import Session
 
@@ -17,7 +18,7 @@ import auth
 import models
 from queries import user_queries
 import schemas
-from utils import common_responses
+from utils import common_responses, csv_tools as csv
 from utils.db import get_db
 
 router = APIRouter(tags=["Runways"])
@@ -75,6 +76,51 @@ async def get_all_runways(
     ) for r in runways]
 
     return runways_return
+
+
+@router.get("/csv", status_code=status.HTTP_200_OK)
+async def get_csv_file_with_all_runways(
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Get CSV File With All Runways Endpoint.
+
+    Parameters: None
+
+    Returns: 
+    - CSV file: csv file with a list of runways.
+
+    Raise:
+    - HTTPException (500): if there is a server error. 
+    """
+
+    a = models.Aerodrome
+    v = models.VfrWaypoint
+    w = models.Waypoint
+
+    private_aerodromes = [item[0] for item in db.query(
+        a.user_waypoint_id).filter(not_(a.user_waypoint_id.is_(None))).all()]
+
+    runways = db.query(models.Runway)\
+        .filter(not_(models.Runway.aerodrome_id.in_(private_aerodromes))).all()
+
+    data = [{
+        "aerodrome_id": r.aerodrome_id,
+        "number": r.number,
+        "position": r.position,
+        "length_ft": r.length_ft,
+        "surface_id": r.surface_id,
+    } for r in runways]
+
+    buffer = csv.from_list(data=data)
+
+    response = StreamingResponse(
+        iter([buffer.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=data.csv"}
+    )
+    return response
 
 
 @router.get("/surfaces", status_code=status.HTTP_200_OK, response_model=List[schemas.RunwaySurfaceReturn])
