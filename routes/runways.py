@@ -113,7 +113,7 @@ async def get_csv_file_with_all_runways(
         "surface_id": r.surface_id,
     } for r in runways]
 
-    buffer = csv.from_list(data=data)
+    buffer = csv.list_to_buffer(data=data)
 
     response = StreamingResponse(
         iter([buffer.getvalue()]),

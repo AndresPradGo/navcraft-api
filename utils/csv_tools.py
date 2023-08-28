@@ -15,7 +15,7 @@ from typing import List, Dict, Any
 _PATH = "static_data/"
 
 
-def from_list(data: List[Dict[str, Any]]):
+def list_to_buffer(data: List[Dict[str, Any]]):
     """
     This function writes a list of dictionary data into a csv file.
 
@@ -36,7 +36,7 @@ def from_list(data: List[Dict[str, Any]]):
     return output
 
 
-def to_list(file_name: str) -> List[Dict[str, Any]]:
+def utf8_to_list(utf8_content: str) -> List[Dict[str, Any]]:
     """
     This function reads a csv file and coverts it to a list of dictionary data.
 
@@ -47,12 +47,10 @@ def to_list(file_name: str) -> List[Dict[str, Any]]:
     - List[Dict[str, Any]]: list of dictionaries with data.
     """
 
-    file_path = f"{_PATH}{file_name}.csv"
     data_list = []
 
-    with open(file_path, 'r') as csv_file:
-        csv_reader = csv.DictReader(csv_file)
-        for row in csv_reader:
-            data_list.append(row)
+    csv_reader = csv.DictReader(io.StringIO(utf8_content))
+    for row in csv_reader:
+        data_list.append(row)
 
     return data_list
