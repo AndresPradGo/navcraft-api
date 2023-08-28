@@ -472,29 +472,27 @@ async def manage_vfr_waypoints_with_csv_file(
     - After getting a 204 response, download csv list again to check it has been uploaded correctly.
 
     Parameters: 
-    - waypoint-file (UploadFile): csv file with VFR Waypoint data.
+    - csv-file (UploadFile): csv file with VFR Waypoint data.
 
-    Returns: 
-    - CSV file: csv file with a list of VFR Waypoints.
+    Returns: None
 
     Raise:
     - HTTPException (400): file or file-data is wrong.
     - HTTPException (401): if user is not admin user.
     - HTTPException (500): if there is a server error. 
     """
-
+    # Check and decode csv-file
     if not csv_file.filename.endswith(".csv"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Only CSV files allowed",
         )
 
-    data_list = []
-
     content = await csv_file.read()
     decoded_content = content.decode("utf-8")
 
     # Check data is in the correct format
+    data_list = []
     try:
         data_list = [schemas.VfrWaypointData(
             **w) for w in csv.utf8_to_list(utf8_content=decoded_content)]
@@ -566,6 +564,9 @@ async def manage_vfr_waypoints_with_csv_file(
             "lon_direction": waypoint.lon_direction,
             "magnetic_variation": waypoint.magnetic_variation
         }
+        db.query(models.Waypoint)\
+            .filter(models.Waypoint.id == waypoint_to_edit["id"])\
+            .update(waypoint_to_edit, synchronize_session=False)
 
         vfr_waypoint_to_edit = {
             "waypoint_id": db_vfr_waypoint_ids[waypoint.code],
@@ -574,10 +575,6 @@ async def manage_vfr_waypoints_with_csv_file(
             "creator_id": user_id,
             "hidden": waypoint.hidden
         }
-
-        db.query(models.Waypoint)\
-            .filter(models.Waypoint.id == waypoint_to_edit["id"])\
-            .update(waypoint_to_edit, synchronize_session=False)
         db.query(models.VfrWaypoint)\
             .filter(models.VfrWaypoint.waypoint_id == vfr_waypoint_to_edit["waypoint_id"])\
             .update(vfr_waypoint_to_edit, synchronize_session=False)
@@ -767,6 +764,159 @@ async def post_private_aerodrome(
         .join(s, a.status_id == s.id).first()
 
     return {**r[0].__dict__, **r[1].__dict__, **r[2].__dict__, "status": r[3], "registered": False}
+
+
+@router.post("/registered-aerodrome/csv", status_code=status.HTTP_204_NO_CONTENT)
+async def manage_registered_aerodrome_with_csv_file(
+    csv_file: UploadFile,
+    db: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Manage Registered Aerodrome Endpoint.
+
+    Usage:
+    - Download the Registered-Aerodrome csv-list, from the "Get Csv File With All Aerodrome" endpoint.
+    - Use this file to update the list in the desired way.
+    - Do not edit the headers of the colums in any way.
+    - Enter all data in the correct colum to ensure data integrity.
+    - Make sure there are no typos or repeated entries.
+    - After getting a 204 response, download csv list again to check it has been uploaded correctly.
+
+    Parameters: 
+    - csv-file (UploadFile): csv file with registered aerodrome data.
+
+    Returns: None
+
+    Raise:
+    - HTTPException (400): file or file-data is wrong.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check and decode csv-file
+    if not csv_file.filename.endswith(".csv"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only CSV files allowed",
+        )
+
+    content = await csv_file.read()
+    decoded_content = content.decode("utf-8")
+
+    # Check data is in the correct format
+    data_list = []
+    try:
+        data_list = [schemas.RegisteredAerodromeData(
+            **a, status=a["status_id"]) for a in csv.utf8_to_list(utf8_content=decoded_content)]
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=e.errors()
+        )
+
+    # Check there are no repeated codes
+    codes_set = {v.code for v in data_list}
+    if not len(data_list) == len(set(codes_set)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="There are repeated entries in your list, please make sure all waypoints are unique."
+        )
+
+    # Find waypoints already in database
+    db_vfr_waypoints = db.query(models.VfrWaypoint).filter(
+        models.VfrWaypoint.code.in_(codes_set)).all()
+    db_vfr_waypoint_ids = {v.code: v.waypoint_id for v in db_vfr_waypoints}
+
+    # Divide list into data to add and data to edit
+    data_to_add = [v for v in filter(
+        lambda i: not i.code in list(db_vfr_waypoint_ids.keys()), data_list)]
+    data_to_edit = [v for v in filter(
+        lambda i: i.code in list(db_vfr_waypoint_ids.keys()), data_list)]
+
+    # Add data
+    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+
+    for aerodrome in data_to_add:
+        new_waypoint = models.Waypoint(
+            lat_degrees=aerodrome.lat_degrees,
+            lat_minutes=aerodrome.lat_minutes,
+            lat_seconds=aerodrome.lat_seconds,
+            lat_direction=aerodrome.lat_direction,
+            lon_degrees=aerodrome.lon_degrees,
+            lon_minutes=aerodrome.lon_minutes,
+            lon_seconds=aerodrome.lon_seconds,
+            lon_direction=aerodrome.lon_direction,
+            magnetic_variation=aerodrome.magnetic_variation,
+        )
+        db.add(new_waypoint)
+        db.commit()
+        db.refresh(new_waypoint)
+
+        new_vfr_waypoint = models.VfrWaypoint(
+            waypoint_id=new_waypoint.id,
+            code=aerodrome.code,
+            name=aerodrome.name,
+            hidden=aerodrome.hidden,
+            creator_id=user_id
+        )
+        db.add(new_vfr_waypoint)
+
+        new_aerodrome = models.Aerodrome(
+            id=new_waypoint.id,
+            vfr_waypoint_id=new_waypoint.id,
+            has_taf=aerodrome.has_taf,
+            has_metar=aerodrome.has_metar,
+            has_fds=aerodrome.has_fds,
+            elevation_ft=aerodrome.elevation_ft,
+            status_id=aerodrome.status
+        )
+        db.add(new_aerodrome)
+        db.commit()
+
+    # Edit data
+    for aerodrome in data_to_edit:
+        waypoint_to_edit = {
+            "id": db_vfr_waypoint_ids[aerodrome.code],
+            "lat_degrees": aerodrome.lat_degrees,
+            "lat_minutes": aerodrome.lat_minutes,
+            "lat_seconds": aerodrome.lat_seconds,
+            "lat_direction": aerodrome.lat_direction,
+            "lon_degrees": aerodrome.lon_degrees,
+            "lon_minutes": aerodrome.lon_minutes,
+            "lon_seconds": aerodrome.lon_seconds,
+            "lon_direction": aerodrome.lon_direction,
+            "magnetic_variation": aerodrome.magnetic_variation
+        }
+        db.query(models.Waypoint)\
+            .filter(models.Waypoint.id == waypoint_to_edit["id"])\
+            .update(waypoint_to_edit, synchronize_session=False)
+
+        vfr_waypoint_to_edit = {
+            "waypoint_id": db_vfr_waypoint_ids[aerodrome.code],
+            "code": aerodrome.code,
+            "name": aerodrome.name,
+            "creator_id": user_id,
+            "hidden": aerodrome.hidden
+        }
+        db.query(models.VfrWaypoint)\
+            .filter(models.VfrWaypoint.waypoint_id == vfr_waypoint_to_edit["waypoint_id"])\
+            .update(vfr_waypoint_to_edit, synchronize_session=False)
+
+        aerodrome_to_edit = {
+            "id": db_vfr_waypoint_ids[aerodrome.code],
+            "vfr_waypoint_id": db_vfr_waypoint_ids[aerodrome.code],
+            "has_taf": aerodrome.has_taf,
+            "has_metar": aerodrome.has_metar,
+            "has_fds": aerodrome.has_fds,
+            "elevation_ft": aerodrome.elevation_ft,
+            "status_id": aerodrome.status
+        }
+        db.query(models.Aerodrome)\
+            .filter(models.Aerodrome.id == aerodrome_to_edit["id"])\
+            .update(aerodrome_to_edit, synchronize_session=False)
+
+    db.commit()
 
 
 @router.post("/registered-aerodrome", status_code=status.HTTP_201_CREATED, response_model=schemas.RegisteredAerodromeReturn)
