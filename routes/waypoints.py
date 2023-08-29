@@ -19,9 +19,9 @@ from sqlalchemy.orm import Session
 
 import auth
 import models
-from utils import queries
 import schemas
 from utils import common_responses, csv_tools as csv
+from utils.functions import get_user_id_from_email
 
 from utils.db import get_db
 from utils.functions import clean_string
@@ -178,7 +178,7 @@ async def get_all_user_waypoints(
     """
     u = models.UserWaypoint
     w = models.Waypoint
-    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db=db)
 
     user_aerodromes = db.query
 
@@ -365,7 +365,7 @@ async def get_all_aerodromes(
     Raise:
     - HTTPException (500): if there is a server error. 
     """
-    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db=db)
 
     rs = models.RunwaySurface
     s = models.AerodromeStatus
@@ -471,6 +471,9 @@ async def manage_vfr_waypoints_with_csv_file(
     - Make sure there are no typos or repeated entries.
     - After getting a 204 response, download csv list again to check it has been uploaded correctly.
 
+    NOTE: This endpoint will post new data-rows, and updata existing ones, but it will not delete any 
+    data already in the database. To delete existing data, use the delete endpoint.
+
     Parameters: 
     - csv-file (UploadFile): csv file with VFR Waypoint data.
 
@@ -482,32 +485,17 @@ async def manage_vfr_waypoints_with_csv_file(
     - HTTPException (500): if there is a server error. 
     """
     # Check and decode csv-file
-    if not csv_file.filename.endswith(".csv"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only CSV files allowed",
-        )
+    csv.check_format(csv_file)
 
-    content = await csv_file.read()
-    decoded_content = content.decode("utf-8")
-
-    # Check data is in the correct format
-    data_list = []
-    try:
-        data_list = [schemas.VfrWaypointData(
-            **w) for w in csv.utf8_to_list(utf8_content=decoded_content)]
-    except ValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=e.errors()
-        )
+    # Get list of schemas
+    data_list = await csv.extract_schemas(file=csv_file, schema=schemas.VfrWaypointData)
 
     # Check there are no repeated codes
     codes_set = {v.code for v in data_list}
     if not len(data_list) == len(set(codes_set)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="There are repeated entries in your list, please make sure all waypoints are unique."
+            detail="There are repeated waypoint-codes in your list, please make sure all waypoints are unique."
         )
 
     # Find waypoints already in database
@@ -522,7 +510,7 @@ async def manage_vfr_waypoints_with_csv_file(
         lambda i: i.code in list(db_vfr_waypoint_ids.keys()), data_list)]
 
     # Add data
-    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db=db)
 
     for waypoint in data_to_add:
         new_waypoint = models.Waypoint(
@@ -603,7 +591,7 @@ async def post_new_vfr_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db=db)
     result = await post_vfr_waypoint(waypoint=waypoint, db=db, creator_id=user_id)
 
     return result
@@ -630,7 +618,7 @@ async def post_new_user_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db=db)
 
     exists = db.query(models.UserWaypoint).filter(and_(
         models.UserWaypoint.creator_id == user_id,
@@ -703,7 +691,7 @@ async def post_private_aerodrome(
             detail="Please provide a valid status ID."
         )
 
-    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db=db)
 
     waypoint_exists = db.query(models.UserWaypoint).filter(and_(
         models.UserWaypoint.creator_id == user_id,
@@ -783,6 +771,9 @@ async def manage_registered_aerodrome_with_csv_file(
     - Make sure there are no typos or repeated entries.
     - After getting a 204 response, download csv list again to check it has been uploaded correctly.
 
+    NOTE: This endpoint will post new data-rows, and updata existing ones, but it will not delete any 
+    data already in the database. To delete existing data, use the delete endpoint.
+
     Parameters: 
     - csv-file (UploadFile): csv file with registered aerodrome data.
 
@@ -795,32 +786,17 @@ async def manage_registered_aerodrome_with_csv_file(
     """
 
     # Check and decode csv-file
-    if not csv_file.filename.endswith(".csv"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only CSV files allowed",
-        )
+    csv.check_format(csv_file)
 
-    content = await csv_file.read()
-    decoded_content = content.decode("utf-8")
-
-    # Check data is in the correct format
-    data_list = []
-    try:
-        data_list = [schemas.RegisteredAerodromeData(
-            **a, status=a["status_id"]) for a in csv.utf8_to_list(utf8_content=decoded_content)]
-    except ValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=e.errors()
-        )
+    # Get list of schemas
+    data_list = await csv.extract_schemas(file=csv_file, schema=schemas.RegisteredAerodromeData)
 
     # Check there are no repeated codes
     codes_set = {v.code for v in data_list}
     if not len(data_list) == len(set(codes_set)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="There are repeated entries in your list, please make sure all waypoints are unique."
+            detail="There are repeated aerodrome-codes in your list, please make sure all aerodromes are unique."
         )
 
     # Find waypoints already in database
@@ -835,7 +811,7 @@ async def manage_registered_aerodrome_with_csv_file(
         lambda i: i.code in list(db_vfr_waypoint_ids.keys()), data_list)]
 
     # Add data
-    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db=db)
 
     for aerodrome in data_to_add:
         new_waypoint = models.Waypoint(
@@ -949,7 +925,7 @@ async def post_registered_aerodrome(
             detail="Please provide a valid status ID."
         )
 
-    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db=db)
 
     waypoint_result = await post_vfr_waypoint(waypoint=aerodrome, db=db, creator_id=user_id)
 
@@ -1044,7 +1020,7 @@ async def edit_user_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db=db)
 
     user_waypoint_exists = db.query(models.UserWaypoint).filter(and_(
         models.UserWaypoint.waypoint_id == id,
@@ -1119,7 +1095,7 @@ async def edit_vfr_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db=db)
     is_aerodrome = db.query(models.Aerodrome).filter(
         models.Aerodrome.vfr_waypoint_id == id).first()
     if is_aerodrome:
@@ -1178,7 +1154,7 @@ async def edit_registered_aerodrome(
             detail="Please provide a valid status ID."
         )
 
-    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db=db)
     waypoint_data = schemas.WaypointData(
         code=aerodrome.code,
         name=aerodrome.name,
@@ -1256,7 +1232,7 @@ async def edit_private_aerodrome(
             detail="Invalid ID, the waypoint ID you provided is not an aerodrome."
         )
 
-    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db=db)
     user_waypoint_query = db.query(models.UserWaypoint).filter(
         and_(
             models.UserWaypoint.waypoint_id == id,
@@ -1355,7 +1331,7 @@ async def delete_user_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db=db)
     waypoint_exists = db.query(models.UserWaypoint).filter(and_(
         models.UserWaypoint.waypoint_id == id,
         models.UserWaypoint.creator_id == user_id

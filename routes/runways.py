@@ -16,10 +16,10 @@ from sqlalchemy.orm import Session
 
 import auth
 import models
-from utils import queries
 import schemas
 from utils import common_responses, csv_tools as csv
 from utils.db import get_db
+from utils.functions import get_user_id_from_email
 
 router = APIRouter(tags=["Runways"])
 
@@ -169,7 +169,7 @@ async def post_runway_(
     """
 
     # Check if aerodrome exists
-    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db=db)
     aerodrome = db.query(models.Aerodrome).filter_by(
         id=runway_data.aerodrome_id).first()
 
@@ -325,7 +325,7 @@ async def edit_runway(
         )
 
     # Check if user has permission to update this aerodrome
-    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db=db)
     aerodrome_id = runway_query.first().aerodrome_id
 
     no_permission_exception = HTTPException(
@@ -483,7 +483,7 @@ async def delete_runways(
         )
 
     # Define some variables
-    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db=db)
     user_is_active_admin = current_user.is_active and current_user.is_admin
 
     # Loop thorugh ids

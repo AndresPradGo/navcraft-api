@@ -16,10 +16,10 @@ from sqlalchemy.orm import Session
 
 import auth
 import models
-from utils import queries
 import schemas
 from utils import common_responses
 from utils.db import get_db
+from utils.functions import get_user_id_from_email
 
 
 router = APIRouter(tags=["Users"])
@@ -172,7 +172,7 @@ async def add_new_passenger_profile(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db=db)
 
     passenger_already_exists = db.query(models.PassengerProfile).filter(and_(
         models.PassengerProfile.name == passenger_profile_data.name,
@@ -312,7 +312,7 @@ async def edit_existing_passenger_profile(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db=db)
 
     passenger_already_exists = db.query(models.PassengerProfile).filter(and_(
         models.PassengerProfile.name == passenger_profile_data.name,
@@ -424,7 +424,7 @@ async def delete_passenger_profile(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await queries.get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db=db)
     deleted = db.query(models.PassengerProfile).filter(and_(
         models.PassengerProfile.id == id,
         models.PassengerProfile.creator_id == user_id
