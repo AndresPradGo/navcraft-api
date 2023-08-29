@@ -160,7 +160,7 @@ async def update_vfr_waypoint(waypoint: schemas.VfrWaypointData, db: Session, cr
 
 @router.get("/user", status_code=status.HTTP_200_OK, response_model=List[schemas.UserWaypointReturn])
 async def get_all_user_waypoints(
-    id: Optional[int] = 0,
+    ids: Optional[List[int]] = None,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
@@ -168,7 +168,7 @@ async def get_all_user_waypoints(
     Get All User Waypoints Endpoint.
 
     Parameters:
-    - id (optional int): waypoint id.
+    - ids (optional list[int]): list of waypoint ids.
 
     Returns: 
     - list: list of waypoint dictionaries.
@@ -180,19 +180,17 @@ async def get_all_user_waypoints(
     w = models.Waypoint
     user_id = await get_user_id_from_email(email=current_user.email, db=db)
 
-    user_aerodromes = db.query
-
-    query_results = db.query(w, u)\
+    user_waypoints = db.query(w, u)\
         .filter(and_(
             u.creator_id == user_id,
             or_(
-                not_(id),
-                w.id == id
+                not_(ids),
+                w.id.in_(ids)
             )
         ))\
         .join(u, w.id == u.waypoint_id).all()
 
-    return [{**w.__dict__, **v.__dict__} for w, v in query_results]
+    return [{**w.__dict__, **v.__dict__} for w, v in user_waypoints]
 
 
 @router.get("/vfr/csv", status_code=status.HTTP_200_OK)
@@ -248,7 +246,7 @@ async def get_csv_file_with_all_vfr_waypoints(
     return response
 
 
-@router.get("/vfr", status_code=status.HTTP_200_OK, response_model=List[schemas.UserWaypointReturn])
+@router.get("/vfr", status_code=status.HTTP_200_OK, response_model=List[schemas.VfrWaypointReturn])
 async def get_all_vfr_waypoints(
     id: Optional[int] = 0,
     db: Session = Depends(get_db),
@@ -258,7 +256,7 @@ async def get_all_vfr_waypoints(
     Get All VFR Waypoints Endpoint.
 
     Parameters: 
-    - id (optional int): waypoint id.
+    - ids (optional list[int]): list of waypoint ids.
 
     Returns: 
     - list: list of waypoint dictionaries.
@@ -288,7 +286,12 @@ async def get_all_vfr_waypoints(
         ))\
         .join(v, w.id == v.waypoint_id).all()
 
-    return [{**w.__dict__, **v.__dict__} for w, v in query_results]
+    return [{
+        **w.__dict__,
+        "code": v.code,
+        "name": v.name,
+        "hidden": v.hidden if user_is_active_admin else None,
+    } for w, v in query_results]
 
 
 @router.get("/aerodromes/csv", status_code=status.HTTP_200_OK)
@@ -411,22 +414,24 @@ async def get_all_aerodromes(
         .join(rs, r.surface_id == rs.id).all()
 
     return [{
-        **w.__dict__,
-        **v.__dict__,
-        **a.__dict__,
-        "status": s,
-        "registered": a.vfr_waypoint_id is not None,
-        "runways": [
-            schemas.RunwayInAerodromeReturn(
-                id=r.id,
-                number=r.number,
-                position=r.position,
-                length_ft=r.length_ft,
-                surface=rs,
-                surface_id=r.surface_id
-            ) for r, rs in filter(lambda i: i[0].aerodrome_id == a.id, runways)
-        ]
-    } for w, v, a, s in aerodromes]
+            **w.__dict__,
+            "code": v.code,
+            "name": v.name,
+            "hidden": v.hidden if user_is_active_admin else None,
+            **a.__dict__,
+            "status": s,
+            "registered": a.vfr_waypoint_id is not None,
+            "runways": [
+                schemas.RunwayInAerodromeReturn(
+                    id=r.id,
+                    number=r.number,
+                    position=r.position,
+                    length_ft=r.length_ft,
+                    surface=rs,
+                    surface_id=r.surface_id
+                ) for r, rs in filter(lambda i: i[0].aerodrome_id == a.id, runways)
+            ]
+            } for w, v, a, s in aerodromes]
 
 
 @router.get("/aerodromes-status", status_code=status.HTTP_200_OK, response_model=List[schemas.AerodromeStatusReturn])
@@ -466,13 +471,15 @@ async def manage_vfr_waypoints_with_csv_file(
     Usage:
     - Download the VFR-Waypoint csv-list, from the "Get Csv File With All Vfr Waypoints" endpoint.
     - Use this file to update the list in the desired way.
-    - Do not edit the headers of the colums in any way.
+    - New columns can be added for your reference, but they won't be considered for updating the 
+      data in the database. 
+    - Do not delete or edit the headers of the existing colums in any way, or the file will be rejected.
     - Enter all data in the correct colum to ensure data integrity.
     - Make sure there are no typos or repeated entries.
     - After getting a 204 response, download csv list again to check it has been uploaded correctly.
 
-    NOTE: This endpoint will post new data-rows, and updata existing ones, but it will not delete any 
-    data already in the database. To delete existing data, use the delete endpoint.
+    NOTE: This endpoint will post new data-entries, and updata existing ones, but it will not delete any 
+    entries already in the database. To delete existing data-entries, use the appropriate delete endpoint.
 
     Parameters: 
     - csv-file (UploadFile): csv file with VFR Waypoint data.
@@ -766,13 +773,15 @@ async def manage_registered_aerodrome_with_csv_file(
     Usage:
     - Download the Registered-Aerodrome csv-list, from the "Get Csv File With All Aerodrome" endpoint.
     - Use this file to update the list in the desired way.
-    - Do not edit the headers of the colums in any way.
+    - New columns can be added for your reference, but they won't be considered for updating the 
+      data in the database. 
+    - Do not delete or edit the headers of the existing colums in any way, or the file will be rejected.
     - Enter all data in the correct colum to ensure data integrity.
     - Make sure there are no typos or repeated entries.
     - After getting a 204 response, download csv list again to check it has been uploaded correctly.
 
-    NOTE: This endpoint will post new data-rows, and updata existing ones, but it will not delete any 
-    data already in the database. To delete existing data, use the delete endpoint.
+    NOTE: This endpoint will post new data-entries, and updata existing ones, but it will not delete any 
+    entries already in the database. To delete existing data-entries, use the appropriate delete endpoint.
 
     Parameters: 
     - csv-file (UploadFile): csv file with registered aerodrome data.
@@ -1352,7 +1361,7 @@ async def delete_user_waypoint(
     db.commit()
 
 
-@router.delete("/registered/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/registered", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_vfr_waypoints_or_aerodromes(
     ids: List[int],
     db: Session = Depends(get_db),

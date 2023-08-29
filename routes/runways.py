@@ -452,7 +452,7 @@ async def edit_runway_surface(
     return new_surface
 
 
-@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_runways(
     ids: List[int],
     db: Session = Depends(get_db),

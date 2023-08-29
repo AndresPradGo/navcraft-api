@@ -92,7 +92,7 @@ class VfrWaypointReturn(UserWaypointReturn):
     - hidden (boolean): if true, do not show waypoint to users.
     """
 
-    hidden: bool
+    hidden: Optional[bool] = None
 
 
 class UserWaypointData(WaypointBase):
@@ -285,7 +285,7 @@ class RunwayInAerodromeReturn(BaseModel):
     surface_id: int
 
 
-class AerodromeReturnWithRunways(PrivateAerodromeReturn):
+class AerodromeReturnWithRunways(RegisteredAerodromeReturn):
     """
     This class defines the pydantic schema to return aerodrome data with a list of runways.
     """
