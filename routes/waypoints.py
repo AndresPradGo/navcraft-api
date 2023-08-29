@@ -241,8 +241,8 @@ async def get_csv_file_with_all_vfr_waypoints(
     response = StreamingResponse(
         iter([buffer.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=data.csv"}
     )
+    response.headers["Content-Disposition"] = 'attachment; filename="vfr_waypoints.csv"'
     return response
 
 
@@ -345,8 +345,8 @@ async def get_csv_file_with_all_aerodromes(
     response = StreamingResponse(
         iter([buffer.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=data.csv"}
     )
+    response.headers["Content-Disposition"] = 'attachment; filename="aerodromes.csv"'
     return response
 
 

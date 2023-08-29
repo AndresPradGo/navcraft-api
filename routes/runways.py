@@ -89,7 +89,10 @@ async def get_csv_file_with_all_runways(
     Parameters: None
 
     Returns: 
-    - CSV file: csv file with a list of runways.
+    - Zip folder: zip folder with 3 files:
+       - runways.csv
+       - aerodrome_ids.csv
+       - surface_ids.csv
 
     Raise:
     - HTTPException (500): if there is a server error. 
@@ -97,29 +100,57 @@ async def get_csv_file_with_all_runways(
 
     a = models.Aerodrome
     v = models.VfrWaypoint
-    w = models.Waypoint
 
-    private_aerodromes = [item[0] for item in db.query(
-        a.user_waypoint_id).filter(not_(a.user_waypoint_id.is_(None))).all()]
+    aerodromes = [{
+        "id": a.id,
+        "code": v.code,
+        "name": v.name
+    } for a, v in db.query(a, v)
+        .filter(a.user_waypoint_id.is_(None))
+        .join(v, a.vfr_waypoint_id == v.waypoint_id).all()]
+
+    aerodrome_ids = [item["id"] for item in aerodromes]
 
     runways = db.query(models.Runway)\
-        .filter(not_(models.Runway.aerodrome_id.in_(private_aerodromes))).all()
+        .filter(models.Runway.aerodrome_id.in_(aerodrome_ids)).all()
+    surfaces = db.query(models.RunwaySurface).all()
 
-    data = [{
-        "aerodrome_id": r.aerodrome_id,
-        "number": r.number,
-        "position": r.position,
-        "length_ft": r.length_ft,
-        "surface_id": r.surface_id,
-    } for r in runways]
+    files_data = [
+        {
+            "name": "runways.csv",
+            "data": [{
+                "aerodrome_id": r.aerodrome_id,
+                "number": r.number,
+                "position": r.position,
+                "length_ft": r.length_ft,
+                "surface_id": r.surface_id,
+            } for r in runways]
+        },
+        {
+            "name": "aerodrome_ids.csv",
+            "data": [{
+                "id": a["id"],
+                "code": a["code"],
+                "name": a["name"]
+            } for a in aerodromes]
+        },
+        {
+            "name": "runway_surface_ids.csv",
+            "data": [{
+                "id": s.id,
+                "surface": s.surface
+            } for s in surfaces]
+        }
+    ]
 
-    buffer = csv.list_to_buffer(data=data)
-
+    zip_buffer = csv.zip_csv_files_from_data_list(files_data)
     response = StreamingResponse(
-        iter([buffer.getvalue()]),
-        media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=data.csv"}
+        iter([zip_buffer.getvalue()]),
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": 'attachment; filename="runways_data.zip"'}
     )
+
     return response
 
 

@@ -11,6 +11,7 @@ Usage:
 import csv
 import io
 from typing import List, Dict, Any
+import zipfile
 
 from fastapi import UploadFile, HTTPException, status
 from pydantic import ValidationError
@@ -106,3 +107,26 @@ async def extract_schemas(file: UploadFile, schema):
         )
 
     return data_list
+
+
+def zip_csv_files_from_data_list(csv_files_data: List[Dict[str, Any]]):
+    """
+    This function will extract the data from a list of data,
+    and return it as a zip of csv-files.
+
+    Parameters:
+    - csv_files_data(list[dict]): list of dictionaries with the data.
+
+    Returns: 
+    - Any: file buffer.
+    """
+
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w') as zipf:
+        for csv_file_data in csv_files_data:
+            csv_content = list_to_buffer(csv_file_data["data"])
+            zipf.writestr(csv_file_data["name"], csv_content.getvalue())
+
+    zip_buffer.seek(0)
+
+    return zip_buffer
