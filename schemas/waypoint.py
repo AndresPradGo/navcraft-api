@@ -17,20 +17,12 @@ from utils.functions import clean_string
 
 class WaypointBase(BaseModel):
     """
-    This class defines the pydantic waypoint_base schema.
+    This class defines the basic waypoint data:
+    - code
+    - name
+    - coordinates
+    - magnetic variation
 
-   Attributes:
-    - code (String): waypoint code identifyer.
-    - name (String): waypoint name.
-    - lat_degrees (Integer): latitude degrees of the waypoint coordinates.
-    - lat_minutes (Integer): latitude minutes of the waypoint coordinates.
-    - lat_seconds (Integer): latitude seconds of the waypoint coordinates.
-    - lat_direction (String): latitude direction of the waypoint coordinates ("N" or "S").
-    - lon_degrees (Integer): longitude degrees of the waypoint coordinates.
-    - lon_minutes (Integer): longitude minutes of the waypoint coordinates.
-    - lon_seconds (Integer): longitude seconds of the waypoint coordinates.
-    - lon_direction (String): longitude direction of the waypoint coordinates ("E" or "W").
-    - magnetic_variation (Float): magnetic variation at the waypoint.
     """
 
     code: constr(
@@ -66,13 +58,8 @@ class WaypointBase(BaseModel):
 
 class UserWaypointReturn(WaypointBase):
     """
-    This class defines the pydantic waypoint_return schema.
-
-    Attributes:
-    - id (Integer): waypoint id.
-    - name (Optional String): waypoint name.
-    - created_at (DateTime): date time created.
-    - last_updated (DateTime): date time last updated.
+    This class defines the data-structure used to return user-waypoint data to the client.
+    - name is optional.
     """
 
     id: conint(gt=0)
@@ -86,10 +73,7 @@ class UserWaypointReturn(WaypointBase):
 
 class VfrWaypointReturn(UserWaypointReturn):
     """
-    This class defines the pydantic vfr_waypoint_return schema.
-
-   Attributes:
-    - hidden (boolean): if true, do not show waypoint to users.
+    This class defines the data-structure used to return vfr-waypoint data to the client.
     """
 
     hidden: Optional[bool] = None
@@ -97,9 +81,8 @@ class VfrWaypointReturn(UserWaypointReturn):
 
 class UserWaypointData(WaypointBase):
     """
-    This class defines the pydantic waypoint_with_validation schema.
-
-    Attributes: None
+    This class defines the data-structure required form client to post user-waypoint data.
+    It includes data validation.
     """
 
     @field_validator('magnetic_variation')
@@ -130,7 +113,7 @@ class UserWaypointData(WaypointBase):
         (str): cleaned name string.
 
         '''
-        return clean_string(value)
+        return None if value is None else clean_string(value)
 
     @model_validator(mode='after')
     @classmethod
@@ -193,34 +176,24 @@ class UserWaypointData(WaypointBase):
 
 class VfrWaypointData(UserWaypointData):
     """
-    This class defines the pydantic vfr_waypoint_data schema.
-
-   Attributes:
-    - hidden (boolean): if true, do not show waypoint to users.
+    This class defines the data-structure required form client to post vfr-waypoint data.
+    It includes data validation.
     """
 
     hidden: bool
 
 
-class FlightWaypointData(WaypointBase):
+class FlightWaypointData(UserWaypointData):
     """
-    This class defines the pydantic flight_waypoint_with_validation schema.
-
-    Attributes: 
-     - name (Optional String): waypoint name.
+    This class defines the data-structure required form client to post flight-waypoint data.
+    Name is optional. It includes data validation.
     """
     name: Optional[constr(min_length=2, max_length=50)] = None
 
 
 class AerodromeBase(BaseModel):
     """
-    This class defines the pydantic aerodrome_base schema.
-
-   Attributes:
-    - has_taf (boolean): true if the airport has a weather TAF.
-    - has_metar (boolean): true if the airport has a weather METAR.
-    - has_fds (boolean): true if the airport has a weather FDs.
-    - elevation (int): airport elevation in ft.
+    This class defines the basic aerodrome data-structure
     """
 
     has_taf: bool
@@ -231,21 +204,21 @@ class AerodromeBase(BaseModel):
 
 class RegisteredAerodromeData(VfrWaypointData, AerodromeBase):
     """
-    This class defines the pydantic registered_aerodrome_data schema.
+    This class defines the data required from client to post a new registered aerodrome.
     """
     status: int
 
 
 class PrivateAerodromeData(UserWaypointData, AerodromeBase):
     """
-    This class defines the pydantic private_aerodrome_data schema.
+    This class defines the data required from client to post a new private aerodrome.
     """
     status: int
 
 
 class RegisteredAerodromeReturn(VfrWaypointReturn, AerodromeBase):
     """
-    This class defines the pydantic registered_aerodrome_return schema.
+    This class defines the registered-aerodrome data returned to the client.
     """
     status: str
     registered: bool
@@ -253,7 +226,7 @@ class RegisteredAerodromeReturn(VfrWaypointReturn, AerodromeBase):
 
 class PrivateAerodromeReturn(UserWaypointReturn, AerodromeBase):
     """
-    This class defines the pydantic private_aerodrome_return schema.
+    This class defines the private-aerodrome data returned to the client.
     """
     status: str
     registered: bool
@@ -261,8 +234,8 @@ class PrivateAerodromeReturn(UserWaypointReturn, AerodromeBase):
 
 class RunwayInAerodromeReturn(BaseModel):
     """
-    This class defines the pydantic schema to return a list 
-    of runways inside an aerodrome_return_with_runways model.
+    This class defines the runway  data-structure used to return to the client a list of runways,
+    as part of the aerodrome data.
     """
     id: conint(gt=0)
     number: conint(
@@ -287,14 +260,14 @@ class RunwayInAerodromeReturn(BaseModel):
 
 class AerodromeReturnWithRunways(RegisteredAerodromeReturn):
     """
-    This class defines the pydantic schema to return aerodrome data with a list of runways.
+    This class defines the aerodrome data returned to the client, including the list of runways.
     """
     runways: Optional[conlist(item_type=RunwayInAerodromeReturn)] = []
 
 
 class AerodromeStatusReturn(BaseModel):
     """
-    This class defines the pydantic aerodrome_status_return schema.
+    This class defines the aerodrome-status data returned to the client.
     """
     id: int
     status: str

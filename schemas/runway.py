@@ -17,13 +17,8 @@ from utils.functions import clean_string
 
 class RunwayDataEdit(BaseModel):
     """
-    This class defines the pydantic runway_data schema, for data input to put endpoints.
+    This class defines the data-structure required from client to update runway data.
 
-   Attributes:
-   - length (int): runway surface id.
-   - number (int): runway number.
-   - position (str): runway position could be right, left, center or None.
-   - surface_id (int): runway surface id.
     """
 
     length_ft: int
@@ -42,11 +37,7 @@ class RunwayDataEdit(BaseModel):
 
 class RunwayData(RunwayDataEdit):
     """
-    This class defines the pydantic runway_data schema, for data input to post endpoints.
-
-   Attributes:
-    - aerodrome_id (int): runway surface id.
-
+    This class defines the data-structure rquired form the client to post new runways.
     """
 
     aerodrome_id: int
@@ -54,12 +45,7 @@ class RunwayData(RunwayDataEdit):
 
 class RunwayReturn(RunwayData):
     """
-    This class defines the pydantic runway_return schema, for data return from endpoints.
-
-   Attributes:
-    - id (Integer): runway id.
-    - surface (String): runway surface.
-    - aerodrome (String): aerodrome code.
+    This class defines the data-structure used to return runway data to the client.
     """
 
     id: conint(gt=0)
@@ -80,10 +66,7 @@ class RunwayReturn(RunwayData):
 
 class RunwaySurfaceData(BaseModel):
     """
-    This class defines the pydantic runway_surface_data schema, for data input to endpoints.
-
-   Attributes:
-    - surface (String): runway surface.
+    This class defines the data-structure required from the client to post a new runway-surface.
     """
 
     surface: constr(
@@ -111,10 +94,7 @@ class RunwaySurfaceData(BaseModel):
 
 class RunwaySurfaceReturn(RunwaySurfaceData):
     """
-    This class defines the pydantic runway_surface_return schema, for data return from endpoints.
-
-   Attributes:
-    - id (Integer): runway surface id.
+    This class defines the data-structure used to return runway-surface data to the client.
     """
 
     id: conint(gt=0)

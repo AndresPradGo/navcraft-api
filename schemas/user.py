@@ -17,12 +17,7 @@ from utils.functions import clean_string
 
 class PassengerProfileData(BaseModel):
     """
-    This class defines the pydantic schema used to
-    send passenger profile data.
-
-   Attributes:
-    - name (String): passenger name.
-    - weight_lb (Decimal): passenger weight in lbs.
+    This class defines the pdata-structure used to send passenger profile data.
     """
 
     name: constr(
@@ -37,11 +32,8 @@ class PassengerProfileData(BaseModel):
 
 class PassengerProfileReturn(PassengerProfileData):
     """
-    This class defines the pydantic schema used to
+    This class defines the data-structure used to
     return passenger profile data to the client.
-
-   Attributes:
-    - id (Integer): passenger id.
     """
 
     id: conint(gt=0)
@@ -49,10 +41,7 @@ class PassengerProfileReturn(PassengerProfileData):
 
 class UserEmail(BaseModel):
     """
-    This class defines the pydantic user_email schema.
-
-   Attributes:
-    - email (String): user email.
+    This class defines the user email data structure.
     """
 
     email: EmailStr
@@ -60,10 +49,7 @@ class UserEmail(BaseModel):
 
 class UserName(BaseModel):
     """
-    This class defines the pydantic user_base schema.
-
-   Attributes:
-    - name (String): user name.
+    This class defines the user name data structure.
     """
 
     name: constr(
@@ -92,16 +78,8 @@ class UserName(BaseModel):
 
 class UserReturnBasic(UserName, UserEmail):
     """
-    This class defines the pydantic schema used to return 
-    user data to the client.
-
-   Attributes:
-    - id (Integer): user id.
-    - is_admin (Boolean): true if the user is admin. Admin users have privileges 
-      like adding aerodromes and aircraft base models.
-    - is_master (Boolean): true if the user is master. Only master users can add 
-      new admin users. Master users have to be Admin Users.
-    - weight_lb (Decimal): user weight in lbs.
+    This class defines the data-structure used to return 
+    user-profile data to the client.
     """
 
     id: conint(gt=0)
@@ -113,7 +91,7 @@ class UserReturnBasic(UserName, UserEmail):
 
 class UserReturn(UserReturnBasic):
     """
-    This class defines the pydantic schema used to return 
+    This class defines the data-structure used to return 
     user data to the client, including the list of passenger profies.
 
    Attributes:
@@ -125,10 +103,7 @@ class UserReturn(UserReturnBasic):
 
 class UserPassword(BaseModel):
     """
-    This class defines the pydantic user_data schema.
-
-   Attributes:
-    - password (String): user password.
+    This class defines the user password data structure.
     """
 
     password: constr(
@@ -172,10 +147,7 @@ class UserPassword(BaseModel):
 
 class UserWeight(BaseModel):
     """
-    This class defines the pydantic user_data schema.
-
-   Attributes:
-    - weight_lb (Decimal): user weight in lbs.
+    This class defines the user weight data structure.
     """
     weight_lb: confloat(ge=0)
 
@@ -196,18 +168,23 @@ class UserWeight(BaseModel):
 
 
 class UserSigin(UserPassword, UserName, UserEmail):
-    ...
-
-
-class UserData(UserSigin, UserWeight):
+    '''
+    This class defines the data required to sign in as a new user.
+    '''
     ...
 
 
 class UserEditProfileData(UserName, UserWeight):
+    '''
+    This class defines the data required for editing profile data.
+    '''
     ...
 
 
 class PasswordChangeData(UserPassword):
+    '''
+    This class defines the data required for user password change.
+    '''
     current_password: constr(
         strip_whitespace=True,
         strict=True,
@@ -217,28 +194,16 @@ class PasswordChangeData(UserPassword):
 
 
 class JWTData(BaseModel):
-    """
-    This class defines the pydantic jwt_data schema, 
-    to return the JWT after authentication.
-
-    Attributes:
-    - jwt (String): the Jason Web Token.
-    - type (String): the token type.
-    """
-
+    '''
+    This class defines the JWT Return
+    '''
     access_token: str
     token_type: str
 
 
 class TokenData(BaseModel):
     """
-    This class defines the pydantic token_data schema.
-
-   Attributes:
-    - email (String): user email.
-    - is_admin (Boolean): true if user is admin.
-    - is_master (Boolean): true if user is master.
-    - is_active (Boolean): true if user is active.
+    This class defines the JWT Payload.
     """
     email: str | None = None
     is_admin: bool
