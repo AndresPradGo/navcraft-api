@@ -1,0 +1,2 @@
+code,name,lat_degrees,lat_minutes,lat_seconds,lat_direction,lon_degrees,lon_minutes,lon_seconds,lon_direction,elevation_ft,magnetic_variation,has_taf,has_metar,has_fds,hidden,status_id
+CZBB,Boundary Bay Airport,45,30,0,N,45,30,0,W,6,-16,FALSE,FALSE,FALSE,FALSE,1

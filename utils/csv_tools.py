@@ -95,6 +95,18 @@ def check_format(file: UploadFile) -> None:
         )
 
 
+def pre_process_aerodrome_data(runway_list: List[Dict[str, Any]]):
+    """
+    This function preprocess the aerodrome data.
+
+    Parameters:
+    - runway_list(list): preprocessed aerodrome list.
+
+    Returns: processed aerodrome list
+    """
+    return [{**a, "status": a["status_id"]} for a in runway_list]
+
+
 def pre_process_runway_data(runway_list: List[Dict[str, Any]]):
     """
     This function loops through a list of Runway data dictionaries, 
@@ -119,7 +131,7 @@ def pre_process_runway_data(runway_list: List[Dict[str, Any]]):
     } for r in runway_list]
 
 
-async def extract_schemas(file: UploadFile, schema, is_runway: bool = False):
+async def extract_schemas(file: UploadFile, schema, is_runway: bool = False, is_aerodrome: bool = False):
     """
     This function will extract the data from the csv-file,
     and return it as a list of schema objects.
@@ -139,6 +151,8 @@ async def extract_schemas(file: UploadFile, schema, is_runway: bool = False):
 
     if is_runway:
         dict_list = pre_process_runway_data(dict_list)
+    elif is_aerodrome:
+        dict_list = pre_process_aerodrome_data(dict_list)
 
     data_list = []
     try:

@@ -1,0 +1,2 @@
+code,name,lat_degrees,lat_minutes,lat_seconds,lat_direction,lon_degrees,lon_minutes,lon_seconds,lon_direction,magnetic_variation,hidden
+CLOV, Cloverdale,45,30,0,N,45,30,0,W,-16,FALSE
