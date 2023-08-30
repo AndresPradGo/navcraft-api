@@ -10,6 +10,7 @@ Usage:
 
 from fastapi import FastAPI
 
+from routes.aircraft import router as aircraft
 from routes.auth import router as auth
 from routes.users import router as users
 from routes.waypoints import router as waypoints
@@ -29,6 +30,7 @@ def link_routes(app: FastAPI) -> None:
 
     print("------ LINKING ROUTES ------")
     app.include_router(auth, prefix="/login")
-    app.include_router(runways, prefix="/runways")
     app.include_router(users, prefix="/users")
+    app.include_router(aircraft, prefix="/aircraft")
     app.include_router(waypoints, prefix="/waypoints")
+    app.include_router(runways, prefix="/runways")

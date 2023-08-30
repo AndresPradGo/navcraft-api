@@ -241,6 +241,7 @@ def _add_aerodromes():
                         creator_id=user_id
                     )
                     db.add(new_vfr_waypoint)
+
                     new_aerodrome = models.Aerodrome(
                         id=new_waypoint.id,
                         vfr_waypoint_id=new_waypoint.id,

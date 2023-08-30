@@ -528,7 +528,13 @@ async def manage_vfr_waypoints_with_csv_file(
     csv.check_format(csv_file)
 
     # Get list of schemas
-    data_list = await csv.extract_schemas(file=csv_file, schema=schemas.VfrWaypointData)
+    try:
+        data_list = [schemas.VfrWaypointData(**v) for v in await csv.extract_data(file=csv_file)]
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=e.errors()
+        )
 
     # Check there are no repeated codes
     codes_set = {v.code for v in data_list}
@@ -831,7 +837,16 @@ async def manage_registered_aerodrome_with_csv_file(
     csv.check_format(csv_file)
 
     # Get list of schemas
-    data_list = await csv.extract_schemas(file=csv_file, schema=schemas.RegisteredAerodromeData)
+    try:
+        data_list = [schemas.RegisteredAerodromeData(**{
+            **a,
+            "status": a["status_id"]
+        }) for a in await csv.extract_data(file=csv_file)]
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=e.errors()
+        )
 
     # Check there are no repeated codes
     codes_set = {v.code for v in data_list}
@@ -841,6 +856,15 @@ async def manage_registered_aerodrome_with_csv_file(
             detail="There are repeated aerodrome-codes in your list, please make sure all aerodromes are unique."
         )
 
+    # Check status ids are corret
+    status_ids = {a.status for a in data_list}
+    status_ids_id_db = [s.id for s in db.query(models.AerodromeStatus)
+                        .filter(models.AerodromeStatus.id.in_(status_ids)).all()]
+    if not len(status_ids) == len(status_ids_id_db):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="please make sure all the aerodrome status IDs are correct."
+        )
     # Find waypoints already in database
     db_vfr_waypoints = db.query(models.VfrWaypoint).filter(
         models.VfrWaypoint.code.in_(codes_set)).all()

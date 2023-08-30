@@ -11,6 +11,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
+from pydantic import ValidationError
 from sqlalchemy import and_, or_, not_
 from sqlalchemy.orm import Session
 
@@ -91,7 +92,7 @@ async def get_csv_file_with_all_runways(
     Returns: 
     - Zip folder: zip folder with 3 files:
        - runways.csv
-       - aerodrome_ids.csv
+       - aerodrome_codes.csv
        - surface_ids.csv
 
     Raise:
@@ -110,6 +111,7 @@ async def get_csv_file_with_all_runways(
         .join(v, a.vfr_waypoint_id == v.waypoint_id).all()]
 
     aerodrome_ids = [item["id"] for item in aerodromes]
+    aerodrome_codes = {a["id"]: a["code"] for a in aerodromes}
 
     runways = db.query(models.Runway)\
         .filter(models.Runway.aerodrome_id.in_(aerodrome_ids)).all()
@@ -119,7 +121,7 @@ async def get_csv_file_with_all_runways(
         {
             "name": "runways.csv",
             "data": [{
-                "aerodrome_id": r.aerodrome_id,
+                "aerodrome": aerodrome_codes[r.aerodrome_id],
                 "number": r.number,
                 "position": r.position,
                 "length_ft": r.length_ft,
@@ -133,13 +135,11 @@ async def get_csv_file_with_all_runways(
             }]
         },
         {
-            "name": "aerodrome_ids.csv",
+            "name": "aerodrome_codes.csv",
             "data": [{
-                "id": a["id"],
                 "code": a["code"],
                 "name": a["name"]
             } for a in aerodromes] if len(aerodromes) else [{
-                "id": "",
                 "code": "",
                 "name": ""
             }]
@@ -338,24 +338,46 @@ async def manage_runways_with_csv_file(
     csv.check_format(csv_file)
 
     # Get list of schemas
-    data_list = await csv.extract_schemas(file=csv_file, schema=schemas.RunwayData, is_runway=True)
+    dict_list = await csv.extract_data(file=csv_file)
+
+    # Check all aerodrome codes are valid
+    a = models.Aerodrome
+    v = models.VfrWaypoint
+
+    aerodrome_codes = {r["aerodrome"].strip().upper() for r in dict_list}
+    aerodrome_objects = db.query(a, v)\
+        .join(v, a.vfr_waypoint_id == v.waypoint_id)\
+        .filter(and_(not_(a.vfr_waypoint == None), v.code.in_(aerodrome_codes)))\
+        .all()
+
+    aerodrome_ids_in_db = {v.code: v.waypoint_id for _, v in aerodrome_objects}
+
+    if not len(aerodrome_codes) == len(set(aerodrome_ids_in_db.keys())):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Some of the aerodromes are not in the database."
+        )
+
+    try:
+        data_list = [schemas.RunwayData(
+            aerodrome_id=aerodrome_ids_in_db[r["aerodrome"].strip().upper()],
+            number=r["number"],
+            position=None if not r["position"] or r["position"].isspace(
+            ) else r["position"],
+            length_ft=r["length_ft"],
+            surface_id=r["surface_id"]
+        ) for r in dict_list]
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=e.errors()
+        )
 
     # Check there are no repeated runways
     if not runways_are_unique(data_list):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="There are repeated runway in your list, please make sure all runways are unique."
-        )
-
-    # Check all aerodrome ids are valid
-    aerodrome_ids = {r.aerodrome_id for r in data_list}
-    aerodrome_ids_in_db = [a.id for a in db.query(models.Aerodrome).filter(
-        models.Aerodrome.vfr_waypoint_id.in_(aerodrome_ids)).all()]
-    print(aerodrome_ids_in_db, aerodrome_ids)
-    if not len(aerodrome_ids) == len(aerodrome_ids_in_db):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Some of the aerodrome IDs are not valid."
         )
 
     # Check all surface ids are valid
@@ -370,7 +392,7 @@ async def manage_runways_with_csv_file(
 
     # Delete Runways
     deleted = db.query(models.Runway).filter(models.Runway.aerodrome_id.in_(
-        aerodrome_ids_in_db)).delete(synchronize_session=False)
+        list(aerodrome_ids_in_db.values()))).delete(synchronize_session=False)
 
     # Add data
     for runway in data_list:
