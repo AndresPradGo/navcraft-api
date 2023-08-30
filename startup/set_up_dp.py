@@ -17,9 +17,11 @@ from sqlalchemy.exc import OperationalError, IntegrityError, TimeoutError
 
 from auth.hasher import Hasher
 import models
-from utils import environ_variable_tools as environ
+from utils import environ_variable_tools as environ, csv_tools as csv
 from utils.db import engine, Session
 from utils.functions import clean_string
+
+_PATH = "static_data/"
 
 
 def __set_charracter_set() -> None:
@@ -91,9 +93,12 @@ def __add_ruway_surfaces():
     Returns: None
     """
     pattern = r"^[-A-Za-z ']*$"
-    with open("config/runway_surfaces.json", "r") as json_file:
-        surfaces = [clean_string(s) for s in json.load(json_file)[
-            "surfaces"] if re.match(pattern, s) is not None]
+
+    surfaces = [
+        clean_string(s["surface"]) for s in csv.csv_to_list(
+            file_path=f"{_PATH}runway_surfaces.csv"
+        ) if re.match(pattern, s["surface"]) is not None
+    ]
 
     try:
         with Session() as db:
@@ -118,10 +123,14 @@ def __add_aerodrome_status():
 
     Returns: None
     """
-    pattern = r'^[-A-Za-z ]*$'
-    with open("config/aerodrome_status.json", "r") as json_file:
-        status = [clean_string(s) for s in json.load(json_file)[
-            "status"] if re.match(pattern, s) is not None]
+
+    pattern = r"^[-A-Za-z ]*$"
+
+    status = [
+        clean_string(s["status"]) for s in csv.csv_to_list(
+            file_path=f"{_PATH}aerodrome_status.csv"
+        ) if re.match(pattern, s["status"]) is not None
+    ]
 
     try:
         with Session() as db:

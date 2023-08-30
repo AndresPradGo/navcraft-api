@@ -16,7 +16,25 @@ import zipfile
 from fastapi import UploadFile, HTTPException, status
 from pydantic import ValidationError
 
-_PATH = "static_data/"
+
+def csv_to_list(file_path: str) -> List[Dict[str, Any]]:
+    """
+    This function reads a csv-file and returns the data in a list of dictionaries.
+
+    Parameters:
+    - file_path (str): csv-file path.
+
+    Returns: 
+    - list: list of data.
+    """
+
+    data_list = []
+    with open(file_path, mode="r", newline="", encoding="utf-8") as csv_file:
+        csv_reader = csv.DictReader(csv_file)
+        for row in csv_reader:
+            data_list.append(row)
+
+    return data_list
 
 
 def list_to_buffer(data: List[Dict[str, Any]]):
