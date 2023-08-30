@@ -10,7 +10,7 @@ Usage:
 
 from typing import List
 
-from pydantic import BaseModel, constr, EmailStr, conint, confloat, NaiveDatetime, validator
+from pydantic import BaseModel, constr, EmailStr, conint, confloat, NaiveDatetime, field_validator
 
 from utils.functions import clean_string
 
@@ -123,7 +123,7 @@ class UserSigin(UserBase):
         max_length=25
     )
 
-    @validator('password')
+    @field_validator('password')
     @classmethod
     def check_passwrod_criteria(clc, password: float) -> float:
         '''
@@ -154,7 +154,7 @@ class UserSigin(UserBase):
 
         return password
 
-    @validator('name')
+    @field_validator('name')
     @classmethod
     def clean_user_name(clc, value: str) -> str:
         '''
@@ -179,7 +179,7 @@ class UserData(UserSigin):
     """
     weight_lb: confloat(ge=0)
 
-    @validator('weight_lb')
+    @field_validator('weight_lb')
     @classmethod
     def round_user_weight(clc, value: float) -> float:
         '''

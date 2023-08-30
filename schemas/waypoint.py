@@ -10,7 +10,7 @@ Usage:
 
 from typing import Optional
 
-from pydantic import BaseModel, constr, conint, confloat, conlist, NaiveDatetime, validator, model_validator
+from pydantic import BaseModel, constr, conint, confloat, conlist, NaiveDatetime, field_validator, model_validator
 
 from utils.functions import clean_string
 
@@ -102,7 +102,7 @@ class UserWaypointData(WaypointBase):
     Attributes: None
     """
 
-    @validator('magnetic_variation')
+    @field_validator('magnetic_variation')
     @classmethod
     def round_magnetic_variation(clc, value: float) -> float:
         '''
@@ -117,7 +117,7 @@ class UserWaypointData(WaypointBase):
         '''
         return round(value, 1)
 
-    @validator('name')
+    @field_validator('name')
     @classmethod
     def clean_waypoint_name(clc, value: str) -> str:
         '''

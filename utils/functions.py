@@ -4,6 +4,7 @@ Useful Reusable Functions
 Usage: 
 - Import the required function and call it.
 """
+from typing import List, Any
 
 from sqlalchemy.orm import Session
 
@@ -51,3 +52,33 @@ async def get_user_id_from_email(email: str, db: Session):
         raise common_responses.invalid_credentials()
 
     return user_id[0]
+
+
+def runways_are_unique(runways: List[Any]):
+    """
+    Checks if a list of runways is unique
+
+    Parameters:
+    - runways (list): a list of RunwayData instances
+
+    Returns: 
+    - bool: true is list is unique, and false otherwise
+    """
+
+    right_runways = {
+        f"{r.aerodrome_id}{r.number}" for r in runways if r.position == "R"}
+    left_runways = {
+        f"{r.aerodrome_id}{r.number}" for r in runways if r.position == "L"}
+    center_runways = {
+        f"{r.aerodrome_id}{r.number}" for r in runways if r.position == "C"}
+    none_runways = {
+        f"{r.aerodrome_id}{r.number}" for r in runways if r.position is None}
+
+    runways_with_position = right_runways | left_runways | center_runways
+    all_runways = runways_with_position | none_runways
+
+    if not len(right_runways) + len(left_runways) + len(center_runways) + len(none_runways) == len(runways) or\
+            not len(runways_with_position) + len(none_runways) == len(all_runways):
+        return False
+
+    return True

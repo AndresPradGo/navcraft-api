@@ -77,7 +77,31 @@ def check_format(file: UploadFile) -> None:
         )
 
 
-async def extract_schemas(file: UploadFile, schema):
+def pre_process_runway_data(runway_list: List[Dict[str, Any]]):
+    """
+    This function loops through a list of Runway data dictionaries, 
+    and removes the 'position' if it is an empty string
+
+    Parameters:
+    - runway_list(list): preprocessed tunway list.
+
+    Returns: processed runway list
+    """
+    return [{
+        "aerodrome_id": r["aerodrome_id"],
+        "number": r["number"],
+        "length_ft": r["length_ft"],
+        "surface_id": r["surface_id"]
+    } if r["position"] == "" else {
+        "aerodrome_id": r["aerodrome_id"],
+        "number": r["number"],
+        "position": r["position"],
+        "length_ft": r["length_ft"],
+        "surface_id": r["surface_id"]
+    } for r in runway_list]
+
+
+async def extract_schemas(file: UploadFile, schema, is_runway: bool = False):
     """
     This function will extract the data from the csv-file,
     and return it as a list of schema objects.
@@ -93,13 +117,15 @@ async def extract_schemas(file: UploadFile, schema):
     HTTPException (400): If the data in the file is not in the correct format
     """
     content = await file.read()
-    decoded_content = content.decode("utf-8")
+    dict_list = utf8_to_list(utf8_content=content.decode("utf-8"))
 
-    # Check data is in the correct format
+    if is_runway:
+        dict_list = pre_process_runway_data(dict_list)
+
     data_list = []
     try:
         data_list = [schema(
-            **w) for w in utf8_to_list(utf8_content=decoded_content)]
+            **i) for i in dict_list]
     except ValidationError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

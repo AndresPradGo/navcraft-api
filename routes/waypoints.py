@@ -160,7 +160,7 @@ async def update_vfr_waypoint(waypoint: schemas.VfrWaypointData, db: Session, cr
 
 @router.get("/user", status_code=status.HTTP_200_OK, response_model=List[schemas.UserWaypointReturn])
 async def get_all_user_waypoints(
-    ids: Optional[List[int]] = None,
+    id: Optional[int] = 0,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
@@ -184,8 +184,8 @@ async def get_all_user_waypoints(
         .filter(and_(
             u.creator_id == user_id,
             or_(
-                not_(ids),
-                w.id.in_(ids)
+                not_(id),
+                w.id == id
             )
         ))\
         .join(u, w.id == u.waypoint_id).all()

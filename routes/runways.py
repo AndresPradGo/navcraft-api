@@ -9,7 +9,7 @@ Usage:
 """
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy import and_, or_, not_
 from sqlalchemy.orm import Session
@@ -19,7 +19,7 @@ import models
 import schemas
 from utils import common_responses, csv_tools as csv
 from utils.db import get_db
-from utils.functions import get_user_id_from_email
+from utils.functions import get_user_id_from_email, runways_are_unique
 
 router = APIRouter(tags=["Runways"])
 
@@ -285,6 +285,92 @@ async def post_runway_(
         .join(u, a.user_waypoint_id == u.waypoint_id).first()
 
     return {"aerodrome": aerodrome_result[1], **runway_result[0].__dict__, "surface": runway_result[1]}
+
+
+@router.post("/csv", status_code=status.HTTP_204_NO_CONTENT)
+async def manage_runways_with_csv_file(
+    csv_file: UploadFile,
+    db: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Manage Runways Endpoint.
+
+    Usage:
+    - Download the Runways csv-list, from the "Get Csv File With All Runways" endpoint.
+    - Use this file to update the list in the desired way.
+    - New columns can be added for your reference, but they won't be considered for updating the 
+      data in the database. 
+    - Do not delete or edit the headers of the existing colums in any way, or the file will be rejected.
+    - Enter all data in the correct colums to ensure data integrity.
+    - Make sure there are no typos or repeated entries.
+    - After getting a 204 response, download csv list again to check it has been uploaded correctly.
+
+    NOTE: This endpoint will delete all runways in the database for the given aerodromes, and will post 
+    new data-entries.
+
+
+    Parameters: 
+    - csv-file (UploadFile): csv file with runway data.
+
+    Returns: None
+
+    Raise:
+    - HTTPException (400): file or file-data is wrong.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check and decode csv-file
+    csv.check_format(csv_file)
+
+    # Get list of schemas
+    data_list = await csv.extract_schemas(file=csv_file, schema=schemas.RunwayData, is_runway=True)
+
+    # Check there are no repeated runways
+    if not runways_are_unique(data_list):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="There are repeated runway in your list, please make sure all runways are unique."
+        )
+
+    # Check all aerodrome ids are valid
+    aerodrome_ids = {r.aerodrome_id for r in data_list}
+    aerodrome_ids_in_db = [a.id for a in db.query(models.Aerodrome).filter(
+        models.Aerodrome.vfr_waypoint_id.in_(aerodrome_ids)).all()]
+    print(aerodrome_ids_in_db, aerodrome_ids)
+    if not len(aerodrome_ids) == len(aerodrome_ids_in_db):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Some of the aerodrome IDs are not valid."
+        )
+
+    # Check all surface ids are valid
+    surface_ids = {r.surface_id for r in data_list}
+    surfaces_in_db = db.query(models.RunwaySurface).filter(
+        models.RunwaySurface.id.in_(surface_ids)).all()
+    if not len(surface_ids) == len(surfaces_in_db):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Some of the surface IDs are not valid."
+        )
+
+    # Delete Runways
+    deleted = db.query(models.Runway).filter(models.Runway.aerodrome_id.in_(
+        aerodrome_ids_in_db)).delete(synchronize_session=False)
+
+    # Add data
+    for runway in data_list:
+        new_runway = models.Runway(
+            aerodrome_id=runway.aerodrome_id,
+            number=runway.number,
+            position=runway.position,
+            length_ft=runway.length_ft,
+            surface_id=runway.surface_id
+        )
+        db.add(new_runway)
+
+    db.commit()
 
 
 @router.post("/surface", status_code=status.HTTP_201_CREATED, response_model=schemas.RunwaySurfaceReturn)

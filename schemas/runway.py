@@ -10,7 +10,7 @@ Usage:
 
 from typing import Optional
 
-from pydantic import BaseModel, constr, conint, validator
+from pydantic import BaseModel, constr, conint, field_validator, conset
 
 from utils.functions import clean_string
 
@@ -93,7 +93,7 @@ class RunwaySurfaceData(BaseModel):
         pattern="^[-a-zA-Z ']+$",
     )
 
-    @validator('surface')
+    @field_validator('surface')
     @classmethod
     def clean_surface_string(clc, value: str) -> str:
         '''
