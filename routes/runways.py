@@ -124,7 +124,13 @@ async def get_csv_file_with_all_runways(
                 "position": r.position,
                 "length_ft": r.length_ft,
                 "surface_id": r.surface_id,
-            } for r in runways]
+            } for r in runways] if len(runways) else [{
+                "aerodrome_id": "",
+                "number": "",
+                "position": "",
+                "length_ft": "",
+                "surface_id": "",
+            }]
         },
         {
             "name": "aerodrome_ids.csv",
@@ -132,14 +138,21 @@ async def get_csv_file_with_all_runways(
                 "id": a["id"],
                 "code": a["code"],
                 "name": a["name"]
-            } for a in aerodromes]
+            } for a in aerodromes] if len(aerodromes) else [{
+                "id": "",
+                "code": "",
+                "name": ""
+            }]
         },
         {
             "name": "runway_surface_ids.csv",
             "data": [{
                 "id": s.id,
                 "surface": s.surface
-            } for s in surfaces]
+            } for s in surfaces] if len(surfaces) else [{
+                "id": "",
+                "surface": ""
+            }]
         }
     ]
 

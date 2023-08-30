@@ -234,7 +234,22 @@ async def get_csv_file_with_all_vfr_waypoints(
         "lon_direction": w.lon_direction,
         "magnetic_variation": w.magnetic_variation,
         "hidden": v.hidden
-    } for w, v in query_results]
+    } for w, v in query_results] if len(query_results) else [
+        {
+            "code": "",
+            "name": "",
+            "lat_degrees": "",
+            "lat_minutes": "",
+            "lat_seconds": "",
+            "lat_direction": "",
+            "lon_degrees": "",
+            "lon_minutes": "",
+            "lon_seconds": "",
+            "lon_direction": "",
+            "magnetic_variation": "",
+            "hidden": ""
+        }
+    ]
 
     buffer = csv.list_to_buffer(data=data)
 
@@ -338,7 +353,25 @@ async def get_csv_file_with_all_aerodromes(
         "has_fds": a.has_fds,
         "hidden": v.hidden,
         "status_id": a.status_id
-    } for w, v, a in aerodromes]
+    } for w, v, a in aerodromes] if len(aerodromes) else [{
+        "code": "",
+        "name": "",
+        "lat_degrees": "",
+        "lat_minutes": "",
+        "lat_seconds": "",
+        "lat_direction": "",
+        "lon_degrees": "",
+        "lon_minutes": "",
+        "lon_seconds": "",
+        "lon_direction": "",
+        "elevation_ft": "",
+        "magnetic_variation": "",
+        "has_taf": "",
+        "has_metar": "",
+        "has_fds": "",
+        "hidden": "",
+        "status_id": ""
+    }]
 
     buffer = csv.list_to_buffer(data=data)
 
