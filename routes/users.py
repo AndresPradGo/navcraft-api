@@ -137,7 +137,6 @@ async def sign_in(
     new_user = models.User(
         email=user.email,
         name=user.name,
-        weight_lb=user.weight_lb,
         password=hashed_pswd,
         is_admin=False,
         is_master=False,
@@ -196,10 +195,108 @@ async def add_new_passenger_profile(
     return new_passenger_profile
 
 
-@router.put("/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturnBasic)
-async def edit_user_profile(
-    user_data: schemas.UserData,
+@router.put("/email/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturnBasic)
+async def change_email(
+    user_data: schemas.UserEmail,
     response: Response,
+    db: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Change User Email Endpoint.
+
+    Parameters: 
+    - user_data (dict): schema with the new user email.
+
+    Returns: 
+    - Dic: dictionary with the user data.
+
+    Raise:
+    - HTTPException (400): if user with new email already exists.
+    - HTTPException (401): if user is invalid or trying to update other user's data.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check if email is equal to current email
+    if user_data.email == current_user.email:
+        new_user = db.query(models.User).filter(
+            models.User.email == user_data.email).first()
+        response.headers["x-access-token"] = new_user.generate_auth_token()
+        response.headers["x-token-type"] = "bearer"
+        return new_user
+
+    # Check if user with new email already exists
+    user_with_email = db.query(models.User).filter(
+        models.User.email == user_data.email).first()
+    if user_with_email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"User with email {user_data.email}, already exists."
+        )
+
+    # Update User email
+    user = db.query(models.User).filter(
+        models.User.email == current_user.email)
+    if not user.first():
+        raise common_responses.internal_server_error()
+    user.update({"email": user_data.email})
+    db.commit()
+
+    # Return new user data
+    new_user = db.query(models.User).filter(
+        models.User.email == user_data.email).first()
+    response.headers["x-access-token"] = new_user.generate_auth_token()
+    response.headers["x-token-type"] = "bearer"
+    return new_user
+
+
+@router.put("/password/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturnBasic)
+async def change_password(
+    user_data: schemas.PasswordChangeData,
+    response: Response,
+    db: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Change Password Endpoint.
+
+    Parameters: 
+    - user_data (dict): dictionary current password and new password.
+
+    Returns: 
+    - Dic: dictionary with the user data.
+
+    Raise:
+    - HTTPException (400): if new password is not in the right format.
+    - HTTPException (401): if user is invalid or trying to update other user's data.
+    - HTTPException (500): if there is a server error. 
+    """
+    # Get user from db
+    user_query = db.query(models.User).filter(
+        models.User.email == current_user.email)
+    if not user_query.first():
+        raise common_responses.internal_server_error()
+
+    # Check current_password provided
+    if not auth.Hasher.verify(user_data.current_password, user_query.first().password):
+        raise common_responses.invalid_credentials()
+
+    # Updata password to new password
+    user_data.password = auth.Hasher.bcrypt(user_data.password)
+    user_query.update({"password": user_data.password})
+    db.commit()
+
+    # Return User data
+    new_user = db.query(models.User).filter(
+        models.User.email == current_user.email).first()
+    response.headers["x-access-token"] = new_user.generate_auth_token()
+    response.headers["x-token-type"] = "bearer"
+    return new_user
+
+
+@router.put("/me", status_code=status.HTTP_200_OK, response_model=schemas.UserEditProfileData)
+async def edit_user_profile(
+    user_data: schemas.UserEditProfileData,
     db: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
@@ -217,30 +314,18 @@ async def edit_user_profile(
     - HTTPException (401): if user is invalid or trying to update other user's data.
     - HTTPException (500): if there is a server error. 
     """
-
-    user_with_email = db.query(models.User).filter(
-        models.User.email == user_data.email).first()
-
-    if user_with_email and not user_data.email == current_user.email:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"User with email {user_data.email}, already exists."
-        )
-
+    # Get User from db
     user = db.query(models.User).filter(
         models.User.email == current_user.email)
-
     if not user.first():
         raise common_responses.invalid_credentials()
-
-    user_data.password = auth.Hasher.bcrypt(user_data.password)
+    # Update User
     user.update(user_data.model_dump())
     db.commit()
+    # Return User Data
     new_user = db.query(models.User).filter(
-        models.User.email == user_data.email).first()
+        models.User.email == current_user.email).first()
 
-    response.headers["x-access-token"] = new_user.generate_auth_token()
-    response.headers["x-token-type"] = "bearer"
     return new_user
 
 

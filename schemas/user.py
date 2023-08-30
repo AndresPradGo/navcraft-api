@@ -58,7 +58,7 @@ class UserEmail(BaseModel):
     email: EmailStr
 
 
-class UserBase(UserEmail):
+class UserName(BaseModel):
     """
     This class defines the pydantic user_base schema.
 
@@ -74,8 +74,23 @@ class UserBase(UserEmail):
         pattern="^[-a-zA-Z0-9 ]+$",
     )
 
+    @field_validator('name')
+    @classmethod
+    def clean_user_name(clc, value: str) -> str:
+        '''
+        Classmethod to clean name string.
 
-class UserReturnBasic(UserBase):
+        Parameters:
+        - value (str): the name string t to be validated.
+
+        Returns:
+        (str): cleaned name string.
+
+        '''
+        return clean_string(value)
+
+
+class UserReturnBasic(UserName, UserEmail):
     """
     This class defines the pydantic schema used to return 
     user data to the client.
@@ -108,7 +123,7 @@ class UserReturn(UserReturnBasic):
     passenger_profiles: List[PassengerProfileReturn]
 
 
-class UserSigin(UserBase):
+class UserPassword(BaseModel):
     """
     This class defines the pydantic user_data schema.
 
@@ -154,23 +169,8 @@ class UserSigin(UserBase):
 
         return password
 
-    @field_validator('name')
-    @classmethod
-    def clean_user_name(clc, value: str) -> str:
-        '''
-        Classmethod to clean name string.
 
-        Parameters:
-        - value (str): the name string t to be validated.
-
-        Returns:
-        (str): cleaned name string.
-
-        '''
-        return clean_string(value)
-
-
-class UserData(UserSigin):
+class UserWeight(BaseModel):
     """
     This class defines the pydantic user_data schema.
 
@@ -193,6 +193,27 @@ class UserData(UserSigin):
 
         '''
         return round(value, 1)
+
+
+class UserSigin(UserPassword, UserName, UserEmail):
+    ...
+
+
+class UserData(UserSigin, UserWeight):
+    ...
+
+
+class UserEditProfileData(UserName, UserWeight):
+    ...
+
+
+class PasswordChangeData(UserPassword):
+    current_password: constr(
+        strip_whitespace=True,
+        strict=True,
+        min_length=8,
+        max_length=25
+    )
 
 
 class JWTData(BaseModel):
