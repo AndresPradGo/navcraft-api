@@ -43,8 +43,8 @@ class AircraftModel(BaseModel):
 
     Attributes:
     - id (Integer Column): table primary key.
-    - model (String Column): aircraft model code that identifies the aircraft (e.g. PA28-161, C172R Long Range).
-    - name (String Column): aircraft name (e.g. Cessna 172 Skyhawk).
+    - model (String Column): aircraft model (e.g. Cessna 172 SR Long Range).
+    - code (String Column): aircraft code that identifies the aircraft (e.g. PA28, C172).
     - hidden (Boolean Column): if it is an official aircraft profile model, it can be hidden from normal users.
     - make_id (String Column): foreign key pointing to the aircraft_make.
     - performance_profile_id (Integer Column): foreign key pointing to the performance_profiles table.
@@ -57,7 +57,7 @@ class AircraftModel(BaseModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     model = Column(String(255), nullable=False, unique=True)
-    name = Column(String(255), nullable=False)
+    code = Column(String(5), nullable=False)
     hidden = Column(Boolean)
     make_id = Column(
         Integer,
@@ -95,6 +95,8 @@ class PerformanceProfile(BaseModel):
     - center_of_gravity_in (Decimal Column): center of gravity of empty aircraft 
       in inches from datum.
     - empty_weight_lb (Decimal Column): empty weight of the aircraft in lbs.
+    - take_off_taxi_fuel_gallons (Decimal Column) = fuel gallons used during start,
+      taxi, runup and takeoff.
     - percent_decrease_takeoff_headwind_knot (Decimal Column): percent decrease
     in takeoff distance per knot of headwind.
     - percent_increase_takeoff_tailwind_knot (Decimal Column): percent increase
@@ -113,6 +115,7 @@ class PerformanceProfile(BaseModel):
     id = Column(Integer, primary_key=True, autoincrement=True)
     center_of_gravity_in = Column(DECIMAL(5, 2))
     empty_weight_lb = Column(DECIMAL(7, 2))
+    take_off_taxi_fuel_gallons = Column(DECIMAL(3, 1))
     percent_decrease_takeoff_headwind_knot = Column(DECIMAL(4, 2))
     percent_increase_takeoff_tailwind_knot = Column(DECIMAL(4, 2))
     percent_decrease_landing_headwind_knot = Column(DECIMAL(4, 2))
@@ -178,12 +181,6 @@ class PerformanceProfile(BaseModel):
         passive_deletes=True,
         passive_updates=True
     )
-    airspeed_calibration_data = Relationship(
-        "AirspeedCalibration",
-        back_populates="performance_profile",
-        passive_deletes=True,
-        passive_updates=True
-    )
 
 
 class Aircraft(BaseModel):
@@ -237,12 +234,6 @@ class Aircraft(BaseModel):
     owner = Relationship("User", back_populates="aircraft")
     flights = Relationship(
         "Flight",
-        back_populates="aircraft",
-        passive_deletes=True,
-        passive_updates=True
-    )
-    compass_card_data = Relationship(
-        "CompassCard",
         back_populates="aircraft",
         passive_deletes=True,
         passive_updates=True
@@ -660,74 +651,4 @@ class FuelType(BaseModel):
         back_populates="fuel_type",
         passive_deletes=True,
         passive_updates=True
-    )
-
-
-class CompassCard(BaseModel):
-    """
-    This class defines the database compass_card model.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - uncorrected (Integer Column): the compass track before correction. The track you want to steer.
-    - corrected (Integer Column): the compass track after correction. The track you have to steer.
-    - aircraft_id (Integer Column): foreignkey pointing to the aircraft parent table.
-    - aircraft (Relationship): Defines the many-to-one relationship with the 
-      aircraft parent table.
-    """
-
-    __tablename__ = "compass_card_data"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    uncorrected = Column(Integer, nullable=False)
-    corrected = Column(Integer, nullable=False)
-
-    aircraft_id = Column(
-        Integer,
-        ForeignKey(
-            "aircraft.id",
-            ondelete="CASCADE",
-            onupdate="CASCADE"
-        ),
-        nullable=False
-    )
-
-    aircraft = Relationship(
-        "Aircraft",
-        back_populates="compass_card_data"
-    )
-
-
-class AirspeedCalibration(BaseModel):
-    """
-    This class defines the database airspeed_calibration model.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - kias (Integer Column): indicated airspeed in knots.
-    - kcas (Integer Column): calibrated airspeed in knots.
-    - performance_profile_id (Integer Column): foreignkey pointing to the performance_profiles parent table.
-    - performance_profile (Relationship): Defines the many-to-one relationship with the 
-      performance_profiles parent table.
-    """
-
-    __tablename__ = "airspeed_calibration_data"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    kias = Column(Integer, nullable=False)
-    kcas = Column(Integer, nullable=False)
-
-    performance_profile_id = Column(
-        Integer,
-        ForeignKey(
-            "performance_profiles.id",
-            ondelete="CASCADE",
-            onupdate="CASCADE"
-        ),
-        nullable=False
-    )
-
-    performance_profile = Relationship(
-        "PerformanceProfile",
-        back_populates="airspeed_calibration_data"
     )

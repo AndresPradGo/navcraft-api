@@ -10,7 +10,7 @@ Usage:
 
 from typing import Optional
 
-from pydantic import BaseModel, constr, conint, field_validator, confloat
+from pydantic import BaseModel, constr, conint, confloat, field_validator, model_validator
 
 from utils.functions import clean_string
 
@@ -94,6 +94,39 @@ class FuelTypeData(BaseModel):
 class FuelTypeReturn(FuelTypeData):
     """
     This class defines the data-structure required to return fuel type data to the client.
+    """
+
+    id: conint(gt=0)
+
+
+class AircraftModelOfficialPostData(BaseModel):
+    '''
+    This class defines the data structure reuired from the client, in order to add
+    a new official aircraft model to the database as an admin user.
+    '''
+
+    make_id: conint(gt=0) = None
+    fuel_type_id: conint(gt=0) = None
+    model: constr(
+        strip_whitespace=True,
+        min_length=2,
+        max_length=255,
+        pattern="^[\.\-a-zA-Z0-9\(\) ]+$"
+    )
+    code: constr(
+        to_upper=True,
+        strip_whitespace=True,
+        min_length=2,
+        max_length=5,
+        pattern="^[\-a-zA-Z0-9]+$"
+    )
+    hidden: Optional[bool] = None
+
+
+class AircraftModelOfficialPostReturn(AircraftModelOfficialPostData):
+    """
+    This class defines the data-structure required to return Official aircraft model data
+    to the client.
     """
 
     id: conint(gt=0)

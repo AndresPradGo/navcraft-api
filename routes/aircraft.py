@@ -11,7 +11,7 @@ Usage:
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException, UploadFile
-from sqlalchemy import and_, or_, not_
+from sqlalchemy import and_, or_, not_, func
 from sqlalchemy.orm import Session
 
 import auth
@@ -158,6 +158,77 @@ async def post_new_aircraft_manufacturer(
     # Return manufacturer data
     db.refresh(new_make)
     return new_make
+
+
+@router.post("/model", status_code=status.HTTP_201_CREATED, response_model=schemas.AircraftModelOfficialPostReturn)
+async def post_new_aircraft_model(
+    model_data: schemas.AircraftModelOfficialPostData,
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Post New Aircraft Model Endpoint.
+
+    Parameters: 
+    - model_data (dict): the data to be added.
+
+    Returns: 
+    - Dic: dictionary with the data added to the database, and the id.
+
+    Raise:
+    - HTTPException (400): if model already exists, or data is wrong.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check if model already exists in database
+    model_exists = db.query(models.AircraftModel).filter(
+        func.upper(models.AircraftModel.model) == func.upper(model_data.model)).first()
+    if model_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{model_data.model} already exists in the database."
+        )
+
+    # Check manufacturer data
+    make_id_exists = db.query(models.AircraftMake).filter_by(
+        id=model_data.make_id).first()
+    if not make_id_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Manufacturer ID {model_data.make_id} doesn't exist."
+        )
+
+    # Check fuel type data
+    fuel_type_id_exists = db.query(models.FuelType).filter_by(
+        id=model_data.fuel_type_id).first()
+    if not fuel_type_id_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Fuel type ID {model_data.fuel_type_id} doesn't exist."
+        )
+
+    # Post performance profile
+    new_performance_profile = models.PerformanceProfile(
+        fuel_type_id=model_data.fuel_type_id)
+    db.add(new_performance_profile)
+    db.commit()
+    db.refresh(new_performance_profile)
+
+    # Post aircraft model
+    new_model = models.AircraftModel(
+        model=model_data.model,
+        code=model_data.code,
+        hidden=True if model_data.hidden is None else model_data.hidden,
+        make_id=model_data.make_id,
+        performance_profile_id=new_performance_profile.id
+    )
+    db.add(new_model)
+    db.commit()
+
+    # Return aircraft model data
+    db.refresh(new_model)
+    return {**new_model.__dict__, "fuel_type_id": new_performance_profile.fuel_type_id}
 
 
 @router.put("/fuel-type/{id}", status_code=status.HTTP_201_CREATED, response_model=schemas.FuelTypeReturn)

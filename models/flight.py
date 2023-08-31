@@ -26,7 +26,6 @@ class Flight(BaseModel):
     - bhp_percent (Integer Column) = percentage of the engine's break hose power used during cruise.
     - reserve_fuel_hours (Decimal Column) = number of hours of reserve fuel.
     - contingency_fuel_hours (Decimal Column) = number of hours of contingency fuel.
-    - take_off_fuel_gallons (Decimal Column) = fuel gallons used during start, taxi, runup and takeoff.
     - aircraft_id (Integer Column): foreign key that points to the aircraft table.
     - status_id (Integer Column): foreign key that points to the flight_status table.
     - pilot_id (Integer Column): foreign key that points to the users table.
@@ -58,11 +57,6 @@ class Flight(BaseModel):
         DECIMAL(precision=3, scale=1),
         nullable=False,
         default=0.0
-    )
-    take_off_fuel_gallons = Column(
-        DECIMAL(precision=3, scale=1),
-        nullable=False,
-        default=1.0
     )
     aircraft_id = Column(
         Integer,
