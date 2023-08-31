@@ -63,8 +63,7 @@ class AircraftModel(BaseModel):
             "aircraft_makes.id",
             ondelete="RESTRICT",
             onupdate="CASCADE"
-        ),
-        nullable=False
+        )
     )
     performance_profile_id = Column(
         Integer,
