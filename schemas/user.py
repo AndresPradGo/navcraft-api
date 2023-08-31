@@ -1,5 +1,5 @@
 """
-Pydantic user scemas
+Pydantic user schemas
 
 This module defines the user pydantic schemas for data validation.
 
@@ -67,7 +67,7 @@ class UserName(BaseModel):
         Classmethod to clean name string.
 
         Parameters:
-        - value (str): the name string t to be validated.
+        - value (str): the name string to be validated.
 
         Returns:
         (str): cleaned name string.

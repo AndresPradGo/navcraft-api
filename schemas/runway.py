@@ -1,5 +1,5 @@
 """
-Pydantic waypoint scemas
+Pydantic waypoint schemas
 
 This module defines the waipoint, aerodrome, and related pydantic schemas for data validation.
 
@@ -18,7 +18,6 @@ from utils.functions import clean_string
 class RunwayDataEdit(BaseModel):
     """
     This class defines the data-structure required from client to update runway data.
-
     """
 
     length_ft: int

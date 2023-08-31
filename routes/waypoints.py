@@ -21,10 +21,8 @@ import auth
 import models
 import schemas
 from utils import common_responses, csv_tools as csv
-from utils.functions import get_user_id_from_email
-
 from utils.db import get_db
-from utils.functions import clean_string
+from utils.functions import get_user_id_from_email, clean_string
 
 router = APIRouter(tags=["Waypoints"])
 

@@ -45,7 +45,8 @@ def get_db():
     try:
         yield database
 
-    except (IntegrityError, TimeoutError, OperationalError):
+    except (IntegrityError, TimeoutError, OperationalError) as e:
+        print(e)
         database.rollback()
         raise common_responses.internal_server_error()
     finally:

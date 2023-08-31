@@ -1,5 +1,5 @@
 """
-Pydantic waypoint scemas
+Pydantic waypoint schemas
 
 This module defines the waipoint, aerodrome, and related pydantic schemas for data validation.
 
