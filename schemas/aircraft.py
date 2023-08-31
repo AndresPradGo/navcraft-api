@@ -24,7 +24,7 @@ class AircraftMakeData(BaseModel):
         to_upper=True,
         min_length=2,
         max_length=255,
-        pattern="^[\.\-a-zA-Z0-9 ]+$"
+        pattern="^[\.\-a-zA-Z0-9\(\) ]+$"
     )
 
     @field_validator('name')
@@ -58,7 +58,7 @@ class FuelTypeData(BaseModel):
     name: constr(
         min_length=1,
         max_length=50,
-        pattern="^[-a-zA-Z0-9 ]+$"
+        pattern="^[-a-zA-Z0-9 /]+$"
     )
     density_lb_gal: confloat(gt=0, allow_inf_nan=False)
 

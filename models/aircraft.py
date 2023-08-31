@@ -8,7 +8,7 @@ Usage:
 
 """
 
-from sqlalchemy import Column, Integer, DECIMAL, Float, String, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, DECIMAL, String, Boolean, ForeignKey
 from sqlalchemy.orm import Relationship
 
 from models.base import BaseModel
@@ -45,6 +45,7 @@ class AircraftModel(BaseModel):
     - id (Integer Column): table primary key.
     - model (String Column): aircraft model code that identifies the aircraft (e.g. PA28-161, C172R Long Range).
     - name (String Column): aircraft name (e.g. Cessna 172 Skyhawk).
+    - hidden (Boolean Column): if it is an official aircraft profile model, it can be hidden from normal users.
     - make_id (String Column): foreign key pointing to the aircraft_make.
     - performance_profile_id (Integer Column): foreign key pointing to the performance_profiles table.
     - make (Relationship): defines the many-to-one relationship with the aircraft_make parent table.
@@ -57,6 +58,7 @@ class AircraftModel(BaseModel):
     id = Column(Integer, primary_key=True, autoincrement=True)
     model = Column(String(255), nullable=False, unique=True)
     name = Column(String(255), nullable=False)
+    hidden = Column(Boolean)
     make_id = Column(
         Integer,
         ForeignKey(
@@ -90,13 +92,16 @@ class PerformanceProfile(BaseModel):
 
     Attributes:
     - id (Integer Column): table primary key.
-    - percent_decrease_takeoff_headwind_knot (Float Column): percent decrease
+    - center_of_gravity_in (Decimal Column): center of gravity of empty aircraft 
+      in inches from datum.
+    - empty_weight_lb (Decimal Column): empty weight of the aircraft in lbs.
+    - percent_decrease_takeoff_headwind_knot (Decimal Column): percent decrease
     in takeoff distance per knot of headwind.
-    - percent_increase_takeoff_tailwind_knot (Float Column): percent increase
+    - percent_increase_takeoff_tailwind_knot (Decimal Column): percent increase
       in takeoff distance per knot of tailwind.
-    - percent_decrease_landing_headwind_knot (Float Column): percent decrease
+    - percent_decrease_landing_headwind_knot (Decimal Column): percent decrease
       in landing distance per knot of headwind.
-    - percent_increase_landing_tailwind_knot (Float Column): percent increase
+    - percent_increase_landing_tailwind_knot (Decimal Column): percent increase
       in landing distance per knot of tailwind.
     - percent_increase_climb_temperature_c (Integer Column): percent increase in climb
       time, fuel and distance per degree celsius of air temperature above standard.
@@ -106,39 +111,20 @@ class PerformanceProfile(BaseModel):
     __tablename__ = "performance_profiles"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    percent_decrease_takeoff_headwind_knot = Column(
-        Float,
-        nullable=False,
-        default=0
-    )
-    percent_increase_takeoff_tailwind_knot = Column(
-        Float,
-        nullable=False,
-        default=0
-    )
-    percent_decrease_landing_headwind_knot = Column(
-        Float,
-        nullable=False,
-        default=0
-    )
-    percent_increase_landing_tailwind_knot = Column(
-        Float,
-        nullable=False,
-        default=0
-    )
-    percent_increase_climb_temperature_c = Column(
-        Float,
-        nullable=False,
-        default=0
-    )
+    center_of_gravity_in = Column(DECIMAL(5, 2))
+    empty_weight_lb = Column(DECIMAL(7, 2))
+    percent_decrease_takeoff_headwind_knot = Column(DECIMAL(4, 2))
+    percent_increase_takeoff_tailwind_knot = Column(DECIMAL(4, 2))
+    percent_decrease_landing_headwind_knot = Column(DECIMAL(4, 2))
+    percent_increase_landing_tailwind_knot = Column(DECIMAL(4, 2))
+    percent_increase_climb_temperature_c = Column(DECIMAL(4, 2))
     fuel_type_id = Column(
         Integer,
         ForeignKey(
             "fuel_types.id",
             ondelete="RESTRICT",
             onupdate="CASCADE"
-        ),
-        nullable=False
+        )
     )
 
     aircraft = Relationship(
@@ -188,12 +174,6 @@ class PerformanceProfile(BaseModel):
     )
     cruise_performance_data = Relationship(
         "CruisePerformance",
-        back_populates="performance_profile",
-        passive_deletes=True,
-        passive_updates=True
-    )
-    compass_card_data = Relationship(
-        "CompassCard",
         back_populates="performance_profile",
         passive_deletes=True,
         passive_updates=True
@@ -261,6 +241,12 @@ class Aircraft(BaseModel):
         passive_deletes=True,
         passive_updates=True
     )
+    compass_card_data = Relationship(
+        "CompassCard",
+        back_populates="aircraft",
+        passive_deletes=True,
+        passive_updates=True
+    )
 
 
 class SurfacePerformanceDecrease(BaseModel):
@@ -281,7 +267,7 @@ class SurfacePerformanceDecrease(BaseModel):
     __tablename__ = "surfaces_performance_decrease"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    percent = Column(Float, nullable=False, default=0)
+    percent = Column(DECIMAL(4, 2), nullable=False, default=0)
     is_takeoff = Column(Boolean, nullable=False, default=True)
     surface_id = Column(
         Integer,
@@ -317,9 +303,6 @@ class WeightBalanceProfile(BaseModel):
     Attributes:
     - id (Integer Column): table primary key.
     - name (String Column): name of the profile.
-    - center_of_gravity_in (Decimal Column): center of gravity of empty aircraft 
-      in inches from datum.
-    - empty_weight_lb (Decimal Column): empty weight of the aircraft in lbs.
     - fuel_capacity_gallons (Decimal Column): total fuel capacity.
     - fuel_arm_in (Decimal Column): arm of the fuel wight.
     - max_take_off_weight_lb (Decimal Column): maximum takeoff weight in lbs.
@@ -334,8 +317,6 @@ class WeightBalanceProfile(BaseModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False, default="Normal Category")
-    center_of_gravity_in = Column(DECIMAL(5, 2), nullable=False, default=0)
-    empty_weight_lb = Column(DECIMAL(7, 2), nullable=False, default=0)
     fuel_capacity_gallons = Column(DECIMAL(5, 2), nullable=False)
     fuel_arm_in = Column(DECIMAL(5, 2), nullable=False)
     max_take_off_weight_lb = Column(DECIMAL(7, 2), nullable=False)
@@ -690,9 +671,9 @@ class CompassCard(BaseModel):
     - id (Integer Column): table primary key.
     - uncorrected (Integer Column): the compass track before correction. The track you want to steer.
     - corrected (Integer Column): the compass track after correction. The track you have to steer.
-    - performance_profile_id (Integer Column): foreignkey pointing to the performance_profiles parent table.
-    - performance_profile (Relationship): Defines the many-to-one relationship with the 
-      performance_profiles parent table.
+    - aircraft_id (Integer Column): foreignkey pointing to the aircraft parent table.
+    - aircraft (Relationship): Defines the many-to-one relationship with the 
+      aircraft parent table.
     """
 
     __tablename__ = "compass_card_data"
@@ -701,18 +682,18 @@ class CompassCard(BaseModel):
     uncorrected = Column(Integer, nullable=False)
     corrected = Column(Integer, nullable=False)
 
-    performance_profile_id = Column(
+    aircraft_id = Column(
         Integer,
         ForeignKey(
-            "performance_profiles.id",
+            "aircraft.id",
             ondelete="CASCADE",
             onupdate="CASCADE"
         ),
         nullable=False
     )
 
-    performance_profile = Relationship(
-        "PerformanceProfile",
+    aircraft = Relationship(
+        "Aircraft",
         back_populates="compass_card_data"
     )
 

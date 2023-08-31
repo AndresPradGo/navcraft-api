@@ -301,6 +301,62 @@ def _add_runways():
         print(f"Error! could not add runways: {e}")
 
 
+def _add_fuel_types():
+    """
+    This function adds an initial list of fuel types.
+
+    Parameters: None
+
+    Returns: None
+    """
+    data_to_add = [schemas.FuelTypeData(**{
+        "name": f["name"],
+        "density_lb_gal": f["density_lb_gal"]
+    }) for f in csv.csv_to_list(file_path=f"{_PATH}fuel_types.csv")]
+
+    try:
+        with Session() as db:
+            db_is_populated = db.query(models.FuelType).first()
+
+            if db_is_populated is None:
+                for fuel_type in data_to_add:
+                    new_fuel_type = models.FuelType(
+                        name=fuel_type.name,
+                        density_lb_gal=fuel_type.density_lb_gal,
+                    )
+                    db.add(new_fuel_type)
+                db.commit()
+    except (IntegrityError, TimeoutError, OperationalError) as e:
+        print(f"Error! could not add fuel types: {e}")
+
+
+def _add_aircraft_manufacturers():
+    """
+    This function adds an initial list of aircraft manufacturers.
+
+    Parameters: None
+
+    Returns: None
+    """
+    data_to_add = [schemas.AircraftMakeData(**{
+        "name": f["name"]
+    }) for f in csv.csv_to_list(file_path=f"{_PATH}manufacturers.csv")]
+
+    try:
+        with Session() as db:
+            db_is_populated = db.query(models.AircraftMake).first()
+
+            if db_is_populated is None:
+                for manufacturer in data_to_add:
+                    new_manufacturer = models.AircraftMake(
+                        name=manufacturer.name
+                    )
+                    db.add(new_manufacturer)
+                db.commit()
+    except (IntegrityError, TimeoutError, OperationalError) as e:
+        print(f"Error! could not add fuel types: {e}")
+
+
 def _populate_db():
     """
     This function populates the database with the minimum required data.
@@ -315,6 +371,8 @@ def _populate_db():
     _add_vfr_waypoints()
     _add_aerodromes()
     _add_runways()
+    _add_fuel_types()
+    _add_aircraft_manufacturers()
 
 
 def set_up_database():
