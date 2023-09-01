@@ -8,7 +8,7 @@ Usage:
 
 """
 
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from pydantic import BaseModel, constr, conint, confloat, field_validator, model_validator
 
@@ -111,20 +111,32 @@ class PerformanceProfilePostData(BaseModel):
         max_length=255,
         pattern="^[\-a-zA-Z0-9 ]+$"
     )
+    center_of_gravity_in: Optional[confloat(ge=0)] = None
+    empty_weight_lb: Optional[confloat(ge=0)] = None
 
-    @field_validator('performance_profile_name')
+    @model_validator(mode='before')
     @classmethod
-    def clean_performance_profile_name(clc, value: str) -> str:
+    def round_weight_and_cog(clc, values: Dict[str, Any]) -> Dict:
         '''
-        Classmethod to clean performance_profile_name string.
+        Classmethod to round empty weight and center of gravity, and clean profile name.
 
         Parameters:
-        - value (str): the performance_profile_name string to be validated.
+        - values (Dict): dictionary with the input values.
 
         Returns:
-        (str): cleaned performance_profile_name string.
+        (Dict): dictionary with the input values corrected.
+
         '''
-        return clean_string(value)
+        if "empty_weight_lb" in values and values["empty_weight_lb"] is not None:
+            values["empty_weight_lb"] = round(values["empty_weight_lb"], 2)
+        if "center_of_gravity_in" in values and values["center_of_gravity_in"] is not None:
+            values["center_of_gravity_in"] = round(
+                values["center_of_gravity_in"], 2)
+
+        values["performance_profile_name"] = clean_string(
+            values["performance_profile_name"])
+
+        return values
 
 
 class PerformanceProfilePostReturn(PerformanceProfilePostData):

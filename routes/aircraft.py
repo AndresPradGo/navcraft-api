@@ -223,16 +223,22 @@ async def post_new_aircraft_model(
     new_performance_profile = models.PerformanceProfile(
         model_id=new_model.id,
         fuel_type_id=model_data.fuel_type_id,
-        name=model_data.performance_profile_name
+        name=model_data.performance_profile_name,
+        center_of_gravity_in=model_data.center_of_gravity_in,
+        empty_weight_lb=model_data.empty_weight_lb
     )
     db.add(new_performance_profile)
     db.commit()
     db.refresh(new_performance_profile)
 
-    return {**new_model_dict,
-            "fuel_type_id": new_performance_profile.fuel_type_id,
-            "performance_profile_name": new_performance_profile.name,
-            "performance_profile_id": new_performance_profile.id}
+    return {
+        **new_model_dict,
+        "fuel_type_id": new_performance_profile.fuel_type_id,
+        "performance_profile_name": new_performance_profile.name,
+        "performance_profile_id": new_performance_profile.id,
+        "center_of_gravity_in": new_performance_profile.empty_weight_lb,
+        "empty_weight_lb": new_performance_profile.center_of_gravity_in
+    }
 
 
 @router.post("/model/performance/{model_id}", status_code=status.HTTP_201_CREATED, response_model=schemas.PerformanceProfilePostReturn)
@@ -290,7 +296,9 @@ async def post_new_aircraft_model_performance_profile(
     new_performance_profile = models.PerformanceProfile(
         model_id=model_id,
         fuel_type_id=performance_data.fuel_type_id,
-        name=performance_data.performance_profile_name
+        name=performance_data.performance_profile_name,
+        center_of_gravity_in=performance_data.center_of_gravity_in,
+        empty_weight_lb=performance_data.empty_weight_lb
     )
     db.add(new_performance_profile)
     db.commit()
@@ -300,7 +308,9 @@ async def post_new_aircraft_model_performance_profile(
     return {
         "id": new_performance_profile.id,
         "fuel_type_id": new_performance_profile.id,
-        "performance_profile_name": new_performance_profile.name
+        "performance_profile_name": new_performance_profile.name,
+        "center_of_gravity_in": new_performance_profile.empty_weight_lb,
+        "empty_weight_lb": new_performance_profile.center_of_gravity_in
     }
 
 
