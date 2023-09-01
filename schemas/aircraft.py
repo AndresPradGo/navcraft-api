@@ -106,7 +106,6 @@ class PerformanceProfilePostData(BaseModel):
     '''
     fuel_type_id: conint(gt=0)
     performance_profile_name: constr(
-        to_upper=True,
         min_length=2,
         max_length=255,
         pattern="^[\-a-zA-Z0-9 ]+$"
@@ -148,10 +147,10 @@ class PerformanceProfilePostReturn(PerformanceProfilePostData):
     id: conint(gt=0)
 
 
-class AircraftModelOfficialPostData(PerformanceProfilePostData):
+class AircraftModelOfficialBaseData(BaseModel):
     '''
-    This class defines the data structure reuired from the client, in order to add
-    a new official aircraft model to the database as an admin user.
+    This class defines the base data structure reuired from the client, in order to edit
+    a official aircraft models.
     '''
 
     make_id: conint(gt=0)
@@ -170,11 +169,27 @@ class AircraftModelOfficialPostData(PerformanceProfilePostData):
     )
 
 
-class AircraftModelOfficialPostReturn(AircraftModelOfficialPostData):
+class AircraftModelOfficialPostData(AircraftModelOfficialBaseData, PerformanceProfilePostData):
+    '''
+    This class defines the data structure reuired from the client, in order to add
+    a new official aircraft model to the database as an admin user.
+    '''
+    ...
+
+
+class AircraftModelOfficialBaseReturn(AircraftModelOfficialBaseData):
+    """
+    This class defines the base data-structure required to return Official aircraft model data
+    to the client.
+    """
+
+    id: conint(gt=0)
+
+
+class AircraftModelOfficialPostReturn(AircraftModelOfficialBaseReturn, PerformanceProfilePostData):
     """
     This class defines the data-structure required to return Official aircraft model data
     to the client.
     """
 
-    id: conint(gt=0)
     performance_profile_id: conint(gt=0)

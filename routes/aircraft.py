@@ -416,6 +416,131 @@ async def edit_aircraft_manufacturer(
     return make_query.first().__dict__
 
 
+@router.put("/model/{id}", status_code=status.HTTP_201_CREATED, response_model=schemas.AircraftModelOfficialBaseReturn)
+async def edit_aircraft_model(
+    id: int,
+    model_data: schemas.AircraftModelOfficialBaseData,
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Edit Aircraft Model Endpoint.
+
+    Parameters: 
+    - id (int): model id
+    - model_data (dict): the data to be added.
+
+    Returns: 
+    - Dic: dictionary with the data added to the database, and the id.
+
+    Raise:
+    - HTTPException (400): if model doesn't exists, or data is wrong.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check if model exists
+    model_query = db.query(models.AircraftModel).filter_by(id=id)
+    if model_query.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Model with id {id} doesn't exist."
+        )
+
+    # Check if new model data is repeated in
+    model_exists = db.query(models.AircraftModel).filter(and_(
+        not_(models.AircraftModel.id == id),
+        func.upper(models.AircraftModel.model) == func.upper(model_data.model),
+    )).first()
+    if model_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{model_data.model} already exists in the database."
+        )
+
+    # Check manufacturer exists
+    make_id_exists = db.query(models.AircraftMake).filter_by(
+        id=model_data.make_id).first()
+    if not make_id_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Manufacturer ID {model_data.make_id} doesn't exist."
+        )
+
+    # Update aircraft model
+    model_query.update(model_data.model_dump())
+    db.commit()
+
+    new_model = db.query(models.AircraftModel).filter_by(id=id).first()
+    return {**new_model.__dict__}
+
+
+@router.put("/model/performance/{id}", status_code=status.HTTP_201_CREATED, response_model=schemas.PerformanceProfilePostReturn)
+async def edit_aircraft_model_performance_profile(
+    id: int,
+    performance_data: schemas.PerformanceProfilePostData,
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Edit Model Performance Profile Endpoint.
+
+    Parameters: 
+    - id (int): performance profile id.
+    - performance_data (dict): the data to be added.
+
+    Returns: 
+    - Dic: dictionary with the data added to the database, and the id.
+
+    Raise:
+    - HTTPException (400): if performance profile doesn't exists, or data is wrong.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check profile exists
+    performance_profile_query = db.query(
+        models.PerformanceProfile).filter_by(id=id)
+    if performance_profile_query.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Performance profile with id {id} doesn't exist."
+        )
+
+    # Check profile is not repeated
+    profile_exists = db.query(models.PerformanceProfile).filter(and_(
+        models.PerformanceProfile.model_id == performance_profile_query.first().model_id,
+        models.PerformanceProfile.name == performance_data.performance_profile_name
+    )).first()
+    if profile_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Performance Profile {performance_data.performance_profile_name} already exists."
+        )
+
+    # Check fuel type exists
+    fuel_type_id_exists = db.query(models.FuelType).filter_by(
+        id=performance_data.fuel_type_id).first()
+    if not fuel_type_id_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Fuel type ID {performance_data.fuel_type_id} doesn't exist."
+        )
+
+    # Update profile
+    performance_profile_query.update({
+        "name": performance_data.performance_profile_name,
+        "fuel_type_id": performance_data.fuel_type_id,
+        "center_of_gravity_in": performance_data.center_of_gravity_in,
+        "empty_weight_lb": performance_data.empty_weight_lb
+    })
+    db.commit()
+
+    new_performance_profile = db.query(
+        models.PerformanceProfile).filter_by(id=id).first()
+    return {**new_performance_profile.__dict__, "performance_profile_name": new_performance_profile.name}
+
+
 @router.delete("/fuel-type/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_fuel_type(
     id: int,
