@@ -190,7 +190,7 @@ async def post_new_aircraft_model(
             detail=f"{model_data.model} already exists in the database."
         )
 
-    # Check manufacturer data
+    # Check manufacturer exists
     make_id_exists = db.query(models.AircraftMake).filter_by(
         id=model_data.make_id).first()
     if not make_id_exists:
@@ -199,7 +199,7 @@ async def post_new_aircraft_model(
             detail=f"Manufacturer ID {model_data.make_id} doesn't exist."
         )
 
-    # Check fuel type data
+    # Check fuel type exists
     fuel_type_id_exists = db.query(models.FuelType).filter_by(
         id=model_data.fuel_type_id).first()
     if not fuel_type_id_exists:
@@ -208,27 +208,32 @@ async def post_new_aircraft_model(
             detail=f"Fuel type ID {model_data.fuel_type_id} doesn't exist."
         )
 
-    # Post performance profile
-    new_performance_profile = models.PerformanceProfile(
-        fuel_type_id=model_data.fuel_type_id)
-    db.add(new_performance_profile)
-    db.commit()
-    db.refresh(new_performance_profile)
-
     # Post aircraft model
     new_model = models.AircraftModel(
         model=model_data.model,
         code=model_data.code,
         hidden=True if model_data.hidden is None else model_data.hidden,
         make_id=model_data.make_id,
-        performance_profile_id=new_performance_profile.id
     )
     db.add(new_model)
     db.commit()
-
-    # Return aircraft model data
     db.refresh(new_model)
-    return {**new_model.__dict__, "fuel_type_id": new_performance_profile.fuel_type_id}
+    new_model_dict = {**new_model.__dict__}
+
+    # Post performance profile
+    new_performance_profile = models.PerformanceProfile(
+        model_id=new_model.id,
+        fuel_type_id=model_data.fuel_type_id,
+        name=model_data.performance_profile_name
+    )
+    db.add(new_performance_profile)
+    db.commit()
+    db.refresh(new_performance_profile)
+
+    return {**new_model_dict,
+            "fuel_type_id": new_performance_profile.fuel_type_id,
+            "performance_profile_name": new_performance_profile.name,
+            "performance_profile_id": new_performance_profile.id}
 
 
 @router.put("/fuel-type/{id}", status_code=status.HTTP_201_CREATED, response_model=schemas.FuelTypeReturn)

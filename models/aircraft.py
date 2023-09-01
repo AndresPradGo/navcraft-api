@@ -43,14 +43,13 @@ class AircraftModel(BaseModel):
 
     Attributes:
     - id (Integer Column): table primary key.
-    - model (String Column): aircraft model (e.g. Cessna 172 SR Long Range).
+    - model (String Column): aircraft model (e.g. Cessna 172 Skyhawk SR).
     - code (String Column): aircraft code that identifies the aircraft (e.g. PA28, C172).
     - hidden (Boolean Column): if it is an official aircraft profile model, it can be hidden from normal users.
     - make_id (String Column): foreign key pointing to the aircraft_make.
-    - performance_profile_id (Integer Column): foreign key pointing to the performance_profiles table.
     - make (Relationship): defines the many-to-one relationship with the aircraft_make parent table.
     - aircraft (Relationship): defines the one-to-many relationship with the aircraft child table.
-    - performance_profile (Relationship): defines the one-to-one relationship with the performance_profiles parent table.
+    - performance_profiles (Relationship): defines the one-to-many relationship with the performance_profiles child table.
     """
 
     __tablename__ = "aircraft_models"
@@ -67,13 +66,12 @@ class AircraftModel(BaseModel):
             onupdate="CASCADE"
         )
     )
-    performance_profile_id = Column(
-        Integer,
-        ForeignKey(
-            "performance_profiles.id",
-            ondelete="CASCADE",
-            onupdate="CASCADE"
-        )
+
+    performance_profiles = Relationship(
+        "PerformanceProfile",
+        back_populates="model",
+        passive_deletes=True,
+        passive_updates=True
     )
     make = Relationship("AircraftMake", back_populates="models")
     aircraft = Relationship(
@@ -82,8 +80,6 @@ class AircraftModel(BaseModel):
         passive_deletes=True,
         passive_updates=True
     )
-    performance_profile = Relationship(
-        "PerformanceProfile", back_populates="model")
 
 
 class PerformanceProfile(BaseModel):
@@ -92,6 +88,8 @@ class PerformanceProfile(BaseModel):
 
     Attributes:
     - id (Integer Column): table primary key.
+    - name (String Column): name specifying details about the profile 
+      (e.g. No Wheel-fairings, Airconditioning-on, Long-range Tanks)
     - center_of_gravity_in (Decimal Column): center of gravity of empty aircraft 
       in inches from datum.
     - empty_weight_lb (Decimal Column): empty weight of the aircraft in lbs.
@@ -108,11 +106,14 @@ class PerformanceProfile(BaseModel):
     - percent_increase_climb_temperature_c (Integer Column): percent increase in climb
       time, fuel and distance per degree celsius of air temperature above standard.
     - fuel_type_id (Integer Column): foreignkey pointing to the fuel_types table.
+    - model_id (Integer Column): foreignkey pointing to the aircarft_models table.
+    - aircraft_id (Integer Column): foreignkey pointing to the aircraft table.
     """
 
     __tablename__ = "performance_profiles"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(50), nullable=False)
     center_of_gravity_in = Column(DECIMAL(5, 2))
     empty_weight_lb = Column(DECIMAL(7, 2))
     take_off_taxi_fuel_gallons = Column(DECIMAL(3, 1))
@@ -129,21 +130,26 @@ class PerformanceProfile(BaseModel):
             onupdate="CASCADE"
         )
     )
-
-    aircraft = Relationship(
-        "Aircraft",
-        back_populates="performance_profile",
-        uselist=False,
-        passive_deletes=True,
-        passive_updates=True
+    model_id = Column(
+        Integer,
+        ForeignKey(
+            "aircraft_models.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE"
+        )
+    )
+    aircraft_id = Column(
+        Integer,
+        ForeignKey(
+            "aircraft.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE"
+        )
     )
     model = Relationship(
-        "AircraftModel",
-        back_populates="performance_profile",
-        uselist=False,
-        passive_deletes=True,
-        passive_updates=True
-    )
+        "AircraftModel", back_populates="performance_profiles")
+    aircraft = Relationship(
+        "Aircraft", back_populates="performance_profiles")
     fuel_type = Relationship("FuelType", back_populates="performance_profiles")
     performance_decreace_runway_surfaces = Relationship(
         "SurfacePerformanceDecrease",
@@ -193,7 +199,6 @@ class Aircraft(BaseModel):
     - model_id (Integer Column): foreignkey pointing to the aircraft_models table.
     - fuel_type_id (Integer Column): foreignkey pointing to the fuel_types table.
     - owner_id (Integer Column): foreign key that points to the users table.
-    - performance_profile_id (Integer Column): foreign key that points to the performance_profiles table.
     """
 
     __tablename__ = "aircraft"
@@ -210,14 +215,6 @@ class Aircraft(BaseModel):
         ),
         nullable=False
     )
-    performance_profile_id = Column(
-        Integer,
-        ForeignKey(
-            "performance_profiles.id",
-            ondelete="CASCADE",
-            onupdate="CASCADE"
-        )
-    )
     owner_id = Column(
         Integer,
         ForeignKey(
@@ -229,8 +226,12 @@ class Aircraft(BaseModel):
     )
 
     model = Relationship("AircraftModel", back_populates="aircraft")
-    performance_profile = Relationship(
-        "PerformanceProfile", back_populates="aircraft")
+    performance_profiles = Relationship(
+        "PerformanceProfile",
+        back_populates="aircraft",
+        passive_deletes=True,
+        passive_updates=True
+    )
     owner = Relationship("User", back_populates="aircraft")
     flights = Relationship(
         "Flight",
@@ -293,7 +294,7 @@ class WeightBalanceProfile(BaseModel):
 
     Attributes:
     - id (Integer Column): table primary key.
-    - name (String Column): name of the profile.
+    - name (String Column): name of the profile (e.g. Normal Category, Utility Category).
     - fuel_capacity_gallons (Decimal Column): total fuel capacity.
     - fuel_arm_in (Decimal Column): arm of the fuel wight.
     - max_take_off_weight_lb (Decimal Column): maximum takeoff weight in lbs.

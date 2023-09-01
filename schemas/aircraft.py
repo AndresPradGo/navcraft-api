@@ -105,8 +105,8 @@ class AircraftModelOfficialPostData(BaseModel):
     a new official aircraft model to the database as an admin user.
     '''
 
-    make_id: conint(gt=0) = None
-    fuel_type_id: conint(gt=0) = None
+    make_id: conint(gt=0)
+    fuel_type_id: conint(gt=0)
     model: constr(
         strip_whitespace=True,
         min_length=2,
@@ -120,7 +120,27 @@ class AircraftModelOfficialPostData(BaseModel):
         max_length=5,
         pattern="^[\-a-zA-Z0-9]+$"
     )
+    performance_profile_name: constr(
+        to_upper=True,
+        min_length=2,
+        max_length=255,
+        pattern="^[\-a-zA-Z0-9 ]+$"
+    )
     hidden: Optional[bool] = None
+
+    @field_validator('performance_profile_name')
+    @classmethod
+    def clean_performance_profile_name(clc, value: str) -> str:
+        '''
+        Classmethod to clean performance_profile_name string.
+
+        Parameters:
+        - value (str): the performance_profile_name string to be validated.
+
+        Returns:
+        (str): cleaned performance_profile_name string.
+        '''
+        return clean_string(value)
 
 
 class AircraftModelOfficialPostReturn(AircraftModelOfficialPostData):
@@ -130,3 +150,4 @@ class AircraftModelOfficialPostReturn(AircraftModelOfficialPostData):
     """
 
     id: conint(gt=0)
+    performance_profile_id: conint(gt=0)
