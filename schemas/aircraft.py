@@ -99,34 +99,18 @@ class FuelTypeReturn(FuelTypeData):
     id: conint(gt=0)
 
 
-class AircraftModelOfficialPostData(BaseModel):
+class PerformanceProfilePostData(BaseModel):
     '''
     This class defines the data structure reuired from the client, in order to add
-    a new official aircraft model to the database as an admin user.
+    a new performance profile to the database
     '''
-
-    make_id: conint(gt=0)
     fuel_type_id: conint(gt=0)
-    model: constr(
-        strip_whitespace=True,
-        min_length=2,
-        max_length=255,
-        pattern="^[\.\-a-zA-Z0-9\(\) ]+$"
-    )
-    code: constr(
-        to_upper=True,
-        strip_whitespace=True,
-        min_length=2,
-        max_length=5,
-        pattern="^[\-a-zA-Z0-9]+$"
-    )
     performance_profile_name: constr(
         to_upper=True,
         min_length=2,
         max_length=255,
         pattern="^[\-a-zA-Z0-9 ]+$"
     )
-    hidden: Optional[bool] = None
 
     @field_validator('performance_profile_name')
     @classmethod
@@ -141,6 +125,37 @@ class AircraftModelOfficialPostData(BaseModel):
         (str): cleaned performance_profile_name string.
         '''
         return clean_string(value)
+
+
+class PerformanceProfilePostReturn(PerformanceProfilePostData):
+    """
+    This class defines the data-structure required to return performance profile data
+    to the client.
+    """
+
+    id: conint(gt=0)
+
+
+class AircraftModelOfficialPostData(PerformanceProfilePostData):
+    '''
+    This class defines the data structure reuired from the client, in order to add
+    a new official aircraft model to the database as an admin user.
+    '''
+
+    make_id: conint(gt=0)
+    model: constr(
+        strip_whitespace=True,
+        min_length=2,
+        max_length=255,
+        pattern="^[\.\-a-zA-Z0-9\(\) ]+$"
+    )
+    code: constr(
+        to_upper=True,
+        strip_whitespace=True,
+        min_length=2,
+        max_length=5,
+        pattern="^[\-a-zA-Z0-9]+$"
+    )
 
 
 class AircraftModelOfficialPostReturn(AircraftModelOfficialPostData):

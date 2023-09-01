@@ -212,7 +212,6 @@ async def post_new_aircraft_model(
     new_model = models.AircraftModel(
         model=model_data.model,
         code=model_data.code,
-        hidden=True if model_data.hidden is None else model_data.hidden,
         make_id=model_data.make_id,
     )
     db.add(new_model)
@@ -234,6 +233,75 @@ async def post_new_aircraft_model(
             "fuel_type_id": new_performance_profile.fuel_type_id,
             "performance_profile_name": new_performance_profile.name,
             "performance_profile_id": new_performance_profile.id}
+
+
+@router.post("/model/performance/{model_id}", status_code=status.HTTP_201_CREATED, response_model=schemas.PerformanceProfilePostReturn)
+async def post_new_aircraft_model_performance_profile(
+    model_id: int,
+    performance_data: schemas.PerformanceProfilePostData,
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Post New Model Performance Profile Endpoint.
+
+    Parameters: 
+    - model_id (int): model id.
+    - performance_data (dict): the data to be added.
+
+    Returns: 
+    - Dic: dictionary with the data added to the database, and the id.
+
+    Raise:
+    - HTTPException (400): if model doesn't exists, or data is wrong.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check model exists
+    model = db.query(models.AircraftModel).filter_by(id=model_id).first()
+    if model is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Model with id {model_id} doesn't exist."
+        )
+
+    # Check profile is not repeated
+    profile_exists = db.query(models.PerformanceProfile).filter(and_(
+        models.PerformanceProfile.model_id == model_id,
+        models.PerformanceProfile.name == performance_data.performance_profile_name
+    )).first()
+    if profile_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Performance Profile {performance_data.performance_profile_name} already exists."
+        )
+
+    # Check fuel type exists
+    fuel_type_id_exists = db.query(models.FuelType).filter_by(
+        id=performance_data.fuel_type_id).first()
+    if not fuel_type_id_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Fuel type ID {performance_data.fuel_type_id} doesn't exist."
+        )
+
+    # Post profile
+    new_performance_profile = models.PerformanceProfile(
+        model_id=model_id,
+        fuel_type_id=performance_data.fuel_type_id,
+        name=performance_data.performance_profile_name
+    )
+    db.add(new_performance_profile)
+    db.commit()
+
+    # Return profile
+    db.refresh(new_performance_profile)
+    return {
+        "id": new_performance_profile.id,
+        "fuel_type_id": new_performance_profile.id,
+        "performance_profile_name": new_performance_profile.name
+    }
 
 
 @router.put("/fuel-type/{id}", status_code=status.HTTP_201_CREATED, response_model=schemas.FuelTypeReturn)

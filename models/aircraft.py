@@ -45,7 +45,6 @@ class AircraftModel(BaseModel):
     - id (Integer Column): table primary key.
     - model (String Column): aircraft model (e.g. Cessna 172 Skyhawk SR).
     - code (String Column): aircraft code that identifies the aircraft (e.g. PA28, C172).
-    - hidden (Boolean Column): if it is an official aircraft profile model, it can be hidden from normal users.
     - make_id (String Column): foreign key pointing to the aircraft_make.
     - make (Relationship): defines the many-to-one relationship with the aircraft_make parent table.
     - aircraft (Relationship): defines the one-to-many relationship with the aircraft child table.
@@ -57,7 +56,6 @@ class AircraftModel(BaseModel):
     id = Column(Integer, primary_key=True, autoincrement=True)
     model = Column(String(255), nullable=False, unique=True)
     code = Column(String(5), nullable=False)
-    hidden = Column(Boolean)
     make_id = Column(
         Integer,
         ForeignKey(
@@ -90,6 +88,7 @@ class PerformanceProfile(BaseModel):
     - id (Integer Column): table primary key.
     - name (String Column): name specifying details about the profile 
       (e.g. No Wheel-fairings, Airconditioning-on, Long-range Tanks)
+    - is_complete (Boolean Column): true when profile is complete and ready to show to users.
     - center_of_gravity_in (Decimal Column): center of gravity of empty aircraft 
       in inches from datum.
     - empty_weight_lb (Decimal Column): empty weight of the aircraft in lbs.
@@ -114,6 +113,7 @@ class PerformanceProfile(BaseModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False)
+    is_complete = Column(Boolean, nullable=False, default=False)
     center_of_gravity_in = Column(DECIMAL(5, 2))
     empty_weight_lb = Column(DECIMAL(7, 2))
     take_off_taxi_fuel_gallons = Column(DECIMAL(3, 1))
