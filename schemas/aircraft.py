@@ -110,14 +110,42 @@ class PerformanceProfilePostData(BaseModel):
         max_length=255,
         pattern="^[\-a-zA-Z0-9 ]+$"
     )
-    center_of_gravity_in: Optional[confloat(ge=0)] = None
-    empty_weight_lb: Optional[confloat(ge=0)] = None
+    is_complete: Optional[bool] = None
+
+    @field_validator("performance_profile_name")
+    @classmethod
+    def clean_performance_profile_name(clc, value: str) -> str:
+        '''
+        Classmethod to clean profile name.
+
+        Parameters:
+        - values (str): profile name.
+
+        Returns:
+        (str): profile name.
+
+        '''
+
+        return clean_string(value)
+
+
+class PerformanceProfileWightBalanceData(BaseModel):
+    '''
+    This class defines the data structure reuired from the client, in order to add
+    weight and balance data to a performance profile.
+    '''
+    center_of_gravity_in: confloat(ge=0)
+    empty_weight_lb: confloat(ge=0)
+    max_ramp_weight_lb: confloat(ge=0)
+    max_landing_weight_lb: confloat(ge=0)
+    fuel_arm_in: confloat(ge=0)
+    fuel_capacity_gallons: confloat(ge=0)
 
     @model_validator(mode='before')
     @classmethod
     def round_weight_and_cog(clc, values: Dict[str, Any]) -> Dict:
         '''
-        Classmethod to round empty weight and center of gravity, and clean profile name.
+        Classmethod to round weight data.
 
         Parameters:
         - values (Dict): dictionary with the input values.
@@ -126,15 +154,16 @@ class PerformanceProfilePostData(BaseModel):
         (Dict): dictionary with the input values corrected.
 
         '''
-        if "empty_weight_lb" in values and values["empty_weight_lb"] is not None:
-            values["empty_weight_lb"] = round(values["empty_weight_lb"], 2)
-        if "center_of_gravity_in" in values and values["center_of_gravity_in"] is not None:
-            values["center_of_gravity_in"] = round(
-                values["center_of_gravity_in"], 2)
 
-        values["performance_profile_name"] = clean_string(
-            values["performance_profile_name"])
-
+        values["center_of_gravity_in"] = round(
+            values["center_of_gravity_in"], 2)
+        values["empty_weight_lb"] = round(values["empty_weight_lb"], 2)
+        values["max_ramp_weight_lb"] = round(values["max_ramp_weight_lb"], 2)
+        values["max_landing_weight_lb"] = round(
+            values["max_landing_weight_lb"], 2)
+        values["fuel_arm_in"] = round(values["fuel_arm_in"], 2)
+        values["fuel_capacity_gallons"] = round(
+            values["fuel_capacity_gallons"], 2)
         return values
 
 
@@ -145,6 +174,12 @@ class PerformanceProfilePostReturn(PerformanceProfilePostData):
     """
 
     id: conint(gt=0)
+    center_of_gravity_in: Optional[confloat(ge=0)] = None
+    empty_weight_lb: Optional[confloat(ge=0)] = None
+    max_ramp_weight_lb: Optional[confloat(ge=0)] = None
+    max_landing_weight_lb: Optional[confloat(ge=0)] = None
+    fuel_arm_in: Optional[confloat(ge=0)] = None
+    fuel_capacity_gallons: Optional[confloat(ge=0)] = None
 
 
 class AircraftModelOfficialBaseData(BaseModel):

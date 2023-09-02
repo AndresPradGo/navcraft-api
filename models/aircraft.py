@@ -116,6 +116,10 @@ class PerformanceProfile(BaseModel):
     is_complete = Column(Boolean, nullable=False, default=False)
     center_of_gravity_in = Column(DECIMAL(5, 2))
     empty_weight_lb = Column(DECIMAL(7, 2))
+    max_ramp_weight_lb = Column(DECIMAL(7, 2))
+    max_landing_weight_lb = Column(DECIMAL(7, 2))
+    fuel_arm_in = Column(DECIMAL(5, 2))
+    fuel_capacity_gallons = Column(DECIMAL(5, 2))
     take_off_taxi_fuel_gallons = Column(DECIMAL(3, 1))
     percent_decrease_takeoff_headwind_knot = Column(DECIMAL(4, 2))
     percent_increase_takeoff_tailwind_knot = Column(DECIMAL(4, 2))
@@ -151,6 +155,18 @@ class PerformanceProfile(BaseModel):
     aircraft = Relationship(
         "Aircraft", back_populates="performance_profiles")
     fuel_type = Relationship("FuelType", back_populates="performance_profiles")
+    baggage_compartments = Relationship(
+        "BaggageCompartment",
+        back_populates="performance_profile",
+        passive_deletes=True,
+        passive_updates=True
+    )
+    seat_rows = Relationship(
+        "SeatRow",
+        back_populates="performance_profile",
+        passive_deletes=True,
+        passive_updates=True
+    )
     performance_decreace_runway_surfaces = Relationship(
         "SurfacePerformanceDecrease",
         back_populates="performance_profile",
@@ -309,11 +325,7 @@ class WeightBalanceProfile(BaseModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False, default="Normal Category")
-    fuel_capacity_gallons = Column(DECIMAL(5, 2), nullable=False)
-    fuel_arm_in = Column(DECIMAL(5, 2), nullable=False)
     max_take_off_weight_lb = Column(DECIMAL(7, 2), nullable=False)
-    max_ramp_weight_lb = Column(DECIMAL(7, 2), nullable=False)
-    max_landing_weight_lb = Column(DECIMAL(7, 2), nullable=False)
     performance_profile_id = Column(
         Integer,
         ForeignKey(
@@ -327,18 +339,6 @@ class WeightBalanceProfile(BaseModel):
     performance_profile = Relationship(
         "PerformanceProfile",
         back_populates="weight_balance_profiles"
-    )
-    baggage_compartments = Relationship(
-        "BaggageCompartment",
-        back_populates="weight_balance_profile",
-        passive_deletes=True,
-        passive_updates=True
-    )
-    seat_rows = Relationship(
-        "SeatRow",
-        back_populates="weight_balance_profile",
-        passive_deletes=True,
-        passive_updates=True
     )
     weight_balance_limits = Relationship(
         "WeightBalanceLimit",
@@ -407,18 +407,18 @@ class BaggageCompartment(BaseModel):
     name = Column(String(50), nullable=False)
     arm_in = Column(DECIMAL(5, 2), nullable=False)
     weight_limit_lb = Column(DECIMAL(6, 2))
-    weight_balance_profile_id = Column(
+    performance_profile_id = Column(
         Integer,
         ForeignKey(
-            "weight_balance_profiles.id",
+            "performance_profiles.id",
             ondelete="CASCADE",
             onupdate="CASCADE"
         ),
         nullable=False
     )
 
-    weight_balance_profile = Relationship(
-        "WeightBalanceProfile",
+    performance_profile = Relationship(
+        "PerformanceProfile",
         back_populates="baggage_compartments"
     )
 
@@ -453,18 +453,18 @@ class SeatRow(BaseModel):
     arm_in = Column(DECIMAL(5, 2), nullable=False)
     weight_limit_lb = Column(DECIMAL(6, 2))
     number_of_seats = Column(Integer, nullable=False)
-    weight_balance_profile_id = Column(
+    performance_profile_id = Column(
         Integer,
         ForeignKey(
-            "weight_balance_profiles.id",
+            "performance_profiles.id",
             ondelete="CASCADE",
             onupdate="CASCADE"
         ),
         nullable=False
     )
 
-    weight_balance_profile = Relationship(
-        "WeightBalanceProfile",
+    performance_profile = Relationship(
+        "PerformanceProfile",
         back_populates="seat_rows"
     )
     passengers = Relationship(

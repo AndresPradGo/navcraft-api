@@ -224,8 +224,7 @@ async def post_new_aircraft_model(
         model_id=new_model.id,
         fuel_type_id=model_data.fuel_type_id,
         name=model_data.performance_profile_name,
-        center_of_gravity_in=model_data.center_of_gravity_in,
-        empty_weight_lb=model_data.empty_weight_lb
+        is_complete=model_data.is_complete
     )
     db.add(new_performance_profile)
     db.commit()
@@ -236,8 +235,7 @@ async def post_new_aircraft_model(
         "fuel_type_id": new_performance_profile.fuel_type_id,
         "performance_profile_name": new_performance_profile.name,
         "performance_profile_id": new_performance_profile.id,
-        "center_of_gravity_in": new_performance_profile.empty_weight_lb,
-        "empty_weight_lb": new_performance_profile.center_of_gravity_in
+        "is_complete": new_performance_profile.is_complete
     }
 
 
@@ -297,8 +295,7 @@ async def post_new_aircraft_model_performance_profile(
         model_id=model_id,
         fuel_type_id=performance_data.fuel_type_id,
         name=performance_data.performance_profile_name,
-        center_of_gravity_in=performance_data.center_of_gravity_in,
-        empty_weight_lb=performance_data.empty_weight_lb
+        is_complete=performance_data.is_complete
     )
     db.add(new_performance_profile)
     db.commit()
@@ -306,11 +303,8 @@ async def post_new_aircraft_model_performance_profile(
     # Return profile
     db.refresh(new_performance_profile)
     return {
-        "id": new_performance_profile.id,
-        "fuel_type_id": new_performance_profile.id,
-        "performance_profile_name": new_performance_profile.name,
-        "center_of_gravity_in": new_performance_profile.empty_weight_lb,
-        "empty_weight_lb": new_performance_profile.center_of_gravity_in
+        **new_performance_profile.__dict__,
+        "performance_profile_name": new_performance_profile.name
     }
 
 
@@ -531,8 +525,54 @@ async def edit_aircraft_model_performance_profile(
     performance_profile_query.update({
         "name": performance_data.performance_profile_name,
         "fuel_type_id": performance_data.fuel_type_id,
+        "is_complete": performance_data.is_complete
+    })
+    db.commit()
+
+    new_performance_profile = db.query(
+        models.PerformanceProfile).filter_by(id=id).first()
+    return {**new_performance_profile.__dict__, "performance_profile_name": new_performance_profile.name}
+
+
+@router.put("/model/performance/wheight/{id}", status_code=status.HTTP_201_CREATED, response_model=schemas.PerformanceProfilePostReturn)
+async def edit_weight_and_balance_data_for_aircraft_model_performance_profile(
+    id: int,
+    performance_data: schemas.PerformanceProfileWightBalanceData,
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Edit  Weight And Balance Data For Model Performance Profile Endpoint.
+
+    Parameters: 
+    - id (int): performance profile id.
+    - performance_data (dict): the data to be added.
+
+    Returns: 
+    - Dic: dictionary with the performance profile data, and the id.
+
+    Raise:
+    - HTTPException (400): if performance profile doesn't exists, or data is wrong.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check profile exists
+    performance_profile_query = db.query(
+        models.PerformanceProfile).filter_by(id=id)
+    if performance_profile_query.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Performance profile with id {id} doesn't exist."
+        )
+    # Update profile
+    performance_profile_query.update({
         "center_of_gravity_in": performance_data.center_of_gravity_in,
-        "empty_weight_lb": performance_data.empty_weight_lb
+        "empty_weight_lb": performance_data.empty_weight_lb,
+        "max_ramp_weight_lb": performance_data.max_ramp_weight_lb,
+        "max_landing_weight_lb": performance_data.max_landing_weight_lb,
+        "fuel_arm_in": performance_data.fuel_arm_in,
+        "fuel_capacity_gallons": performance_data.fuel_capacity_gallons
     })
     db.commit()
 
