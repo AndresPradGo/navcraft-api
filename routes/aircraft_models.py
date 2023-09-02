@@ -20,7 +20,7 @@ import schemas
 from utils import common_responses, csv_tools as csv
 from utils.db import get_db
 
-router = APIRouter(tags=["Aircraft"])
+router = APIRouter(tags=["Aircraft Models"])
 
 
 @router.get("/fuel-type", status_code=status.HTTP_200_OK, response_model=List[schemas.FuelTypeReturn])
@@ -160,7 +160,7 @@ async def post_new_aircraft_manufacturer(
     return new_make
 
 
-@router.post("/model", status_code=status.HTTP_201_CREATED, response_model=schemas.AircraftModelOfficialPostReturn)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.AircraftModelOfficialPostReturn)
 async def post_new_aircraft_model(
     model_data: schemas.AircraftModelOfficialPostData,
     db: Session = Depends(get_db),
@@ -239,7 +239,7 @@ async def post_new_aircraft_model(
     }
 
 
-@router.post("/model/performance/{model_id}", status_code=status.HTTP_201_CREATED, response_model=schemas.PerformanceProfilePostReturn)
+@router.post("/performance/{model_id}", status_code=status.HTTP_201_CREATED, response_model=schemas.PerformanceProfilePostReturn)
 async def post_new_aircraft_model_performance_profile(
     model_id: int,
     performance_data: schemas.PerformanceProfilePostData,
@@ -308,7 +308,7 @@ async def post_new_aircraft_model_performance_profile(
     }
 
 
-@router.post("/model/performance/baggage-compartment/{profile_id}", status_code=status.HTTP_201_CREATED, response_model=schemas.BaggageCompartmentReturn)
+@router.post("/performance/baggage-compartment/{profile_id}", status_code=status.HTTP_201_CREATED, response_model=schemas.BaggageCompartmentReturn)
 async def post_new_baggage_compartment(
     profile_id: int,
     data: schemas.BaggageCompartmentData,
@@ -369,7 +369,7 @@ async def post_new_baggage_compartment(
     return new_baggage_compartment.__dict__
 
 
-@router.post("/model/performance/seat-row/{profile_id}", status_code=status.HTTP_201_CREATED, response_model=schemas.SeatRowReturn)
+@router.post("/performance/seat-row/{profile_id}", status_code=status.HTTP_201_CREATED, response_model=schemas.SeatRowReturn)
 async def post_new_seat_row(
     profile_id: int,
     data: schemas.SeatRowData,
@@ -533,7 +533,7 @@ async def edit_aircraft_manufacturer(
     return make_query.first().__dict__
 
 
-@router.put("/model/{id}", status_code=status.HTTP_201_CREATED, response_model=schemas.AircraftModelOfficialBaseReturn)
+@router.put("/{id}", status_code=status.HTTP_201_CREATED, response_model=schemas.AircraftModelOfficialBaseReturn)
 async def edit_aircraft_model(
     id: int,
     model_data: schemas.AircraftModelOfficialBaseData,
@@ -592,7 +592,7 @@ async def edit_aircraft_model(
     return {**new_model.__dict__}
 
 
-@router.put("/model/performance/{id}", status_code=status.HTTP_201_CREATED, response_model=schemas.PerformanceProfilePostReturn)
+@router.put("/performance/{id}", status_code=status.HTTP_201_CREATED, response_model=schemas.PerformanceProfilePostReturn)
 async def edit_aircraft_model_performance_profile(
     id: int,
     performance_data: schemas.PerformanceProfilePostData,
@@ -661,7 +661,7 @@ async def edit_aircraft_model_performance_profile(
     return {**new_performance_profile.__dict__, "performance_profile_name": new_performance_profile.name}
 
 
-@router.put("/model/performance/wheight/{id}", status_code=status.HTTP_201_CREATED, response_model=schemas.PerformanceProfilePostReturn)
+@router.put("/performance/wheight/{id}", status_code=status.HTTP_201_CREATED, response_model=schemas.PerformanceProfilePostReturn)
 async def edit_weight_and_balance_data_for_aircraft_model_performance_profile(
     id: int,
     performance_data: schemas.PerformanceProfileWightBalanceData,
