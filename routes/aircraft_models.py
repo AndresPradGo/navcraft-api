@@ -712,6 +712,141 @@ async def edit_weight_and_balance_data_for_aircraft_model_performance_profile(
     return {**new_performance_profile.__dict__, "performance_profile_name": new_performance_profile.name}
 
 
+@router.put("/performance/baggage-compartment/{id}", status_code=status.HTTP_201_CREATED, response_model=schemas.BaggageCompartmentReturn)
+async def edit_baggage_compartment(
+    id: int,
+    data: schemas.BaggageCompartmentData,
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Edit Baggage Compartment Endpoint.
+
+    Parameters: 
+    - id (int): baggage compartment id.
+    - data (dict): the data to be added.
+
+    Returns: 
+    - Dic: dictionary with the data added to the database, and the id.
+
+    Raise:
+    - HTTPException (400): if baggage compartment doesn't exists, or data is wrong.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check baggage compartment exists
+    compartment_query = db.query(models.BaggageCompartment).filter_by(id=id)
+    if compartment_query.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Baggage compartment with ID {id} not found."
+        )
+
+    # Check performance profile
+    performance_profile = db.query(
+        models.PerformanceProfile).filter(and_(
+            models.PerformanceProfile.id == compartment_query.first().performance_profile_id,
+            not_(models.PerformanceProfile.model_id == None),
+            models.PerformanceProfile.aircraft_id == None
+        )).first()
+    if performance_profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The Performance profile you're trying to edit, is not for an aircraft model."
+        )
+
+    # Check baggage compartment name is not repeated
+    baggage_compartment_exists = db.query(models.BaggageCompartment).filter(and_(
+        models.BaggageCompartment.name == data.name,
+        models.BaggageCompartment.performance_profile_id == performance_profile.id,
+        not_(models.BaggageCompartment.id == id)
+    )).first()
+    if baggage_compartment_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Baggage compartment {data.name} for profile with id {performance_profile.id}, already exists."
+        )
+
+    # Edit baggage compartment
+    compartment_query.update({
+        "name": data.name,
+        "arm_in": data.arm_in,
+        "weight_limit_lb": data.weight_limit_lb
+    })
+    db.commit()
+
+    return db.query(models.BaggageCompartment).filter_by(id=id).first().__dict__
+
+
+@router.put("/performance/seat-row/{id}", status_code=status.HTTP_201_CREATED, response_model=schemas.SeatRowReturn)
+async def edit_seat_row(
+    id: int,
+    data: schemas.SeatRowData,
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Edit Seat Row Endpoint.
+
+    Parameters: 
+    - id (int): seat row id.
+    - data (dict): the data to be added.
+
+    Returns: 
+    - Dic: dictionary with the data added to the database, and the id.
+
+    Raise:
+    - HTTPException (400): if seat row doesn't exists, or data is wrong.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check baggage compartment exists
+    row_query = db.query(models.SeatRow).filter_by(id=id)
+    if row_query.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Seat row with ID {id} not found."
+        )
+
+    # Check performance profile
+    performance_profile = db.query(
+        models.PerformanceProfile).filter(and_(
+            models.PerformanceProfile.id == row_query.first().performance_profile_id,
+            not_(models.PerformanceProfile.model_id == None),
+            models.PerformanceProfile.aircraft_id == None
+        )).first()
+    if performance_profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The Performance profile you're trying to edit, is not for an aircraft model."
+        )
+
+    # Check seat row name is not repeated
+    seat_row_exists = db.query(models.SeatRow).filter(and_(
+        models.SeatRow.name == data.name,
+        models.SeatRow.performance_profile_id == performance_profile.id,
+        not_(models.SeatRow.id == id)
+    )).first()
+    if seat_row_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Seat row {data.name} for profile with id {performance_profile.id}, already exists."
+        )
+
+    # Edit seat row
+    row_query.update({
+        "name": data.name,
+        "arm_in": data.arm_in,
+        "weight_limit_lb": data.weight_limit_lb,
+        "number_of_seats": data.number_of_seats
+    })
+    db.commit()
+
+    return db.query(models.SeatRow).filter_by(id=id).first().__dict__
+
+
 @router.delete("/fuel-type/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_fuel_type(
     id: int,
@@ -780,6 +915,102 @@ async def delete_aircraft_manufacturer(
 
     # Delete manufacturer
     deleted = make_query.delete(synchronize_session=False)
+    if not deleted:
+        raise common_responses.internal_server_error()
+    db.commit()
+
+
+@router.delete("/performance/baggage-compartment/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_baggage_compartment(
+    id: int,
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Delete Baggage Compartment Endpoint.
+
+    Parameters: 
+    - id (int): baggage compartment id.
+
+    Returns: None
+
+    Raise:
+    - HTTPException (400): if baggage compartment id doesn't exists.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check baggage compartment exists
+    compartment_query = db.query(models.BaggageCompartment).filter_by(id=id)
+    if compartment_query.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Baggage compartment with ID {id} not found."
+        )
+
+    # Check parformance profile is for an aircraft model
+    performance_profile = db.query(
+        models.PerformanceProfile).filter(and_(
+            models.PerformanceProfile.id == compartment_query.first().performance_profile_id,
+            not_(models.PerformanceProfile.model_id == None),
+            models.PerformanceProfile.aircraft_id == None
+        )).first()
+    if performance_profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The Performance profile you're trying to edit, is not for an aircraft model."
+        )
+
+    # Delete baggage compartment
+    deleted = compartment_query.delete(synchronize_session=False)
+    if not deleted:
+        raise common_responses.internal_server_error()
+    db.commit()
+
+
+@router.delete("/performance/seat-row/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_seat_row(
+    id: int,
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Delete Seat Row Endpoint.
+
+    Parameters: 
+    - id (int): seat row id.
+
+    Returns: None
+
+    Raise:
+    - HTTPException (400): if seat row id doesn't exists.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check seat row exists
+    row_query = db.query(models.SeatRow).filter_by(id=id)
+    if row_query.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Seat row with ID {id} not found."
+        )
+
+    # Check performance profile is for an aircraft model
+    performance_profile = db.query(
+        models.PerformanceProfile).filter(and_(
+            models.PerformanceProfile.id == row_query.first().performance_profile_id,
+            not_(models.PerformanceProfile.model_id == None),
+            models.PerformanceProfile.aircraft_id == None
+        )).first()
+    if performance_profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The Performance profile you're trying to edit, is not for an aircraft model."
+        )
+
+    # Delete seat row
+    deleted = row_query.delete(synchronize_session=False)
     if not deleted:
         raise common_responses.internal_server_error()
     db.commit()

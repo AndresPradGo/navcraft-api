@@ -140,7 +140,7 @@ class BaggageCompartmentData(BaseModel):
         pattern="^[\-a-zA-Z0-9 ]+$"
     )
     arm_in: confloat(ge=0)
-    weight_limit_lb: confloat(ge=0)
+    weight_limit_lb: Optional[confloat(ge=0)] = None
 
     @model_validator(mode='before')
     @classmethod
@@ -157,7 +157,9 @@ class BaggageCompartmentData(BaseModel):
         '''
 
         values["arm_in"] = round(values["arm_in"], 2)
-        values["weight_limit_lb"] = round(values["weight_limit_lb"], 2)
+        if "weight_limit_lb" in values:
+            values["weight_limit_lb"] = round(values["weight_limit_lb"], 2)\
+                if values["weight_limit_lb"] is not None else None
         values["name"] = clean_string(values["name"])
 
         return values
@@ -175,7 +177,7 @@ class SeatRowData(BaggageCompartmentData):
     This class defines the seat row data structure.
     '''
 
-    number_of_seats: conint(gt=0)
+    number_of_seats: conint(ge=0)
 
 
 class SeatRowReturn(SeatRowData):
