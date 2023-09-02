@@ -308,6 +308,129 @@ async def post_new_aircraft_model_performance_profile(
     }
 
 
+@router.post("/model/performance/baggage-compartment/{profile_id}", status_code=status.HTTP_201_CREATED, response_model=schemas.BaggageCompartmentReturn)
+async def post_new_baggage_compartment(
+    profile_id: int,
+    data: schemas.BaggageCompartmentData,
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Post New Baggage Compartment Endpoint.
+
+    Parameters: 
+    - profile_id (int): profile id.
+    - performance_data (dict): the data to be added.
+
+    Returns: 
+    - Dic: dictionary with the data added to the database, and the id.
+
+    Raise:
+    - HTTPException (400): if profile doesn't exists, or data is wrong.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check if performance profile exists
+    performance_profile = db.query(
+        models.PerformanceProfile).filter(and_(
+            models.PerformanceProfile.id == profile_id,
+            not_(models.PerformanceProfile.model_id == None),
+            models.PerformanceProfile.aircraft_id == None
+        )).first()
+    if performance_profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Performance profile with id {profile_id} doesn't exist."
+        )
+    # Check baggage compartment name is not repeated
+    baggage_compartment_exists = db.query(models.BaggageCompartment).filter(and_(
+        models.BaggageCompartment.name == data.name,
+        models.BaggageCompartment.performance_profile_id == profile_id
+    )).first()
+    if baggage_compartment_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Baggage compartment {data.name} for profile with id {profile_id}, already exists."
+        )
+
+    # Post baggage compartment
+    new_baggage_compartment = models.BaggageCompartment(
+        performance_profile_id=profile_id,
+        name=data.name,
+        arm_in=data.arm_in,
+        weight_limit_lb=data.weight_limit_lb
+    )
+
+    db.add(new_baggage_compartment)
+    db.commit()
+    db.refresh(new_baggage_compartment)
+
+    return new_baggage_compartment.__dict__
+
+
+@router.post("/model/performance/seat-row/{profile_id}", status_code=status.HTTP_201_CREATED, response_model=schemas.SeatRowReturn)
+async def post_new_seat_row(
+    profile_id: int,
+    data: schemas.SeatRowData,
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Post New Seat Row Endpoint.
+
+    Parameters: 
+    - profile_id (int): profile id.
+    - performance_data (dict): the data to be added.
+
+    Returns: 
+    - Dic: dictionary with the data added to the database, and the id.
+
+    Raise:
+    - HTTPException (400): if profile doesn't exists, or data is wrong.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check if performance profile exists
+    performance_profile = db.query(
+        models.PerformanceProfile).filter(and_(
+            models.PerformanceProfile.id == profile_id,
+            not_(models.PerformanceProfile.model_id == None),
+            models.PerformanceProfile.aircraft_id == None
+        )).first()
+    if performance_profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Performance profile with id {profile_id} doesn't exist."
+        )
+    # Check seat row name is not repeated
+    seat_row_exists = db.query(models.SeatRow).filter(and_(
+        models.SeatRow.name == data.name,
+        models.SeatRow.performance_profile_id == profile_id
+    )).first()
+    if seat_row_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Seat row {data.name} for profile with id {profile_id}, already exists."
+        )
+
+    # Post baggage compartment
+    new_seat_row = models.SeatRow(
+        performance_profile_id=profile_id,
+        name=data.name,
+        arm_in=data.arm_in,
+        weight_limit_lb=data.weight_limit_lb,
+        number_of_seats=data.number_of_seats
+    )
+
+    db.add(new_seat_row)
+    db.commit()
+    db.refresh(new_seat_row)
+
+    return new_seat_row.__dict__
+
+
 @router.put("/fuel-type/{id}", status_code=status.HTTP_201_CREATED, response_model=schemas.FuelTypeReturn)
 async def edit_fuel_type(
     id: int,
@@ -494,7 +617,11 @@ async def edit_aircraft_model_performance_profile(
 
     # Check profile exists
     performance_profile_query = db.query(
-        models.PerformanceProfile).filter_by(id=id)
+        models.PerformanceProfile).filter(and_(
+            models.PerformanceProfile.id == id,
+            not_(models.PerformanceProfile.model_id == None),
+            models.PerformanceProfile.aircraft_id == None
+        ))
     if performance_profile_query.first() is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -559,7 +686,11 @@ async def edit_weight_and_balance_data_for_aircraft_model_performance_profile(
 
     # Check profile exists
     performance_profile_query = db.query(
-        models.PerformanceProfile).filter_by(id=id)
+        models.PerformanceProfile).filter(and_(
+            models.PerformanceProfile.id == id,
+            not_(models.PerformanceProfile.model_id == None),
+            models.PerformanceProfile.aircraft_id == None
+        ))
     if performance_profile_query.first() is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

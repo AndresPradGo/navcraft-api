@@ -8,7 +8,7 @@ Usage:
 
 """
 
-from typing import Optional, Dict, Any
+from typing import Optional, List, Dict, Any
 
 from pydantic import BaseModel, constr, conint, confloat, field_validator, model_validator
 
@@ -127,6 +127,62 @@ class PerformanceProfilePostData(BaseModel):
         '''
 
         return clean_string(value)
+
+
+class BaggageCompartmentData(BaseModel):
+    '''
+    This class defines the baggage compartment data structure.
+    '''
+
+    name: constr(
+        min_length=2,
+        max_length=50,
+        pattern="^[\-a-zA-Z0-9 ]+$"
+    )
+    arm_in: confloat(ge=0)
+    weight_limit_lb: confloat(ge=0)
+
+    @model_validator(mode='before')
+    @classmethod
+    def round_values_clean_name(clc, values: Dict[str, Any]) -> Dict:
+        '''
+        Classmethod to round weight data.
+
+        Parameters:
+        - values (Dict): dictionary with the input values.
+
+        Returns:
+        (Dict): dictionary with the input values corrected.
+
+        '''
+
+        values["arm_in"] = round(values["arm_in"], 2)
+        values["weight_limit_lb"] = round(values["weight_limit_lb"], 2)
+        values["name"] = clean_string(values["name"])
+
+        return values
+
+
+class BaggageCompartmentReturn(BaggageCompartmentData):
+    '''
+    This class defines the baggage compartment data structure to be returned to the client.
+    '''
+    id: conint(gt=0)
+
+
+class SeatRowData(BaggageCompartmentData):
+    '''
+    This class defines the seat row data structure.
+    '''
+
+    number_of_seats: conint(gt=0)
+
+
+class SeatRowReturn(SeatRowData):
+    '''
+    This class defines the seat row data structure to be returned to the client.
+    '''
+    id: conint(gt=0)
 
 
 class PerformanceProfileWightBalanceData(BaseModel):
