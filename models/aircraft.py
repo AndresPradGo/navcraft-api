@@ -367,9 +367,9 @@ class WeightBalanceLimit(BaseModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     from_cg_in = Column(DECIMAL(5, 2), nullable=False)
-    from_weight_lb = Column(DECIMAL(7, 2), nullable=False, default=0)
+    from_weight_lb = Column(DECIMAL(7, 2), nullable=False)
     to_cg_in = Column(DECIMAL(5, 2), nullable=False)
-    to_weight_lb = Column(DECIMAL(7, 2), nullable=False, default=0)
+    to_weight_lb = Column(DECIMAL(7, 2), nullable=False)
     weight_balance_profile_id = Column(
         Integer,
         ForeignKey(

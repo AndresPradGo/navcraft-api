@@ -381,7 +381,7 @@ async def post_new_seat_row(
 
     Parameters: 
     - profile_id (int): profile id.
-    - performance_data (dict): the data to be added.
+    - data (dict): the data to be added.
 
     Returns: 
     - Dic: dictionary with the data added to the database, and the id.
@@ -429,6 +429,87 @@ async def post_new_seat_row(
     db.refresh(new_seat_row)
 
     return new_seat_row.__dict__
+
+
+@router.post("/performance/weight-balance/{profile_id}", status_code=status.HTTP_201_CREATED, response_model=schemas.WeightBalanceReturn)
+async def post_new_weight_and_balance_profile(
+    profile_id: int,
+    data: schemas.WeightBalanceData,
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Post New Weight And Balance Profile Endpoint.
+
+    Parameters: 
+    - profile_id (int): profile id.
+    - data (dict): the data to be added.
+
+    Returns: 
+    - Dic: dictionary with the data added to the database, and the id.
+
+    Raise:
+    - HTTPException (400): if profile doesn't exists, or data is wrong.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check performance profile exists
+    performance_profile = db.query(models.PerformanceProfile).filter(and_(
+        models.PerformanceProfile.id == profile_id,
+        models.PerformanceProfile.aircraft_id == None,
+        not_(models.PerformanceProfile.model_id == None)
+    )).first()
+    if performance_profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Model performance profile with ID {profile_id} was not found."
+        )
+
+    # Check weight and balance profile doesn't already exist
+    wb_profile_exists = db.query(
+        models.WeightBalanceProfile).filter_by(name=data.name).first()
+    if wb_profile_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Weight and Balance profile {data.name} already exists for performance profile with ID {profile_id}."
+        )
+
+    # Post weight and balance profile
+    new_profile = models.WeightBalanceProfile(
+        performance_profile_id=profile_id,
+        name=data.name,
+        max_take_off_weight_lb=data.max_take_off_weight_lb
+    )
+    db.add(new_profile)
+    db.commit()
+    db.refresh(new_profile)
+
+    # Post weight and balance limits
+    wb_profile_id = new_profile.id
+    new_limits = [models.WeightBalanceLimit(
+        weight_balance_profile_id=wb_profile_id,
+        from_cg_in=limit.from_cg_in,
+        from_weight_lb=limit.from_weight_lb,
+        to_cg_in=limit.to_cg_in,
+        to_weight_lb=limit.to_weight_lb,
+    ) for limit in data.limits]
+
+    db.add_all(new_limits)
+    db.commit()
+
+    # Return weight and balance profile
+    weight_balance_profile = db.query(
+        models.WeightBalanceProfile).filter_by(id=wb_profile_id).first()
+    limits = db.query(models.WeightBalanceLimit).filter_by(
+        weight_balance_profile_id=wb_profile_id).all()
+
+    return {
+        **weight_balance_profile.__dict__,
+        "limits": [{
+            limit.__dict__
+        } for limit in limits]
+    }
 
 
 @router.put("/fuel-type/{id}", status_code=status.HTTP_201_CREATED, response_model=schemas.FuelTypeReturn)

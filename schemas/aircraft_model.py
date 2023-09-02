@@ -146,7 +146,7 @@ class BaggageCompartmentData(BaseModel):
     @classmethod
     def round_values_clean_name(clc, values: Dict[str, Any]) -> Dict:
         '''
-        Classmethod to round weight data.
+        Classmethod to round weight data and clean name.
 
         Parameters:
         - values (Dict): dictionary with the input values.
@@ -286,3 +286,86 @@ class AircraftModelOfficialPostReturn(AircraftModelOfficialBaseReturn, Performan
     """
 
     performance_profile_id: conint(gt=0)
+
+
+class WeightBalanceLimitData(BaseModel):
+    """
+    This class defines the data-structure required to post weight and balance limits of a 
+    weight and balance profile.
+    """
+
+    from_cg_in: confloat(ge=0)
+    from_weight_lb: confloat(ge=0)
+    to_cg_in: confloat(ge=0)
+    to_weight_lb: confloat(ge=0)
+
+    @model_validator(mode='before')
+    @classmethod
+    def round_values(clc, values: Dict[str, Any]) -> Dict[str, Any]:
+        '''
+        Classmethod to round values.
+
+        Parameters:
+        - values (Dict): dictionary with the input values.
+
+        Returns:
+        (Dict): dictionary with the input values corrected.
+
+        '''
+
+        values["from_cg_in"] = round(values["from_cg_in"], 2)
+        values["from_weight_lb"] = round(values["from_weight_lb"], 2)
+        values["to_cg_in"] = round(values["to_cg_in"], 2)
+        values["to_weight_lb"] = round(values["to_weight_lb"], 2)
+        return values
+
+
+class WeightBalanceLimitReturn(WeightBalanceLimitData):
+    """
+    This class defines the data-structure required to return weight and balance limits of a 
+    weight and balance profile.
+    """
+    id: conint(gt=0)
+
+
+class WeightBalanceData(BaseModel):
+    """
+    This class defines the data-structure required to post a weight and balance profile.
+    """
+
+    name: constr(
+        min_length=2,
+        max_length=50,
+        pattern="^[\-a-zA-Z0-9\(\) ]+$"
+    )
+    max_take_off_weight_lb: confloat(ge=0)
+    limits: List[WeightBalanceLimitData] = []
+
+    @model_validator(mode='before')
+    @classmethod
+    def round_values_clean_name(clc, values: Dict[str, Any]) -> Dict[str, Any]:
+        '''
+        Classmethod to round weight data and clean name.
+
+        Parameters:
+        - values (Dict): dictionary with the input values.
+
+        Returns:
+        (Dict): dictionary with the input values corrected.
+
+        '''
+
+        values["max_take_off_weight_lb"] = round(
+            values["max_take_off_weight_lb"], 2)
+        values["name"] = clean_string(values["name"])
+
+        return values
+
+
+class WeightBalanceReturn(WeightBalanceData):
+    """
+    This class defines the data-structure required to return a weight and balance profile.
+    """
+
+    id: conint(gt=0)
+    limits: List[WeightBalanceLimitReturn] = []
