@@ -22,7 +22,7 @@ import models
 import schemas
 from utils import common_responses, csv_tools as csv
 from utils.db import get_db
-from utils.functions import get_user_id_from_email, clean_string
+from utils.functions import get_user_id_from_email, clean_string, get_table_header
 
 router = APIRouter(tags=["Waypoints"])
 
@@ -207,7 +207,6 @@ async def get_csv_file_with_all_vfr_waypoints(
     Raise:
     - HTTPException (500): if there is a server error. 
     """
-
     a = models.Aerodrome
     v = models.VfrWaypoint
     w = models.Waypoint
@@ -219,33 +218,36 @@ async def get_csv_file_with_all_vfr_waypoints(
         .filter(not_(w.id.in_(aerodromes)))\
         .join(v, w.id == v.waypoint_id).all()
 
+    table_name = "vfr_waypoints"
+    headers = get_table_header(table_name)
+
     data = [{
-        "code": v.code,
-        "name": v.name,
-        "lat_degrees": w.lat_degrees,
-        "lat_minutes": w.lat_minutes,
-        "lat_seconds": w.lat_seconds,
-        "lat_direction": w.lat_direction,
-        "lon_degrees": w.lon_degrees,
-        "lon_minutes": w.lon_minutes,
-        "lon_seconds": w.lon_seconds,
-        "lon_direction": w.lon_direction,
-        "magnetic_variation": w.magnetic_variation,
-        "hidden": v.hidden
+        headers["code"]: v.code,
+        headers["name"]: v.name,
+        headers["lat_degrees"]: w.lat_degrees,
+        headers["lat_minutes"]: w.lat_minutes,
+        headers["lat_seconds"]: w.lat_seconds,
+        headers["lat_direction"]: w.lat_direction,
+        headers["lon_degrees"]: w.lon_degrees,
+        headers["lon_minutes"]: w.lon_minutes,
+        headers["lon_seconds"]: w.lon_seconds,
+        headers["lon_direction"]: w.lon_direction,
+        headers["magnetic_variation"]: w.magnetic_variation,
+        headers["hidden"]: v.hidden
     } for w, v in query_results] if len(query_results) else [
         {
-            "code": "",
-            "name": "",
-            "lat_degrees": "",
-            "lat_minutes": "",
-            "lat_seconds": "",
-            "lat_direction": "",
-            "lon_degrees": "",
-            "lon_minutes": "",
-            "lon_seconds": "",
-            "lon_direction": "",
-            "magnetic_variation": "",
-            "hidden": ""
+            headers["code"]: "",
+            headers["name"]: "",
+            headers["lat_degrees"]: "",
+            headers["lat_minutes"]: "",
+            headers["lat_seconds"]: "",
+            headers["lat_direction"]: "",
+            headers["lon_degrees"]: "",
+            headers["lon_minutes"]: "",
+            headers["lon_seconds"]: "",
+            headers["lon_direction"]: "",
+            headers["magnetic_variation"]: "",
+            headers["hidden"]: ""
         }
     ]
 
@@ -255,7 +257,7 @@ async def get_csv_file_with_all_vfr_waypoints(
         iter([buffer.getvalue()]),
         media_type="text/csv",
     )
-    response.headers["Content-Disposition"] = 'attachment; filename="vfr_waypoints.csv"'
+    response.headers["Content-Disposition"] = f'attachment; filename="{table_name}.csv"'
     return response
 
 
@@ -333,42 +335,45 @@ async def get_csv_file_with_all_aerodromes(
         .join(v, w.id == v.waypoint_id)\
         .join(a, v.waypoint_id == a.vfr_waypoint_id).all()
 
+    table_name = "aerodromes"
+    headers = get_table_header(table_name)
+
     data = [{
-        "code": v.code,
-        "name": v.name,
-        "lat_degrees": w.lat_degrees,
-        "lat_minutes": w.lat_minutes,
-        "lat_seconds": w.lat_seconds,
-        "lat_direction": w.lat_direction,
-        "lon_degrees": w.lon_degrees,
-        "lon_minutes": w.lon_minutes,
-        "lon_seconds": w.lon_seconds,
-        "lon_direction": w.lon_direction,
-        "elevation_ft": a.elevation_ft,
-        "magnetic_variation": w.magnetic_variation,
-        "has_taf": a.has_taf,
-        "has_metar": a.has_metar,
-        "has_fds": a.has_fds,
-        "hidden": v.hidden,
-        "status_id": a.status_id
+        headers["code"]: v.code,
+        headers["name"]: v.name,
+        headers["lat_degrees"]: w.lat_degrees,
+        headers["lat_minutes"]: w.lat_minutes,
+        headers["lat_seconds"]: w.lat_seconds,
+        headers["lat_direction"]: w.lat_direction,
+        headers["lon_degrees"]: w.lon_degrees,
+        headers["lon_minutes"]: w.lon_minutes,
+        headers["lon_seconds"]: w.lon_seconds,
+        headers["lon_direction"]: w.lon_direction,
+        headers["elevation_ft"]: a.elevation_ft,
+        headers["magnetic_variation"]: w.magnetic_variation,
+        headers["has_taf"]: a.has_taf,
+        headers["has_metar"]: a.has_metar,
+        headers["has_fds"]: a.has_fds,
+        headers["hidden"]: v.hidden,
+        headers["status_id"]: a.status_id
     } for w, v, a in aerodromes] if len(aerodromes) else [{
-        "code": "",
-        "name": "",
-        "lat_degrees": "",
-        "lat_minutes": "",
-        "lat_seconds": "",
-        "lat_direction": "",
-        "lon_degrees": "",
-        "lon_minutes": "",
-        "lon_seconds": "",
-        "lon_direction": "",
-        "elevation_ft": "",
-        "magnetic_variation": "",
-        "has_taf": "",
-        "has_metar": "",
-        "has_fds": "",
-        "hidden": "",
-        "status_id": ""
+        headers["code"]: "",
+        headers["name"]: "",
+        headers["lat_degrees"]: "",
+        headers["lat_minutes"]: "",
+        headers["lat_seconds"]: "",
+        headers["lat_direction"]: "",
+        headers["lon_degrees"]: "",
+        headers["lon_minutes"]: "",
+        headers["lon_seconds"]: "",
+        headers["lon_direction"]: "",
+        headers["elevation_ft"]: "",
+        headers["magnetic_variation"]: "",
+        headers["has_taf"]: "",
+        headers["has_metar"]: "",
+        headers["has_fds"]: "",
+        headers["hidden"]: "",
+        headers["status_id"]: ""
     }]
 
     buffer = csv.list_to_buffer(data=data)
@@ -377,7 +382,7 @@ async def get_csv_file_with_all_aerodromes(
         iter([buffer.getvalue()]),
         media_type="text/csv",
     )
-    response.headers["Content-Disposition"] = 'attachment; filename="aerodromes.csv"'
+    response.headers["Content-Disposition"] = f'attachment; filename="{table_name}.csv"'
     return response
 
 
@@ -526,8 +531,23 @@ async def manage_vfr_waypoints_with_csv_file(
     csv.check_format(csv_file)
 
     # Get list of schemas
+    table_name = "vfr_waypoints"
+    headers = get_table_header(table_name)
     try:
-        data_list = [schemas.VfrWaypointData(**v) for v in await csv.extract_data(file=csv_file)]
+        data_list = [schemas.VfrWaypointData(
+            code=v[headers["code"]],
+            name=v[headers["name"]],
+            lat_degrees=v[headers["lat_degrees"]],
+            lat_minutes=v[headers["lat_minutes"]],
+            lat_seconds=v[headers["lat_seconds"]],
+            lat_direction=v[headers["lat_direction"]],
+            lon_degrees=v[headers["lon_degrees"]],
+            lon_minutes=v[headers["lon_minutes"]],
+            lon_seconds=v[headers["lon_seconds"]],
+            lon_direction=v[headers["lon_direction"]],
+            magnetic_variation=v[headers["magnetic_variation"]],
+            hidden=v[headers["hidden"]]
+        ) for v in await csv.extract_data(file=csv_file)]
     except ValidationError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -835,11 +855,28 @@ async def manage_registered_aerodrome_with_csv_file(
     csv.check_format(csv_file)
 
     # Get list of schemas
+    table_name = "aerodromes"
+    headers = get_table_header(table_name)
     try:
-        data_list = [schemas.RegisteredAerodromeData(**{
-            **a,
-            "status": a["status_id"]
-        }) for a in await csv.extract_data(file=csv_file)]
+        data_list = [schemas.RegisteredAerodromeData(
+            code=a[headers["code"]],
+            name=a[headers["name"]],
+            lat_degrees=a[headers["lat_degrees"]],
+            lat_minutes=a[headers["lat_minutes"]],
+            lat_seconds=a[headers["lat_seconds"]],
+            lat_direction=a[headers["lat_direction"]],
+            lon_degrees=a[headers["lon_degrees"]],
+            lon_minutes=a[headers["lon_minutes"]],
+            lon_seconds=a[headers["lon_seconds"]],
+            lon_direction=a[headers["lon_direction"]],
+            magnetic_variation=a[headers["magnetic_variation"]],
+            status=a[headers["status_id"]],
+            elevation_ft=a[headers["elevation_ft"]],
+            has_taf=a[headers["has_taf"]],
+            has_metar=a[headers["has_metar"]],
+            has_fds=a[headers["has_fds"]],
+            hidden=a[headers["hidden"]],
+        ) for a in await csv.extract_data(file=csv_file)]
     except ValidationError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

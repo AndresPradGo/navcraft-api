@@ -20,7 +20,7 @@ import models
 import schemas
 from utils import common_responses, csv_tools as csv
 from utils.db import get_db
-from utils.functions import get_user_id_from_email, runways_are_unique
+from utils.functions import get_user_id_from_email, runways_are_unique, get_table_header
 
 router = APIRouter(tags=["Runways"])
 
@@ -117,41 +117,45 @@ async def get_csv_file_with_all_runways(
         .filter(models.Runway.aerodrome_id.in_(aerodrome_ids)).all()
     surfaces = db.query(models.RunwaySurface).all()
 
+    runway_headers = get_table_header("runways")
+    aerodrome_headers = get_table_header("aerodrome_codes")
+    surface_headers = get_table_header("runway_surface_ids")
+
     files_data = [
         {
             "name": "runways.csv",
             "data": [{
-                "aerodrome": aerodrome_codes[r.aerodrome_id],
-                "number": r.number,
-                "position": r.position,
-                "length_ft": r.length_ft,
-                "surface_id": r.surface_id,
+                runway_headers["aerodrome"]: aerodrome_codes[r.aerodrome_id],
+                runway_headers["number"]: r.number,
+                runway_headers["position"]: r.position,
+                runway_headers["length_ft"]: r.length_ft,
+                runway_headers["surface_id"]: r.surface_id,
             } for r in runways] if len(runways) else [{
-                "aerodrome_id": "",
-                "number": "",
-                "position": "",
-                "length_ft": "",
-                "surface_id": "",
+                runway_headers["aerodrome_id"]: "",
+                runway_headers["number"]: "",
+                runway_headers["position"]: "",
+                runway_headers["length_ft"]: "",
+                runway_headers["surface_id"]: "",
             }]
         },
         {
             "name": "aerodrome_codes.csv",
             "data": [{
-                "code": a["code"],
-                "name": a["name"]
+                aerodrome_headers["code"]: a["code"],
+                aerodrome_headers["name"]: a["name"]
             } for a in aerodromes] if len(aerodromes) else [{
-                "code": "",
-                "name": ""
+                aerodrome_headers["code"]: "",
+                aerodrome_headers["name"]: ""
             }]
         },
         {
             "name": "runway_surface_ids.csv",
             "data": [{
-                "id": s.id,
-                "surface": s.surface
+                surface_headers["id"]: s.id,
+                surface_headers["surface"]: s.surface
             } for s in surfaces] if len(surfaces) else [{
-                "id": "",
-                "surface": ""
+                surface_headers["id"]: "",
+                surface_headers["surface"]: ""
             }]
         }
     ]
@@ -339,12 +343,14 @@ async def manage_runways_with_csv_file(
 
     # Get list of schemas
     dict_list = await csv.extract_data(file=csv_file)
+    headers = get_table_header("runways")
 
     # Check all aerodrome codes are valid
     a = models.Aerodrome
     v = models.VfrWaypoint
 
-    aerodrome_codes = {r["aerodrome"].strip().upper() for r in dict_list}
+    aerodrome_codes = {r[headers["aerodrome"]].strip().upper()
+                       for r in dict_list}
     aerodrome_objects = db.query(a, v)\
         .join(v, a.vfr_waypoint_id == v.waypoint_id)\
         .filter(and_(not_(a.vfr_waypoint == None), v.code.in_(aerodrome_codes)))\
@@ -360,12 +366,13 @@ async def manage_runways_with_csv_file(
 
     try:
         data_list = [schemas.RunwayData(
-            aerodrome_id=aerodrome_ids_in_db[r["aerodrome"].strip().upper()],
-            number=r["number"],
-            position=None if not r["position"] or r["position"].isspace(
-            ) else r["position"],
-            length_ft=r["length_ft"],
-            surface_id=r["surface_id"]
+            aerodrome_id=aerodrome_ids_in_db[r[headers["aerodrome"]].strip(
+            ).upper()],
+            number=r[headers["number"]],
+            position=None if not r[headers["position"]] or r[headers["position"]].isspace(
+            ) else r[headers["position"]],
+            length_ft=r[headers["length_ft"]],
+            surface_id=r[headers["surface_id"]]
         ) for r in dict_list]
     except ValidationError as e:
         raise HTTPException(

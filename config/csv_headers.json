@@ -1,0 +1,50 @@
+{
+    "vfr_waypoints": {
+        "code": "Code",
+        "name": "Name",
+        "lat_degrees": "Latitude[deg]",
+        "lat_minutes": "Latitude[min]",
+        "lat_seconds": "Latitude[sec]",
+        "lat_direction": "'N' or 'S'",
+        "lon_degrees": "Longitude[deg]",
+        "lon_minutes": "Longitude[min]",
+        "lon_seconds": "Longitude[sec]",
+        "lon_direction": "'E' or 'W'",
+        "magnetic_variation": "Magnetic Var",
+        "hidden": "Hidden"
+    },
+    "aerodromes": {
+        "code": "Code",
+        "name": "Name",
+        "lat_degrees": "Latitude[deg]",
+        "lat_minutes": "Latitude[min]",
+        "lat_seconds": "Latitude[sec]",
+        "lat_direction": "'N' or 'S'",
+        "lon_degrees": "Longitude[deg]",
+        "lon_minutes": "Longitude[min]",
+        "lon_seconds": "Longitude[sec]",
+        "lon_direction": "'E' or 'W'",
+        "elevation_ft": "Elevation[ft]",
+        "magnetic_variation": "Magnetic Var",
+        "has_taf": "Has TAF",
+        "has_metar": "Has METAR",
+        "has_fds": "Has FDs",
+        "hidden": "Hidden",
+        "status_id": "Aerodrome Status ID"
+    },
+    "runways": {
+        "aerodrome": "Aerodrome",
+        "number": "Runway Number",
+        "position": "Position['R', 'L', 'C']",
+        "length_ft": "Length[ft]",
+        "surface_id": "Runway Surface ID"
+    },
+    "runway_surface_ids": {
+        "id": "ID",
+        "surface": "Surface"
+    },
+    "aerodrome_codes": {
+        "code": "Code",
+        "name": "Aerodrome Name"
+    }
+}

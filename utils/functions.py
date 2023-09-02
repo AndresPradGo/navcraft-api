@@ -4,6 +4,8 @@ Useful Reusable Functions
 Usage: 
 - Import the required function and call it.
 """
+
+import json
 from typing import List, Any
 
 from sqlalchemy.orm import Session
@@ -82,3 +84,19 @@ def runways_are_unique(runways: List[Any]):
         return False
 
     return True
+
+
+def get_table_header(table_name: str):
+    """
+    Gets the table headers for csv downloadable files.
+
+    Parameters:
+    - table_name (str): name of the table.
+
+    Returns: 
+    - dict: dictionary with table headers.
+    """
+    with open("config/csv_headers.json", "r") as json_file:
+        tables = json.load(json_file)
+
+    return tables[table_name]
