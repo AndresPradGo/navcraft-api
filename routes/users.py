@@ -72,7 +72,11 @@ async def get_user_profile_data(
     return user
 
 
-@router.get("/passenger-profiles", status_code=status.HTTP_200_OK, response_model=List[schemas.PassengerProfileReturn])
+@router.get(
+    "/passenger-profiles",
+    status_code=status.HTTP_200_OK,
+    response_model=List[schemas.PassengerProfileReturn]
+)
 async def get_passenger_profiles(
     id: Optional[int] = 0,
     db: Session = Depends(get_db),
@@ -150,7 +154,11 @@ async def sign_in(
     return new_user
 
 
-@router.post("/new-passenger-profile", status_code=status.HTTP_201_CREATED, response_model=schemas.PassengerProfileReturn)
+@router.post(
+    "/new-passenger-profile",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.PassengerProfileReturn
+)
 async def add_new_passenger_profile(
     passenger_profile_data: schemas.PassengerProfileData,
     db: Session = Depends(get_db),
@@ -329,7 +337,11 @@ async def edit_user_profile(
     return new_user
 
 
-@router.put("/admin-user/{id}", status_code=status.HTTP_200_OK, response_model=schemas.UserReturnBasic)
+@router.put(
+    "/admin-user/{id}",
+    status_code=status.HTTP_200_OK,
+    response_model=schemas.UserReturnBasic
+)
 async def grant_revoke_admin_privileges_or_deactivate(
     id: int,
     make_admin: bool,
@@ -374,7 +386,11 @@ async def grant_revoke_admin_privileges_or_deactivate(
     return new_user
 
 
-@router.put("/passenger-profile/{id}", status_code=status.HTTP_200_OK, response_model=schemas.PassengerProfileReturn)
+@router.put(
+    "/passenger-profile/{id}",
+    status_code=status.HTTP_200_OK,
+    response_model=schemas.PassengerProfileReturn
+)
 async def edit_existing_passenger_profile(
     id: int,
     passenger_profile_data: schemas.PassengerProfileData,

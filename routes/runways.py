@@ -171,7 +171,11 @@ async def get_csv_file_with_all_runways(
     return response
 
 
-@router.get("/surfaces", status_code=status.HTTP_200_OK, response_model=List[schemas.RunwaySurfaceReturn])
+@router.get(
+    "/surfaces",
+    status_code=status.HTTP_200_OK,
+    response_model=List[schemas.RunwaySurfaceReturn]
+)
 async def get_all_runway_surfaces(
     id: Optional[int] = 0,
     db: Session = Depends(get_db),
@@ -415,7 +419,11 @@ async def manage_runways_with_csv_file(
     db.commit()
 
 
-@router.post("/surface", status_code=status.HTTP_201_CREATED, response_model=schemas.RunwaySurfaceReturn)
+@router.post(
+    "/surface",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.RunwaySurfaceReturn
+)
 async def post_runway_surface(
     surface_data: schemas.RunwaySurfaceData,
     db: Session = Depends(get_db),
@@ -559,7 +567,11 @@ async def edit_runway(
     return {"aerodrome": aerodrome_result[1], **runway_result[0].__dict__, "surface": runway_result[1]}
 
 
-@router.put("/surface/{id}", status_code=status.HTTP_200_OK, response_model=schemas.RunwaySurfaceReturn)
+@router.put(
+    "/surface/{id}",
+    status_code=status.HTTP_200_OK,
+    response_model=schemas.RunwaySurfaceReturn
+)
 async def edit_runway_surface(
     id: int,
     surface_data: schemas.RunwaySurfaceData,

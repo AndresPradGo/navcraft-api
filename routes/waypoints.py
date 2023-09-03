@@ -90,7 +90,11 @@ async def post_vfr_waypoint(waypoint: schemas.VfrWaypointData, db: Session, crea
     return {**new_vfr_waypoint.__dict__, **new_waypoint.__dict__}
 
 
-async def update_vfr_waypoint(waypoint: schemas.VfrWaypointData, db: Session, creator_id: int, id: int):
+async def update_vfr_waypoint(
+        waypoint: schemas.VfrWaypointData,
+        db: Session,
+        creator_id: int, id: int
+):
     """
     This function updates the waypoint in the database, after performing the necessary checks.
 
@@ -156,7 +160,11 @@ async def update_vfr_waypoint(waypoint: schemas.VfrWaypointData, db: Session, cr
     return db
 
 
-@router.get("/user", status_code=status.HTTP_200_OK, response_model=List[schemas.UserWaypointReturn])
+@router.get(
+    "/user",
+    status_code=status.HTTP_200_OK,
+    response_model=List[schemas.UserWaypointReturn]
+)
 async def get_all_user_waypoints(
     id: Optional[int] = 0,
     db: Session = Depends(get_db),
@@ -386,7 +394,11 @@ async def get_csv_file_with_all_aerodromes(
     return response
 
 
-@router.get("/aerodromes", status_code=status.HTTP_200_OK, response_model=List[schemas.AerodromeReturnWithRunways])
+@router.get(
+    "/aerodromes",
+    status_code=status.HTTP_200_OK,
+    response_model=List[schemas.AerodromeReturnWithRunways]
+)
 async def get_all_aerodromes(
     id: Optional[int] = 0,
     db: Session = Depends(get_db),
@@ -470,7 +482,11 @@ async def get_all_aerodromes(
             } for w, v, a, s in aerodromes]
 
 
-@router.get("/aerodromes-status", status_code=status.HTTP_200_OK, response_model=List[schemas.AerodromeStatusReturn])
+@router.get(
+    "/aerodromes-status",
+    status_code=status.HTTP_200_OK,
+    response_model=List[schemas.AerodromeStatusReturn]
+)
 async def get_all_aerodrome_status(
     id: Optional[int] = 0,
     db: Session = Depends(get_db),
@@ -661,7 +677,11 @@ async def post_new_vfr_waypoint(
     return result
 
 
-@router.post("/user", status_code=status.HTTP_201_CREATED, response_model=schemas.UserWaypointReturn)
+@router.post(
+    "/user",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.UserWaypointReturn
+)
 async def post_new_user_waypoint(
     waypoint: schemas.UserWaypointData,
     db: Session = Depends(get_db),
@@ -725,7 +745,11 @@ async def post_new_user_waypoint(
     return {**new_user_waypoint.__dict__, **new_waypoint.__dict__}
 
 
-@router.post("/private-aerodrome", status_code=status.HTTP_201_CREATED, response_model=schemas.PrivateAerodromeReturn)
+@router.post(
+    "/private-aerodrome",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.PrivateAerodromeReturn
+)
 async def post_private_aerodrome(
     aerodrome: schemas.PrivateAerodromeData,
     db: Session = Depends(get_db),
@@ -996,7 +1020,11 @@ async def manage_registered_aerodrome_with_csv_file(
     db.commit()
 
 
-@router.post("/registered-aerodrome", status_code=status.HTTP_201_CREATED, response_model=schemas.RegisteredAerodromeReturn)
+@router.post(
+    "/registered-aerodrome",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.RegisteredAerodromeReturn
+)
 async def post_registered_aerodrome(
     aerodrome: schemas.RegisteredAerodromeData,
     db: Session = Depends(get_db),
@@ -1051,7 +1079,11 @@ async def post_registered_aerodrome(
     return {**new_aerodrome[0].__dict__, "status": new_aerodrome[1], **waypoint_result, "registered": True}
 
 
-@router.post("/aerodrome-status", status_code=status.HTTP_201_CREATED, response_model=schemas.AerodromeStatusReturn)
+@router.post(
+    "/aerodrome-status",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.AerodromeStatusReturn
+)
 async def post_aerodrome_status(
     aerodrome_status: str,
     db: Session = Depends(get_db),
@@ -1216,7 +1248,11 @@ async def edit_vfr_waypoint(
     return {**new_waypoint[0].__dict__, **new_waypoint[1].__dict__}
 
 
-@router.put("/registered-aerodrome/{id}", status_code=status.HTTP_200_OK, response_model=schemas.RegisteredAerodromeReturn)
+@router.put(
+    "/registered-aerodrome/{id}",
+    status_code=status.HTTP_200_OK,
+    response_model=schemas.RegisteredAerodromeReturn
+)
 async def edit_registered_aerodrome(
     id: int,
     aerodrome: schemas.RegisteredAerodromeData,
@@ -1302,7 +1338,11 @@ async def edit_registered_aerodrome(
     return {**data[0].__dict__, **data[1].__dict__, **data[2].__dict__, "status": data[3], "registered": True}
 
 
-@router.put("/private-aerodrome/{id}", status_code=status.HTTP_200_OK, response_model=schemas.PrivateAerodromeReturn)
+@router.put(
+    "/private-aerodrome/{id}",
+    status_code=status.HTTP_200_OK,
+    response_model=schemas.PrivateAerodromeReturn
+)
 async def edit_private_aerodrome(
     id: int,
     aerodrome: schemas.PrivateAerodromeData,
