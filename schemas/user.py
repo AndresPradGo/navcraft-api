@@ -62,7 +62,7 @@ class UserName(BaseModel):
 
     @field_validator('name')
     @classmethod
-    def clean_user_name(clc, value: str) -> str:
+    def clean_user_name(cls, value: str) -> str:
         '''
         Classmethod to clean name string.
 
@@ -115,7 +115,7 @@ class UserPassword(BaseModel):
 
     @field_validator('password')
     @classmethod
-    def check_passwrod_criteria(clc, password: float) -> float:
+    def check_passwrod_criteria(cls, password: float) -> float:
         '''
         Classmethod to check if password contains at least 1 uppercase, 
         1 lowercase and 1 number characters.
@@ -153,7 +153,7 @@ class UserWeight(BaseModel):
 
     @field_validator('weight_lb')
     @classmethod
-    def round_user_weight(clc, value: float) -> float:
+    def round_user_weight(cls, value: float) -> float:
         '''
         Classmethod to round weight_lb input value to 1 decimal place.
 

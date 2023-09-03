@@ -29,7 +29,7 @@ class AircraftMakeData(BaseModel):
 
     @field_validator('name')
     @classmethod
-    def clean_name(clc, value: str) -> str:
+    def clean_name(cls, value: str) -> str:
         '''
         Classmethod to clean name string.
 
@@ -64,7 +64,7 @@ class FuelTypeData(BaseModel):
 
     @field_validator('density_lb_gal')
     @classmethod
-    def round_density(clc, value: float) -> float:
+    def round_density(cls, value: float) -> float:
         '''
         Classmethod to round density_lb_gal input value to 2 decimal places.
 
@@ -78,7 +78,7 @@ class FuelTypeData(BaseModel):
 
     @field_validator('name')
     @classmethod
-    def clean_name(clc, value: str) -> str:
+    def clean_name(cls, value: str) -> str:
         '''
         Classmethod to clean name string.
 
@@ -114,7 +114,7 @@ class PerformanceProfilePostData(BaseModel):
 
     @field_validator("performance_profile_name")
     @classmethod
-    def clean_performance_profile_name(clc, value: str) -> str:
+    def clean_performance_profile_name(cls, value: str) -> str:
         '''
         Classmethod to clean profile name.
 
@@ -144,7 +144,7 @@ class BaggageCompartmentData(BaseModel):
 
     @model_validator(mode='before')
     @classmethod
-    def round_values_clean_name(clc, values: Dict[str, Any]) -> Dict:
+    def round_values_clean_name(cls, values: Dict[str, Any]) -> Dict:
         '''
         Classmethod to round weight data and clean name.
 
@@ -201,7 +201,7 @@ class PerformanceProfileWightBalanceData(BaseModel):
 
     @model_validator(mode='before')
     @classmethod
-    def round_weight_and_cog(clc, values: Dict[str, Any]) -> Dict:
+    def round_weight_and_cog(cls, values: Dict[str, Any]) -> Dict:
         '''
         Classmethod to round weight data.
 
@@ -267,7 +267,6 @@ class AircraftModelOfficialPostData(AircraftModelOfficialBaseData, PerformancePr
     This class defines the data structure reuired from the client, in order to add
     a new official aircraft model to the database as an admin user.
     '''
-    ...
 
 
 class AircraftModelOfficialBaseReturn(AircraftModelOfficialBaseData):
@@ -301,7 +300,7 @@ class WeightBalanceLimitData(BaseModel):
 
     @model_validator(mode='before')
     @classmethod
-    def round_values(clc, values: Dict[str, Any]) -> Dict[str, Any]:
+    def round_values(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         '''
         Classmethod to round values.
 
@@ -343,7 +342,7 @@ class WeightBalanceData(BaseModel):
 
     @model_validator(mode='before')
     @classmethod
-    def round_values_clean_name(clc, values: Dict[str, Any]) -> Dict[str, Any]:
+    def round_values_clean_name(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         '''
         Classmethod to round weight data and clean name.
 
@@ -369,3 +368,73 @@ class WeightBalanceReturn(WeightBalanceData):
 
     id: conint(gt=0)
     limits: List[WeightBalanceLimitReturn] = []
+
+
+class RunwaySurfacePercentIncrease(BaseModel):
+    '''
+    This class defines the percentage increase by runway surface data structure.
+    '''
+
+    surface_id: conint(gt=0)
+    percent: confloat(ge=0)
+
+    model_validator(mode='before')
+
+    @classmethod
+    def round_percentage_adjustments(cls, values: Dict[str, Any]) -> Dict:
+        '''
+        Classmethod to round percentages.
+
+        Parameters:
+        - values (Dict): dictionary with the input values.
+
+        Returns:
+        (Dict): dictionary with the input values corrected.
+
+        '''
+        values["percent"] = round(values["percent"], 2)
+        return values
+
+
+class RunwayDistanceAdjustmentPercentages(BaseModel):
+    '''
+    This class defines the data structure to return runway distance 
+    adjustment percentages to the client.
+    '''
+
+    id: conint(gt=0)
+    percent_decrease_knot_headwind: Optional[confloat(ge=0)] = None
+    percent_increase_knot_tailwind: Optional[confloat(ge=0)] = None
+    percent_increase_runway_surfaces: Optional[
+        List[RunwaySurfacePercentIncrease]
+    ] = []
+
+    @model_validator(mode='before')
+    @classmethod
+    def round_percentage_adjustments(cls, values: Dict[str, Any]) -> Dict:
+        '''
+        Classmethod to round percentages.
+
+        Parameters:
+        - values (Dict): dictionary with the input values.
+
+        Returns:
+        (Dict): dictionary with the input values corrected.
+
+        '''
+
+        if "percent_decrease_knot_headwind" in values\
+                and values["percent_decrease_knot_headwind"] is not None:
+            values["percent_decrease_knot_headwind"] = round(
+                values["percent_decrease_knot_headwind"], 2)
+        else:
+            values["percent_decrease_knot_headwind"] = None
+
+        if "percent_increase_knot_tailwind" in values\
+                and values["percent_increase_knot_tailwind"] is not None:
+            values["percent_increase_knot_tailwind"] = round(
+                values["percent_increase_knot_tailwind"], 2)
+        else:
+            values["percent_increase_knot_tailwind"] = None
+
+        return values

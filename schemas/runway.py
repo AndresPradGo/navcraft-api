@@ -77,7 +77,7 @@ class RunwaySurfaceData(BaseModel):
 
     @field_validator('surface')
     @classmethod
-    def clean_surface_string(clc, value: str) -> str:
+    def clean_surface_string(cls, value: str) -> str:
         '''
         Classmethod to clean surface string.
 

@@ -46,5 +46,19 @@
     "aerodrome_codes": {
         "code": "Code",
         "name": "Aerodrome Name"
+    },
+    "takeoff_data": {
+        "weight_lb": "Weight[Lbs]",
+        "temperature_c": "OAT[C]",
+        "pressure_alt_ft": "Pressure Alt[ft]",
+        "groundroll_ft": "Ground Roll[ft]",
+        "obstacle_clearance_ft": "50ft Obstacle[ft]"
+    },
+    "landing_data": {
+        "weight_lb": "Weight[Lbs]",
+        "temperature_c": "OAT[C]",
+        "pressure_alt_ft": "Pressure Alt[ft]",
+        "groundroll_ft": "Ground Roll[ft]",
+        "obstacle_clearance_ft": "50ft Obstacle[ft]"
     }
 }
