@@ -1256,7 +1256,7 @@ async def edit_registered_aerodrome(
         )
 
     user_id = await get_user_id_from_email(email=current_user.email, db=db)
-    waypoint_data = schemas.WaypointData(
+    waypoint_data = schemas.VfrWaypointData(
         code=aerodrome.code,
         name=aerodrome.name,
         lat_degrees=aerodrome.lat_degrees,

@@ -353,7 +353,7 @@ async def manage_runways_with_csv_file(
                        for r in dict_list}
     aerodrome_objects = db.query(a, v)\
         .join(v, a.vfr_waypoint_id == v.waypoint_id)\
-        .filter(and_(not_(a.vfr_waypoint == None), v.code.in_(aerodrome_codes)))\
+        .filter(and_(a.vfr_waypoint.isnot(None), v.code.in_(aerodrome_codes)))\
         .all()
 
     aerodrome_ids_in_db = {v.code: v.waypoint_id for _, v in aerodrome_objects}

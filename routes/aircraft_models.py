@@ -10,14 +10,14 @@ Usage:
 
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, status, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy import and_, or_, not_, func
 from sqlalchemy.orm import Session
 
 import auth
 import models
 import schemas
-from utils import common_responses, csv_tools as csv
+from utils import common_responses
 from utils.db import get_db
 
 router = APIRouter(tags=["Aircraft Models"])
@@ -335,8 +335,8 @@ async def post_new_baggage_compartment(
     performance_profile = db.query(
         models.PerformanceProfile).filter(and_(
             models.PerformanceProfile.id == profile_id,
-            not_(models.PerformanceProfile.model_id == None),
-            models.PerformanceProfile.aircraft_id == None
+            models.PerformanceProfile.model_id.isnot(None),
+            models.PerformanceProfile.aircraft_id.is_(None)
         )).first()
     if performance_profile is None:
         raise HTTPException(
@@ -396,8 +396,8 @@ async def post_new_seat_row(
     performance_profile = db.query(
         models.PerformanceProfile).filter(and_(
             models.PerformanceProfile.id == profile_id,
-            not_(models.PerformanceProfile.model_id == None),
-            models.PerformanceProfile.aircraft_id == None
+            models.PerformanceProfile.model_id.isnot(None),
+            models.PerformanceProfile.aircraft_id.is_(None)
         )).first()
     if performance_profile is None:
         raise HTTPException(
@@ -457,8 +457,8 @@ async def post_new_weight_and_balance_profile(
     # Check performance profile exists
     performance_profile = db.query(models.PerformanceProfile).filter(and_(
         models.PerformanceProfile.id == profile_id,
-        models.PerformanceProfile.aircraft_id == None,
-        not_(models.PerformanceProfile.model_id == None)
+        models.PerformanceProfile.aircraft_id.is_(None),
+        models.PerformanceProfile.model_id.isnot(None)
     )).first()
     if performance_profile is None:
         raise HTTPException(
@@ -700,8 +700,8 @@ async def edit_aircraft_model_performance_profile(
     performance_profile_query = db.query(
         models.PerformanceProfile).filter(and_(
             models.PerformanceProfile.id == id,
-            not_(models.PerformanceProfile.model_id == None),
-            models.PerformanceProfile.aircraft_id == None
+            models.PerformanceProfile.model_id.isnot(None),
+            models.PerformanceProfile.aircraft_id.is_(None)
         ))
     if performance_profile_query.first() is None:
         raise HTTPException(
@@ -769,8 +769,8 @@ async def edit_weight_and_balance_data_for_aircraft_model_performance_profile(
     performance_profile_query = db.query(
         models.PerformanceProfile).filter(and_(
             models.PerformanceProfile.id == id,
-            not_(models.PerformanceProfile.model_id == None),
-            models.PerformanceProfile.aircraft_id == None
+            models.PerformanceProfile.model_id.isnot(None),
+            models.PerformanceProfile.aircraft_id.is_(None)
         ))
     if performance_profile_query.first() is None:
         raise HTTPException(
@@ -828,8 +828,8 @@ async def edit_baggage_compartment(
     performance_profile = db.query(
         models.PerformanceProfile).filter(and_(
             models.PerformanceProfile.id == compartment_query.first().performance_profile_id,
-            not_(models.PerformanceProfile.model_id == None),
-            models.PerformanceProfile.aircraft_id == None
+            models.PerformanceProfile.model_id.isnot(None),
+            models.PerformanceProfile.aircraft_id.is_(None)
         )).first()
     if performance_profile is None:
         raise HTTPException(
@@ -895,8 +895,8 @@ async def edit_seat_row(
     performance_profile = db.query(
         models.PerformanceProfile).filter(and_(
             models.PerformanceProfile.id == row_query.first().performance_profile_id,
-            not_(models.PerformanceProfile.model_id == None),
-            models.PerformanceProfile.aircraft_id == None
+            models.PerformanceProfile.model_id.isnot(None),
+            models.PerformanceProfile.aircraft_id.is_(None)
         )).first()
     if performance_profile is None:
         raise HTTPException(
@@ -1033,8 +1033,8 @@ async def delete_baggage_compartment(
     performance_profile = db.query(
         models.PerformanceProfile).filter(and_(
             models.PerformanceProfile.id == compartment_query.first().performance_profile_id,
-            not_(models.PerformanceProfile.model_id == None),
-            models.PerformanceProfile.aircraft_id == None
+            models.PerformanceProfile.model_id.isnot(None),
+            models.PerformanceProfile.aircraft_id.is_(None)
         )).first()
     if performance_profile is None:
         raise HTTPException(
@@ -1081,8 +1081,8 @@ async def delete_seat_row(
     performance_profile = db.query(
         models.PerformanceProfile).filter(and_(
             models.PerformanceProfile.id == row_query.first().performance_profile_id,
-            not_(models.PerformanceProfile.model_id == None),
-            models.PerformanceProfile.aircraft_id == None
+            models.PerformanceProfile.model_id.isnot(None),
+            models.PerformanceProfile.aircraft_id.is_(None)
         )).first()
     if performance_profile is None:
         raise HTTPException(
