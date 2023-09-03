@@ -506,9 +506,7 @@ async def post_new_weight_and_balance_profile(
 
     return {
         **weight_balance_profile.__dict__,
-        "limits": [{
-            limit.__dict__
-        } for limit in limits]
+        "limits": [limit.__dict__ for limit in limits]
     }
 
 
@@ -928,6 +926,97 @@ async def edit_seat_row(
     return db.query(models.SeatRow).filter_by(id=id).first().__dict__
 
 
+@router.put("/performance/weight-balance/{id}", status_code=status.HTTP_201_CREATED, response_model=schemas.WeightBalanceReturn)
+async def edit_weight_and_balance_profile(
+    id: int,
+    data: schemas.WeightBalanceData,
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Edit Weight And Balance Profile Endpoint.
+
+    Parameters: 
+    - id (int): weight and balance id.
+    - data (dict): the data to be added.
+
+    Returns: 
+    - Dic: dictionary with the data added to the database, and the id.
+
+    Raise:
+    - HTTPException (400): if weight and balance doesn't exists, or data is wrong.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check if W&B ID exists
+    wb_profile_query = db.query(models.WeightBalanceProfile).filter_by(id=id)
+    if wb_profile_query.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"W&B Profile with ID {id} was not found."
+        )
+
+    # Check if performance profile is for model
+    performance_profile = db.query(models.PerformanceProfile).filter(and_(
+        models.PerformanceProfile.id == wb_profile_query.first().performance_profile_id,
+        models.PerformanceProfile.aircraft_id.is_(None),
+        models.PerformanceProfile.model_id.isnot(None)
+    )).first()
+
+    if performance_profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The performance profile you are trying to edit is not for and aircraft model."
+        )
+
+    # Check weight and balance profile doesn't already exist
+    wb_profile_exists = db.query(
+        models.WeightBalanceProfile).filter(and_(
+            models.WeightBalanceProfile.name == data.name,
+            models.WeightBalanceProfile.performance_profile_id == performance_profile.id,
+            not_(models.WeightBalanceProfile.id == id)
+        )).first()
+    if wb_profile_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Weight and Balance profile '{data.name}' already exists for performance profile with ID {performance_profile.id}."
+        )
+
+    # Update weight and balance limts
+    new_limits = [models.WeightBalanceLimit(
+        weight_balance_profile_id=id,
+        from_cg_in=limit.from_cg_in,
+        from_weight_lb=limit.from_weight_lb,
+        to_cg_in=limit.to_cg_in,
+        to_weight_lb=limit.to_weight_lb
+    ) for limit in data.limits]
+
+    _ = db.query(models.WeightBalanceLimit).filter(
+        models.WeightBalanceLimit.weight_balance_profile_id == id).delete()
+
+    db.add_all(new_limits)
+
+    # Update weight and balance profile
+    wb_profile_query.update({
+        "name": data.name,
+        "max_take_off_weight_lb": data.max_take_off_weight_lb
+    })
+
+    db.commit()
+
+    # Return weight and balance profile
+    weight_balance_profile = db.query(
+        models.WeightBalanceProfile).filter_by(id=id).first()
+    limits = db.query(models.WeightBalanceLimit).filter_by(
+        weight_balance_profile_id=id).all()
+
+    return {
+        **weight_balance_profile.__dict__,
+        "limits": [limit.__dict__ for limit in limits]
+    }
+
+
 @router.delete("/fuel-type/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_fuel_type(
     id: int,
@@ -1094,4 +1183,53 @@ async def delete_seat_row(
     deleted = row_query.delete(synchronize_session=False)
     if not deleted:
         raise common_responses.internal_server_error()
+    db.commit()
+
+
+@router.delete("/performance/weight-balance/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_weight_and_balance_profile(
+    id: int,
+    db: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
+):
+    """
+    Delete Weight and Balance Profile Endpoint.
+
+    Parameters: 
+    - id (int): weight and balance id.
+
+    Returns: None
+
+    Raise:
+    - HTTPException (400): if W&B profile id doesn't exists.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check if W&B ID exists
+    wb_profile_query = db.query(models.WeightBalanceProfile).filter_by(id=id)
+    if wb_profile_query.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"W&B Profile with ID {id} was not found."
+        )
+
+    # Check if performance profile is for model
+    is_aircraft_model_profile = db.query(models.PerformanceProfile).filter(and_(
+        models.PerformanceProfile.id == wb_profile_query.first().performance_profile_id,
+        models.PerformanceProfile.aircraft_id.is_(None),
+        models.PerformanceProfile.model_id.isnot(None)
+    )).first()
+
+    if is_aircraft_model_profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The performance profile you are trying to edit is not for and aircraft model."
+        )
+
+    # Delete W&B Profile
+    deleted = wb_profile_query.delete(synchronize_session=False)
+    if not deleted:
+        raise common_responses.internal_server_error()
+
     db.commit()
