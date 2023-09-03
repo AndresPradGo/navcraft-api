@@ -46,7 +46,7 @@ async def get_all_users(
     return db.query(models.User).filter(or_(
         not_(id),
         models.User.id == id
-    )).all()
+    )).order_by(models.User.id).all()
 
 
 @router.get("/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturn)
@@ -101,7 +101,7 @@ async def get_passenger_profiles(
             not_(id),
             models.PassengerProfile.id == id
         )
-    )).all()
+    )).order_by(models.PassengerProfile.name).all()
 
     return profiles
 

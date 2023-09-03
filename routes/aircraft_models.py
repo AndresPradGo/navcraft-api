@@ -183,12 +183,10 @@ async def get_fuel_types(
     - HTTPException (500): if there is a server error. 
     """
 
-    fuel_types = db.query(models.FuelType).filter(or_(
+    return db.query(models.FuelType).filter(or_(
         not_(id),
         models.FuelType.id == id
-    )).all()
-
-    return [fuel_type.__dict__ for fuel_type in fuel_types]
+    )).order_by(models.FuelType.name).all()
 
 
 @router.get(
@@ -216,12 +214,10 @@ async def get_aircraft_manufacturers(
     - HTTPException (500): if there is a server error. 
     """
 
-    manufacturers = db.query(models.AircraftMake).filter(or_(
+    return db.query(models.AircraftMake).filter(or_(
         not_(id),
         models.AircraftMake.id == id
-    )).all()
-
-    return [manufacturer.__dict__ for manufacturer in manufacturers]
+    )).order_by(models.AircraftMake.name).all()
 
 
 @router.post(

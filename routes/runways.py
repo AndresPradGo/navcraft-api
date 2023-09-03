@@ -76,6 +76,9 @@ async def get_all_runways(
         aerodrome=aerodrome_codes[r[0].aerodrome_id]
     ) for r in runways]
 
+    runways_return.sort(key=lambda r: (
+        r["aerodrome"], r["number"], r["position"]))
+
     return runways_return
 
 
@@ -124,13 +127,20 @@ async def get_csv_file_with_all_runways(
     files_data = [
         {
             "name": "runways.csv",
-            "data": [{
-                runway_headers["aerodrome"]: aerodrome_codes[r.aerodrome_id],
-                runway_headers["number"]: r.number,
-                runway_headers["position"]: r.position,
-                runway_headers["length_ft"]: r.length_ft,
-                runway_headers["surface_id"]: r.surface_id,
-            } for r in runways] if len(runways) else [{
+            "data": sorted(
+                [{
+                    runway_headers["aerodrome"]: aerodrome_codes[r.aerodrome_id],
+                    runway_headers["number"]: r.number,
+                    runway_headers["position"]: r.position,
+                    runway_headers["length_ft"]: r.length_ft,
+                    runway_headers["surface_id"]: r.surface_id,
+                } for r in runways],
+                key=lambda r: (
+                    r[runway_headers["aerodrome"]],
+                    r[runway_headers["number"]],
+                    r[runway_headers["position"]]
+                )
+            ) if len(runways) else [{
                 runway_headers["aerodrome_id"]: "",
                 runway_headers["number"]: "",
                 runway_headers["position"]: "",
@@ -140,20 +150,26 @@ async def get_csv_file_with_all_runways(
         },
         {
             "name": "aerodrome_codes.csv",
-            "data": [{
-                aerodrome_headers["code"]: a["code"],
-                aerodrome_headers["name"]: a["name"]
-            } for a in aerodromes] if len(aerodromes) else [{
+            "data": sorted(
+                [{
+                    aerodrome_headers["code"]: a["code"],
+                    aerodrome_headers["name"]: a["name"]
+                } for a in aerodromes],
+                key=lambda a: a[aerodrome_headers["code"]]
+            ) if len(aerodromes) else [{
                 aerodrome_headers["code"]: "",
                 aerodrome_headers["name"]: ""
             }]
         },
         {
             "name": "runway_surface_ids.csv",
-            "data": [{
-                surface_headers["id"]: s.id,
-                surface_headers["surface"]: s.surface
-            } for s in surfaces] if len(surfaces) else [{
+            "data": sorted(
+                [{
+                    surface_headers["id"]: s.id,
+                    surface_headers["surface"]: s.surface
+                } for s in surfaces],
+                key=lambda s: s[surface_headers["id"]]
+            ) if len(surfaces) else [{
                 surface_headers["id"]: "",
                 surface_headers["surface"]: ""
             }]
@@ -197,7 +213,7 @@ async def get_all_runway_surfaces(
     return db.query(models.RunwaySurface).filter(or_(
         not_(id),
         models.RunwaySurface.id == id
-    )).all()
+    )).order_by(models.RunwaySurface.surface).all()
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.RunwayReturn)

@@ -194,7 +194,7 @@ async def get_all_user_waypoints(
                 w.id == id
             )
         ))\
-        .join(u, w.id == u.waypoint_id).all()
+        .join(u, w.id == u.waypoint_id).order_by(u.name).all()
 
     return [{**w.__dict__, **v.__dict__} for w, v in user_waypoints]
 
@@ -224,7 +224,7 @@ async def get_csv_file_with_all_vfr_waypoints(
 
     query_results = db.query(w, v)\
         .filter(not_(w.id.in_(aerodromes)))\
-        .join(v, w.id == v.waypoint_id).all()
+        .join(v, w.id == v.waypoint_id).order_by(v.name).all()
 
     table_name = "vfr_waypoints"
     headers = get_table_header(table_name)
@@ -307,7 +307,7 @@ async def get_all_vfr_waypoints(
                 user_is_active_admin
             )
         ))\
-        .join(v, w.id == v.waypoint_id).all()
+        .join(v, w.id == v.waypoint_id).order_by(v.name).all()
 
     return [{
         **w.__dict__,
@@ -341,7 +341,7 @@ async def get_csv_file_with_all_aerodromes(
     aerodromes = db.query(w, v, a)\
         .filter(not_(a.vfr_waypoint_id.is_(None)))\
         .join(v, w.id == v.waypoint_id)\
-        .join(a, v.waypoint_id == a.vfr_waypoint_id).all()
+        .join(a, v.waypoint_id == a.vfr_waypoint_id).order_by(v.name).all()
 
     table_name = "aerodromes"
     headers = get_table_header(table_name)
@@ -461,25 +461,29 @@ async def get_all_aerodromes(
         .filter(r.aerodrome_id.in_(aerodrome_ids))\
         .join(rs, r.surface_id == rs.id).all()
 
-    return [{
-            **w.__dict__,
-            "code": v.code,
-            "name": v.name,
-            "hidden": v.hidden if user_is_active_admin else None,
-            **a.__dict__,
-            "status": s,
-            "registered": a.vfr_waypoint_id is not None,
-            "runways": [
-                schemas.RunwayInAerodromeReturn(
-                    id=r.id,
-                    number=r.number,
-                    position=r.position,
-                    length_ft=r.length_ft,
-                    surface=rs,
-                    surface_id=r.surface_id
-                ) for r, rs in filter(lambda i: i[0].aerodrome_id == a.id, runways)
-            ]
-            } for w, v, a, s in aerodromes]
+    aerodromes = [{
+        **w.__dict__,
+        "code": v.code,
+        "name": v.name,
+        "hidden": v.hidden if user_is_active_admin else None,
+        **a.__dict__,
+        "status": s,
+        "registered": a.vfr_waypoint_id is not None,
+        "runways": [
+            schemas.RunwayInAerodromeReturn(
+                id=r.id,
+                number=r.number,
+                position=r.position,
+                length_ft=r.length_ft,
+                surface=rs,
+                surface_id=r.surface_id
+            ) for r, rs in filter(lambda i: i[0].aerodrome_id == a.id, runways)
+        ]
+    } for w, v, a, s in aerodromes]
+
+    aerodromes.sort(key=lambda a: (a["registered"], a["name"]))
+
+    return aerodromes
 
 
 @router.get(
@@ -508,7 +512,7 @@ async def get_all_aerodrome_status(
     return db.query(models.AerodromeStatus.id, models.AerodromeStatus.status).filter(or_(
         not_(id),
         models.AerodromeStatus.id == id
-    )).all()
+    )).order_by(models.AerodromeStatus.status).all()
 
 
 @router.post("/vfr/csv", status_code=status.HTTP_204_NO_CONTENT)
