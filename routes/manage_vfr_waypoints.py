@@ -373,7 +373,7 @@ async def manage_registered_aerodrome_with_csv_file(
             has_taf=a[headers["has_taf"]],
             has_metar=a[headers["has_metar"]],
             has_fds=a[headers["has_fds"]],
-            hidden=a[headers["hidden"]],
+            hidden=a[headers["hidden"]]
         ) for a in await csv.extract_data(file=csv_file)]
     except ValidationError as error:
         # pylint: disable=raise-missing-from

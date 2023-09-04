@@ -386,7 +386,7 @@ class TakeoffLandingPerformance(BaseModel):
     __abstract__ = True
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    weight_lb = Column(DECIMAL(7, 2), nullable=False)
+    weight_lb = Column(Integer, nullable=False)
     pressure_alt_ft = Column(Integer, nullable=False)
     temperature_c = Column(Integer, nullable=False)
     groundroll_ft = Column(Integer, nullable=False)

@@ -378,8 +378,7 @@ class RunwaySurfacePercentIncrease(BaseModel):
     surface_id: conint(gt=0)
     percent: confloat(ge=0)
 
-    model_validator(mode='before')
-
+    @model_validator(mode='before')
     @classmethod
     def round_percentage_adjustments(cls, values: Dict[str, Any]) -> Dict:
         '''
@@ -402,7 +401,6 @@ class RunwayDistanceAdjustmentPercentages(BaseModel):
     adjustment percentages to the client.
     '''
 
-    id: conint(gt=0)
     percent_decrease_knot_headwind: Optional[confloat(ge=0)] = None
     percent_increase_knot_tailwind: Optional[confloat(ge=0)] = None
     percent_increase_runway_surfaces: Optional[
@@ -438,3 +436,15 @@ class RunwayDistanceAdjustmentPercentages(BaseModel):
             values["percent_increase_knot_tailwind"] = None
 
         return values
+
+
+class TakeoffLandingPerformanceDataEntry(BaseModel):
+    """
+    This class defines the data structure to of takeoff/landing performance data entries.
+    """
+
+    weight_lb: conint(ge=0)
+    pressure_alt_ft: conint(ge=0)
+    temperature_c: int
+    groundroll_ft: conint(ge=0)
+    obstacle_clearance_ft: conint(ge=0)
