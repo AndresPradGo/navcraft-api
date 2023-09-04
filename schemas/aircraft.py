@@ -142,7 +142,7 @@ class BaggageCompartmentData(BaseModel):
     arm_in: confloat(ge=0)
     weight_limit_lb: Optional[confloat(ge=0)] = None
 
-    @model_validator(mode='before')
+    @model_validator(mode='after')
     @classmethod
     def round_values_clean_name(cls, values: Dict[str, Any]) -> Dict:
         '''
@@ -156,11 +156,10 @@ class BaggageCompartmentData(BaseModel):
 
         '''
 
-        values["arm_in"] = round(values["arm_in"], 2)
-        if "weight_limit_lb" in values:
-            values["weight_limit_lb"] = round(values["weight_limit_lb"], 2)\
-                if values["weight_limit_lb"] is not None else None
-        values["name"] = clean_string(values["name"])
+        values.arm_in = round(values.arm_in, 2)
+        values.weight_limit_lb = round(values.weight_limit_lb, 2)\
+            if values.weight_limit_lb is not None else None
+        values.name = clean_string(values.name)
 
         return values
 
@@ -199,7 +198,7 @@ class PerformanceProfileWightBalanceData(BaseModel):
     fuel_arm_in: confloat(ge=0)
     fuel_capacity_gallons: confloat(ge=0)
 
-    @model_validator(mode='before')
+    @model_validator(mode='after')
     @classmethod
     def round_weight_and_cog(cls, values: Dict[str, Any]) -> Dict:
         '''
@@ -213,15 +212,12 @@ class PerformanceProfileWightBalanceData(BaseModel):
 
         '''
 
-        values["center_of_gravity_in"] = round(
-            values["center_of_gravity_in"], 2)
-        values["empty_weight_lb"] = round(values["empty_weight_lb"], 2)
-        values["max_ramp_weight_lb"] = round(values["max_ramp_weight_lb"], 2)
-        values["max_landing_weight_lb"] = round(
-            values["max_landing_weight_lb"], 2)
-        values["fuel_arm_in"] = round(values["fuel_arm_in"], 2)
-        values["fuel_capacity_gallons"] = round(
-            values["fuel_capacity_gallons"], 2)
+        values.center_of_gravity_in = round(values.center_of_gravity_in, 2)
+        values.empty_weight_lb = round(values.empty_weight_lb, 2)
+        values.max_ramp_weight_lb = round(values.max_ramp_weight_lb, 2)
+        values.max_landing_weight_lb = round(values.max_landing_weight_lb, 2)
+        values.fuel_arm_in = round(values.fuel_arm_in, 2)
+        values.fuel_capacity_gallons = round(values.fuel_capacity_gallons, 2)
         return values
 
 
@@ -298,7 +294,7 @@ class WeightBalanceLimitData(BaseModel):
     to_cg_in: confloat(ge=0)
     to_weight_lb: confloat(ge=0)
 
-    @model_validator(mode='before')
+    @model_validator(mode='after')
     @classmethod
     def round_values(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         '''
@@ -312,10 +308,10 @@ class WeightBalanceLimitData(BaseModel):
 
         '''
 
-        values["from_cg_in"] = round(values["from_cg_in"], 2)
-        values["from_weight_lb"] = round(values["from_weight_lb"], 2)
-        values["to_cg_in"] = round(values["to_cg_in"], 2)
-        values["to_weight_lb"] = round(values["to_weight_lb"], 2)
+        values.from_cg_in = round(values.from_cg_in, 2)
+        values.from_weight_lb = round(values.from_weight_lb, 2)
+        values.to_cg_in = round(values.to_cg_in, 2)
+        values.to_weight_lb = round(values.to_weight_lb, 2)
         return values
 
 
@@ -340,7 +336,7 @@ class WeightBalanceData(BaseModel):
     max_take_off_weight_lb: confloat(ge=0)
     limits: List[WeightBalanceLimitData] = []
 
-    @model_validator(mode='before')
+    @model_validator(mode='after')
     @classmethod
     def round_values_clean_name(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         '''
@@ -354,9 +350,8 @@ class WeightBalanceData(BaseModel):
 
         '''
 
-        values["max_take_off_weight_lb"] = round(
-            values["max_take_off_weight_lb"], 2)
-        values["name"] = clean_string(values["name"])
+        values.max_take_off_weight_lb = round(values.max_take_off_weight_lb, 2)
+        values.name = clean_string(values.name)
 
         return values
 
@@ -378,9 +373,9 @@ class RunwaySurfacePercentIncrease(BaseModel):
     surface_id: conint(gt=0)
     percent: confloat(ge=0)
 
-    @model_validator(mode='before')
+    @field_validator('percent')
     @classmethod
-    def round_percentage_adjustments(cls, values: Dict[str, Any]) -> Dict:
+    def round_percentage_adjustments(cls, value: int) -> int:
         '''
         Classmethod to round percentages.
 
@@ -391,8 +386,7 @@ class RunwaySurfacePercentIncrease(BaseModel):
         (Dict): dictionary with the input values corrected.
 
         '''
-        values["percent"] = round(values["percent"], 2)
-        return values
+        return round(value, 2)
 
 
 class RunwayDistanceAdjustmentPercentages(BaseModel):
@@ -407,7 +401,7 @@ class RunwayDistanceAdjustmentPercentages(BaseModel):
         List[RunwaySurfacePercentIncrease]
     ] = []
 
-    @model_validator(mode='before')
+    @model_validator(mode='after')
     @classmethod
     def round_percentage_adjustments(cls, values: Dict[str, Any]) -> Dict:
         '''
@@ -421,19 +415,13 @@ class RunwayDistanceAdjustmentPercentages(BaseModel):
 
         '''
 
-        if "percent_decrease_knot_headwind" in values\
-                and values["percent_decrease_knot_headwind"] is not None:
-            values["percent_decrease_knot_headwind"] = round(
-                values["percent_decrease_knot_headwind"], 2)
-        else:
-            values["percent_decrease_knot_headwind"] = None
+        if values.percent_decrease_knot_headwind is not None:
+            values.percent_decrease_knot_headwind = round(
+                values.percent_decrease_knot_headwind, 2)
 
-        if "percent_increase_knot_tailwind" in values\
-                and values["percent_increase_knot_tailwind"] is not None:
-            values["percent_increase_knot_tailwind"] = round(
-                values["percent_increase_knot_tailwind"], 2)
-        else:
-            values["percent_increase_knot_tailwind"] = None
+        if values.percent_increase_knot_tailwind is not None:
+            values.percent_increase_knot_tailwind = round(
+                values.percent_increase_knot_tailwind, 2)
 
         return values
 
