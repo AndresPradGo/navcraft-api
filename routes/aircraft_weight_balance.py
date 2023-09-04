@@ -510,7 +510,7 @@ async def edit_weight_and_balance_profile(
     ) for limit in data.limits]
 
     _ = db_session.query(models.WeightBalanceLimit).filter(
-        models.WeightBalanceLimit.weight_balance_profile_id == wb_profile_id).delete()
+        models.WeightBalanceLimit.weight_balance_profile_id == wb_profile_id).delete(synchronize_session="evaluate")
 
     db_session.add_all(new_limits)
 

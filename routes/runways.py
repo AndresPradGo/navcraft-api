@@ -425,7 +425,7 @@ async def manage_runways_with_csv_file(
 
     # Delete Runways
     _ = db_session.query(models.Runway).filter(models.Runway.aerodrome_id.in_(
-        list(aerodrome_ids_in_db.values()))).delete(synchronize_session=False)
+        list(aerodrome_ids_in_db.values()))).delete(synchronize_session="evaluate")
 
     # Add data
     for runway in data_list:
