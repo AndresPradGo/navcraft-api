@@ -11,10 +11,9 @@ Usage:
 
 from typing import Annotated, List
 
-from fastapi import Depends, status, HTTPException
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
-from pydantic import BaseModel
 
 from utils import common_responses, environ_variable_tools as environ
 import schemas
@@ -43,6 +42,7 @@ def get_jwt_payload(token: str):
         )
 
     except JWTError:
+        # pylint: disable=raise-missing-from
         raise common_responses.invalid_credentials()
 
     return payload

@@ -24,10 +24,6 @@ class BaseModel(Model):
     """
     This class defines the database base model, 
     which will be the parent for all the db-table models.
-
-    Attributes:
-    - created_at (DateTime Column): date-time at which the table row entry was created.
-    - last_updated (DateTime Column): date-time at which the table row entry was last updated.
     """
 
     __abstract__ = True

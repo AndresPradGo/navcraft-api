@@ -18,25 +18,7 @@ from models.base import BaseModel
 
 class Flight(BaseModel):
     """
-    This class defines the database flight model.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - departure_time (DateTime Column): estimated departure time.
-    - bhp_percent (Integer Column) = percentage of the engine's break hose power used during cruise.
-    - reserve_fuel_hours (Decimal Column) = number of hours of reserve fuel.
-    - contingency_fuel_hours (Decimal Column) = number of hours of contingency fuel.
-    - aircraft_id (Integer Column): foreign key that points to the aircraft table.
-    - status_id (Integer Column): foreign key that points to the flight_status table.
-    - pilot_id (Integer Column): foreign key that points to the users table.
-    - aircraft (Relationship): Defines the many-to-one relationship with the aircraft table.
-    - status (Relationship): Defines the many-to-one relationship with the flight_status table.
-    - departure (Relationship): Defines the one-to-one relationship with the departures table.
-    - arrival (Relationship): Defines the one-to-one relationship with the arrivals table.
-    - legs (Relationship): defines the one-to-many relationship with the legs table.
-    - passengers (Relationship): defines the one-to-many relationship with the passengers table.
-    - baggages (Relationship): defines the one-to-many relationship with the baggages table.
-    - pilot (Relationship): defines the many-to-one relationship with the users table.
+    This class defines the database flights table.
     """
 
     __tablename__ = "flights"
@@ -124,19 +106,8 @@ class Flight(BaseModel):
 
 class DepartureAndArrival(BaseModel):
     """
-    This class defines the databasedepartures and arrivals base model, 
+    This class defines the database departures and arrivals base model, 
     which will be the parent for the Departures and Arrivals models.
-
-    Attributes:
-    - flight_id (Integer Column): table primary key. Also the 
-      foreignkey that points to the flights table.
-    - wind_direction (Integer Column): wind direction in degrees true.
-    - wind_magnitude_knot (Integer Column): wind magnitude in knots.
-    - temperature_c (Integer Column): air temperature at aerodrome, in celsius.
-    - altimeter_inhg (Decimal Column): altimeter setting at aerodrome, in inHg
-    - weather_valid_from (DateTime Column): start-time of validity of weather forecast.
-    - weather_valid_to (DateTime Column): end-time of validity of weather forecast.
-    - aerodrome_id (Integer Column): foreignkey pointing to the parent table aerodrome of departure/arrival.
     """
 
     __abstract__ = True
@@ -180,11 +151,7 @@ class DepartureAndArrival(BaseModel):
 
 class Departure(DepartureAndArrival):
     """
-    This class defines the database departure model.
-
-    Attributes:
-    - flight (Relationship): Defines the one-to-one relationship with the flights table.
-    - aerodrome (Relationship): Defines the many-to-one relationship with the aerodromes parent-table.
+    This class defines the database departures table.
     """
 
     __tablename__ = "departures"
@@ -195,11 +162,7 @@ class Departure(DepartureAndArrival):
 
 class Arrival(DepartureAndArrival):
     """
-    This class defines the database arrival model.
-
-    Attributes:
-    - flight (Relationship): Defines the one-to-one relationship with the flights table.
-    - aerodrome (Relationship): Defines the many-to-one relationship with the aerodromes parent-table.
+    This class defines the database arrivals table.
     """
 
     __tablename__ = "arrivals"
@@ -210,22 +173,7 @@ class Arrival(DepartureAndArrival):
 
 class Leg(BaseModel):
     """
-    This class defines the database leg model.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - sequence (Integer Column): sequence of this leg in the flight.
-    - altitude_ft (Integer Column):  altitude in ft above sea level.
-    - temperature_c (Integer Column): air temperature at cruise altitude, in celsius.
-    - rpm (Integer Column): RPM of the engine during cruise.
-    - ktas (Integer Column): true airspeed in knots.
-    - gph (Decimal Column): gallons per hour of fuel burned during cruise.
-    - wind_direction (Integer Column): wind direction in degrees true.
-    - wind_magnitude_knot (Integer Column): wind magnitude in knots.
-    - magnetic_variation (Decimal Column): magnetic variation for the leg.
-    - flight_id (Integer Column): foreign key that points to the flights table.
-    - flight (Relationship): Defines the many-to-one relationship with the flight table.
-    - flight_waypoint (Relationship): Defines the one-to-one relationship with the waypoint child-table.
+    This class defines the database legs table.
     """
 
     __tablename__ = "legs"
@@ -278,12 +226,7 @@ class Leg(BaseModel):
 
 class FlightStatus(BaseModel):
     """
-    This class defines the database flight_status model.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - status (String Column): the flight status (e.g. saved, printed, completed)
-    - flights (Relationship): list of flights with the status.
+    This class defines the database flight_status table.
     """
 
     __tablename__ = "flight_status"
@@ -301,17 +244,7 @@ class FlightStatus(BaseModel):
 
 class Passenger(BaseModel):
     """
-    This class defines the database passenger model.
-
-    Attributes:
-    - flight_id (Integer Column): foreign key that points to the flights table.
-      Also a composite key.
-    - profile_id (Integer Column): foreign key that points to the profiles table.
-      Also a composite key.
-    - seat_id (Integer Column): foreign key that points to the seat_rows table.
-    - flight (Relationship): Defines the many-to-one relationship with the flights table.
-    - profile (Relationship): Defines the many-to-one relationship with the passenger_profiles table.
-    - seat_row (Relationship): Defines the many-to-one relationship with the seat_rows table.
+    This class defines the database passengers table.
     """
 
     __tablename__ = "passengers"
@@ -351,16 +284,7 @@ class Passenger(BaseModel):
 
 class Baggage(BaseModel):
     """
-    This class defines the database baggage model.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - weight_lb (Decimal Column): weight of the baggage in lbs.
-    - flight_id (Integer Column): foreign key that points to the flights table.
-    - compartment_id (Integer Column): foreign key that points to the baggage_compartment table.
-    - flight (Relationship): Defines the many-to-one relationship with the flights table.
-    - baggage_compartment (Relationship): Defines the many-to-one relationship with 
-      the baggage_compartments table.
+    This class defines the database baggages table.
     """
 
     __tablename__ = "baggages"

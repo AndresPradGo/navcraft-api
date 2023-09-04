@@ -20,26 +20,7 @@ from utils import environ_variable_tools as environ
 
 class User(BaseModel):
     """
-    This class defines the database user model.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - email (String Column): user email.
-    - name (String Column): user name.
-    - password (String Column): user's hashed password.
-    - weight_lb (Decimal Column): user weight in lbs.
-    - is_active (Boolean Column): false if you want to deactivate the account without deleting it.
-      Specially useful for admin user whoe are no longer active.
-    - is_admin (Boolean Column): true if the user is admin. Admin users have privileges 
-      like adding aerodromes and aircraft base models.
-    - is_master (Boolean Column): true if the user is master. Only master users can add 
-      new admin users. Master users have to be Admin Users.
-      aircraft (Relationship): defines the one-to-many relationship with the aircraft table.
-      flights (Relationship): defines the one-to-many relationship with the flights table.
-    - passenger_profiles (Relationship): defines the one-to-many relationship with the 
-      passenger_profile table.
-    - user_waypoints (Relationship): defines the one-to-many relationship with the user_waypoints child-table.
-    - vfr_waypoints (Relationship): defines the one-to-many relationship with the vfr_waypoints child-table.
+    This class defines the database users table.
     """
 
     __tablename__ = "users"
@@ -115,15 +96,7 @@ class User(BaseModel):
 
 class PassengerProfile(BaseModel):
     """
-    This class defines the database passenger_profile model.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - name (String Column): passenger name.
-    - weight_lb (Decimal Column): passenger weight in lbs.
-    - creator_id (Integer Column): foreign key that points to the users table.
-    - creator (Relationship): defines the many-to-one relationship with the users table.
-    - passengers (Relationship): defines the one-to-many relationship with the passenger table.
+    This class defines the database passenger_profiles table.
     """
 
     __tablename__ = "passenger_profiles"

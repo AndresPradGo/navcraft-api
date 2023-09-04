@@ -17,11 +17,6 @@ from models.base import BaseModel
 class AircraftMake(BaseModel):
     """
     This class defines the database aircraft_makes table.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - name (String Column): aircraft manufacturer name.
-    - models (Relationship): defines the one-to-many relationship with the aircraft_moel child table.
     """
 
     __tablename__ = "aircraft_makes"
@@ -40,15 +35,6 @@ class AircraftMake(BaseModel):
 class AircraftModel(BaseModel):
     """
     This class defines the database aircraft_models table.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - model (String Column): aircraft model (e.g. Cessna 172 Skyhawk SR).
-    - code (String Column): aircraft code that identifies the aircraft (e.g. PA28, C172).
-    - make_id (String Column): foreign key pointing to the aircraft_make.
-    - make (Relationship): defines the many-to-one relationship with the aircraft_make parent table.
-    - aircraft (Relationship): defines the one-to-many relationship with the aircraft child table.
-    - performance_profiles (Relationship): defines the one-to-many relationship with the performance_profiles child table.
     """
 
     __tablename__ = "aircraft_models"
@@ -83,30 +69,6 @@ class AircraftModel(BaseModel):
 class PerformanceProfile(BaseModel):
     """
     This class defines the database performance_profiles table.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - name (String Column): name specifying details about the profile 
-      (e.g. No Wheel-fairings, Airconditioning-on, Long-range Tanks)
-    - is_complete (Boolean Column): true when profile is complete and ready to show to users.
-    - center_of_gravity_in (Decimal Column): center of gravity of empty aircraft 
-      in inches from datum.
-    - empty_weight_lb (Decimal Column): empty weight of the aircraft in lbs.
-    - take_off_taxi_fuel_gallons (Decimal Column) = fuel gallons used during start,
-      taxi, runup and takeoff.
-    - percent_decrease_takeoff_headwind_knot (Decimal Column): percent decrease
-    in takeoff distance per knot of headwind.
-    - percent_increase_takeoff_tailwind_knot (Decimal Column): percent increase
-      in takeoff distance per knot of tailwind.
-    - percent_decrease_landing_headwind_knot (Decimal Column): percent decrease
-      in landing distance per knot of headwind.
-    - percent_increase_landing_tailwind_knot (Decimal Column): percent increase
-      in landing distance per knot of tailwind.
-    - percent_increase_climb_temperature_c (Integer Column): percent increase in climb
-      time, fuel and distance per degree celsius of air temperature above standard.
-    - fuel_type_id (Integer Column): foreignkey pointing to the fuel_types table.
-    - model_id (Integer Column): foreignkey pointing to the aircarft_models table.
-    - aircraft_id (Integer Column): foreignkey pointing to the aircraft table.
     """
 
     __tablename__ = "performance_profiles"
@@ -208,13 +170,6 @@ class PerformanceProfile(BaseModel):
 class Aircraft(BaseModel):
     """
     This class defines the database aircraft table.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - registration (String Column): registration or "tail-number"
-    - model_id (Integer Column): foreignkey pointing to the aircraft_models table.
-    - fuel_type_id (Integer Column): foreignkey pointing to the fuel_types table.
-    - owner_id (Integer Column): foreign key that points to the users table.
     """
 
     __tablename__ = "aircraft"
@@ -260,16 +215,6 @@ class Aircraft(BaseModel):
 class SurfacePerformanceDecrease(BaseModel):
     """
     This class defines the database surface_performance_decrease table.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - percent (String Column): percentage by which to decrease landing/takeoff performance 
-    for the runway surface
-    - is_takeoff (Boolean Column): true if the pecentage is for takeoff parformance.
-    - surface_id (Integer Column): foreign key that links to the runway_surfaces table.
-    - performance_profile_id (Integer Column): foreign key that links to the performance_profiles table.
-    - surface (Relationship): defines the many-to-one relationship with the runway_surface table.
-    - performance_profile (Relationship): defines the many-to-one relationship with the performance_profiles parent table.
     """
 
     __tablename__ = "surfaces_performance_decrease"
@@ -306,19 +251,7 @@ class SurfacePerformanceDecrease(BaseModel):
 
 class WeightBalanceProfile(BaseModel):
     """
-    This class defines the database weight_balance_profile model.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - name (String Column): name of the profile (e.g. Normal Category, Utility Category).
-    - fuel_capacity_gallons (Decimal Column): total fuel capacity.
-    - fuel_arm_in (Decimal Column): arm of the fuel wight.
-    - max_take_off_weight_lb (Decimal Column): maximum takeoff weight in lbs.
-    - max_ramp_weight_lb (Decimal Column): maximum ramp weight in lbs.
-    - max_landing_weight_lb (Decimal Column): maximum landing weight in lbs.
-    - performance_profile_id (Integer Column): foreign key that links to the performance_profiles table.
-    - performance_profile (Relationship): retationship with the performance_profiles parent table.
-    - weight_balance_limits (Relationship): list of W&B boundary limits.
+    This class defines the database weight_balance_profiles table.
     """
 
     __tablename__ = "weight_balance_profiles"
@@ -351,16 +284,6 @@ class WeightBalanceProfile(BaseModel):
 class WeightBalanceLimit(BaseModel):
     """
     This class defines the database weight_balance_limits table.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - from_cg_in (Decimal Column): the cg value of the first point in the W&B limit line in inches.
-    - from_weight_lb (Decimal Column): the weight value of the first point in the W&B limit line in lbs.
-    - to_cg_in (Decimal Column): the cg value of the last point in the W&B limit line in inches.
-    - to_weight_lb (Decimal Column): the weight value of the last point in the W&B limit line in lbs.
-    - weight_balance_profile_id (Integer Column): foreign key pointing to the weight_balance_profiles table.
-    - weight_balance_profile (Relationship): defines the many_to_one relationship with the 
-      weight_balance_profiles parent table.
     """
 
     __tablename__ = "weight_balance_limits"
@@ -389,16 +312,6 @@ class WeightBalanceLimit(BaseModel):
 class BaggageCompartment(BaseModel):
     """
     This class defines the database baggage_compartments table.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - name (String Column): the name of the compartment (e.g. compartment 1, back compartment).
-    - arm_in (Decimal Column): the W&B arm of the baggage compartment.
-    - weight_limit_lb (Decimal Column): the weight limit in lbs, if any.
-    - performance_profile_id (Integer Column): foreign key that links to the performance_profiles table.
-    - performance_profile (Relationship): defines the many_to_one relationship with the performance_profiles parent table.
-    - baggages (Relationship): defines the one_to_many relationship with the baggages table.
-
     """
 
     __tablename__ = "baggage_compartments"
@@ -432,18 +345,7 @@ class BaggageCompartment(BaseModel):
 
 class SeatRow(BaseModel):
     """
-    This class defines the database seat_row model.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - name (String Column): the name of the row (e.g. pilot seat, back passanger seats)
-    - arm_in (Decimal Column): the W&B arm of the row.
-    - weight_limit_lb (Decimal Column): the weight limit in lbs, if any.
-    - number_of_seats (Integer Column): the number of seats in that row.
-    - performance_profile_id (Integer Column): foreign key that links to the performance_profiles table.
-    - performance_profile (Relationship): defines the many_to_one relationship with the 
-      performance_profiles parent table.
-    - passengers (Relationship): defines the one_to_many relationship with the passengers table.
+    This class defines the database seat_rows table.
     """
 
     __tablename__ = "seat_rows"
@@ -479,15 +381,6 @@ class TakeoffLandingPerformance(BaseModel):
     """
     This class defines the database takeoff and landing performance base model, 
     which will be the parent for the TakeoffPerformance and LandingPerformance models.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - weight_lb (Integer Column):
-    - pressure_alt_ft (Integer Column): pressure altitude in ft.
-    - temperature_c (Integer Column): air temperature at aerodrome, in celsius.
-    - groundroll_ft (Integer Column): ground roll distance in ft.
-    - obstacle_clearance_ft (Integer Column): distance to clear a 50ft obstacle in ft.
-    - performance_profile_id (Integer Column): foreignkey pointing to the performance_profiles parent table.
     """
 
     __abstract__ = True
@@ -512,10 +405,6 @@ class TakeoffLandingPerformance(BaseModel):
 class TakeoffPerformance(TakeoffLandingPerformance):
     """
     This class defines the database takeoff_performance_data table.
-
-    Attributes:
-    - performance_profile (Relationship): Defines the many-to-one relationship with the 
-      performance_profiles parent table.
     """
 
     __tablename__ = "takeoff_performance_data"
@@ -529,10 +418,6 @@ class TakeoffPerformance(TakeoffLandingPerformance):
 class LandingPerformance(TakeoffLandingPerformance):
     """
     This class defines the database landing_performance model.
-
-    Attributes:
-    - performance_profile (Relationship): Defines the many-to-one relationship with the 
-      performance_profiles parent table.
     """
 
     __tablename__ = "landing_performance_data"
@@ -545,19 +430,7 @@ class LandingPerformance(TakeoffLandingPerformance):
 
 class ClimbPerformance(BaseModel):
     """
-    This class defines the database climb_performance model.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - weight_lb (Decimal Column): the weight limit in lbs, if any.
-    - pressure_alt_ft (Integer Column): pressure altitude in ft.
-    - temperature_c (Integer Column): air temperature in celsius.
-    - time_min (Integer Column): time to climb from sea level, in minutes.
-    - fuel_gal (Decimal Column): fuel to climb from sea level, in gallons.
-    - distance_nm (Integer Column): distance to climb from sea level, in nautical miles.
-    - performance_profile_id (Integer Column): foreignkey pointing to the performance_profiles table.
-    - performance_profile (Relationship): Defines the many-to-one relationship with the 
-      performance_profiles parent table.
+    This class defines the database climb_performance_data table.
     """
 
     __tablename__ = "climb_performance_data"
@@ -587,20 +460,7 @@ class ClimbPerformance(BaseModel):
 
 class CruisePerformance(BaseModel):
     """
-    This class defines the database cruise_performance model.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - weight_lb (Decimal Column): the weight limit in lbs, if any.
-    - pressure_alt_ft (Integer Column): pressure altitude in ft.
-    - temperature_c (Integer Column): air temperature in celsius.
-    - bhp_percent (Integer Column): percentage of engine's BHP, use to cruise.
-    - rpm (Integer Column): RPM of the engine during cruise.
-    - ktas (Integer Column): true airspeed in knots.
-    - gph (Decimal Column): gallons per hour of fuel burned during cruise.
-    - performance_profile_id (Integer Column): foreignkey pointing to the performance_profiles parent table.
-    - performance_profile (Relationship): Defines the many-to-one relationship with the 
-      performance_profiles parent table.
+    This class defines the database cruise_performance_data table.
     """
 
     __tablename__ = "cruise_performance_data"
@@ -631,14 +491,7 @@ class CruisePerformance(BaseModel):
 
 class FuelType(BaseModel):
     """
-    This class defines the database fuel_type model.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - name (String Column): the name of the fuel (e.g. kerosene, 100LL).
-    - density_lb_gal (Decimal Column): density of the fuel in lbs per gallon.
-    - performance_profile (Relationship): Defines the one_to_many relationship with the 
-      performance_profiles child table.
+    This class defines the database fuel_types table.
     """
 
     __tablename__ = "fuel_types"

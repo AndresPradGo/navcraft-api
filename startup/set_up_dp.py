@@ -12,7 +12,7 @@ import re
 import sys
 
 from sqlalchemy import text
-from sqlalchemy.exc import OperationalError, IntegrityError, TimeoutError
+from sqlalchemy.exc import OperationalError, IntegrityError, TimeoutError as SqlalchemyTimeoutError
 
 from auth.hasher import Hasher
 import models
@@ -36,8 +36,8 @@ def _set_charracter_set() -> None:
         with engine.connect() as connection:
             connection.execute(text("SET NAMES utf8mb4;"))
             connection.execute(text("SET character_set_client = utf8mb4;"))
-    except OperationalError as e:
-        print(f"Error setting character set and collation: {e}")
+    except OperationalError as error:
+        print(f"Error setting character set and collation: {error}")
 
 
 def _create_tables() -> None:
@@ -63,8 +63,8 @@ def _create_master_user():
 
     try:
         user_email = environ.get("master_user_email")
-        with Session() as db:
-            user_exists = db.query(models.User).filter(
+        with Session() as db_session:
+            user_exists = db_session.query(models.User).filter(
                 models.User.email == user_email).first()
             if not user_exists:
                 user = models.User(
@@ -76,11 +76,11 @@ def _create_master_user():
                     is_admin=True,
                     is_master=True
                 )
-                db.add(user)
-                db.commit()
+                db_session.add(user)
+                db_session.commit()
 
-    except (IntegrityError, TimeoutError, OperationalError) as e:
-        print(f"Fatal Error! Could not create master user: {e}")
+    except (IntegrityError, SqlalchemyTimeoutError, OperationalError) as error:
+        print(f"Fatal Error! Could not create master user: {error}")
         sys.exit(1)
 
 
@@ -101,18 +101,18 @@ def _add_ruway_surfaces():
     ]
 
     try:
-        with Session() as db:
-            db_is_populated = db.query(models.RunwaySurface).first()
+        with Session() as db_session:
+            db_is_populated = db_session.query(models.RunwaySurface).first()
             if db_is_populated is None:
                 surfaces_to_add = [models.RunwaySurface(
                     surface=s
                 ) for s in surfaces]
 
-                db.add_all(surfaces_to_add)
-                db.commit()
+                db_session.add_all(surfaces_to_add)
+                db_session.commit()
 
-    except (IntegrityError, TimeoutError, OperationalError) as e:
-        print(f"Error! could not add runway surfaces: {e}")
+    except (IntegrityError, SqlalchemyTimeoutError, OperationalError) as error:
+        print(f"Error! could not add runway surfaces: {error}")
 
 
 def _add_aerodrome_status():
@@ -133,18 +133,18 @@ def _add_aerodrome_status():
     ]
 
     try:
-        with Session() as db:
-            db_is_populated = db.query(models.AerodromeStatus).first()
+        with Session() as db_session:
+            db_is_populated = db_session.query(models.AerodromeStatus).first()
             if db_is_populated is None:
                 status_to_add = [models.AerodromeStatus(
                     status=s
                 ) for s in status]
 
-                db.add_all(status_to_add)
-                db.commit()
+                db_session.add_all(status_to_add)
+                db_session.commit()
 
-    except (IntegrityError, TimeoutError, OperationalError) as e:
-        print(f"Error! could not add aerodrome status: {e}")
+    except (IntegrityError, SqlalchemyTimeoutError, OperationalError) as error:
+        print(f"Error! could not add aerodrome status: {error}")
 
 
 def _add_vfr_waypoints():
@@ -160,11 +160,11 @@ def _add_vfr_waypoints():
         **w) for w in csv.csv_to_list(file_path=f"{_PATH}vfr_waypoints.csv")]
 
     try:
-        with Session() as db:
-            db_is_populated = db.query(models.VfrWaypoint).first()
+        with Session() as db_session:
+            db_is_populated = db_session.query(models.VfrWaypoint).first()
 
             if db_is_populated is None:
-                user_id = db.query(models.User.id).first()[0]
+                user_id = db_session.query(models.User.id).first()[0]
 
                 for waypoint in data_to_add:
                     new_waypoint = models.Waypoint(
@@ -178,9 +178,9 @@ def _add_vfr_waypoints():
                         lon_direction=waypoint.lon_direction,
                         magnetic_variation=waypoint.magnetic_variation,
                     )
-                    db.add(new_waypoint)
-                    db.commit()
-                    db.refresh(new_waypoint)
+                    db_session.add(new_waypoint)
+                    db_session.commit()
+                    db_session.refresh(new_waypoint)
 
                     new_vfr_waypoint = models.VfrWaypoint(
                         waypoint_id=new_waypoint.id,
@@ -189,11 +189,11 @@ def _add_vfr_waypoints():
                         hidden=waypoint.hidden,
                         creator_id=user_id
                     )
-                    db.add(new_vfr_waypoint)
-                    db.commit()
+                    db_session.add(new_vfr_waypoint)
+                    db_session.commit()
 
-    except (IntegrityError, TimeoutError, OperationalError) as e:
-        print(f"Error! could not add vfr waypoints: {e}")
+    except (IntegrityError, SqlalchemyTimeoutError, OperationalError) as error:
+        print(f"Error! could not add vfr waypoints: {error}")
 
 
 def _add_aerodromes():
@@ -205,17 +205,15 @@ def _add_aerodromes():
     Returns: None
     """
 
-    x = csv.csv_to_list(file_path=f"{_PATH}aerodromes.csv")
-
     data_to_add = [schemas.RegisteredAerodromeData(
         **a, status=a["status_id"]) for a in csv.csv_to_list(file_path=f"{_PATH}aerodromes.csv")]
 
     try:
-        with Session() as db:
-            db_is_populated = db.query(models.Aerodrome).first()
+        with Session() as db_session:
+            db_is_populated = db_session.query(models.Aerodrome).first()
 
             if db_is_populated is None:
-                user_id = db.query(models.User.id).first()[0]
+                user_id = db_session.query(models.User.id).first()[0]
 
                 for aerodrome in data_to_add:
                     new_waypoint = models.Waypoint(
@@ -229,9 +227,9 @@ def _add_aerodromes():
                         lon_direction=aerodrome.lon_direction,
                         magnetic_variation=aerodrome.magnetic_variation,
                     )
-                    db.add(new_waypoint)
-                    db.commit()
-                    db.refresh(new_waypoint)
+                    db_session.add(new_waypoint)
+                    db_session.commit()
+                    db_session.refresh(new_waypoint)
 
                     new_vfr_waypoint = models.VfrWaypoint(
                         waypoint_id=new_waypoint.id,
@@ -240,7 +238,7 @@ def _add_aerodromes():
                         hidden=aerodrome.hidden,
                         creator_id=user_id
                     )
-                    db.add(new_vfr_waypoint)
+                    db_session.add(new_vfr_waypoint)
 
                     new_aerodrome = models.Aerodrome(
                         id=new_waypoint.id,
@@ -251,12 +249,12 @@ def _add_aerodromes():
                         elevation_ft=aerodrome.elevation_ft,
                         status_id=aerodrome.status
                     )
-                    db.add(new_aerodrome)
+                    db_session.add(new_aerodrome)
 
-                    db.commit()
+                    db_session.commit()
 
-    except (IntegrityError, TimeoutError, OperationalError) as e:
-        print(f"Error! could not add aerodromes: {e}")
+    except (IntegrityError, SqlalchemyTimeoutError, OperationalError) as error:
+        print(f"Error! could not add aerodromes: {error}")
 
 
 def _add_runways():
@@ -282,8 +280,8 @@ def _add_runways():
     }) for r in csv.csv_to_list(file_path=f"{_PATH}runways.csv")]
 
     try:
-        with Session() as db:
-            db_is_populated = db.query(models.Runway).first()
+        with Session() as db_session:
+            db_is_populated = db_session.query(models.Runway).first()
 
             if db_is_populated is None:
                 for runway in data_to_add:
@@ -294,11 +292,11 @@ def _add_runways():
                         length_ft=runway.length_ft,
                         surface_id=runway.surface_id
                     )
-                    db.add(new_runway)
-                db.commit()
+                    db_session.add(new_runway)
+                db_session.commit()
 
-    except (IntegrityError, TimeoutError, OperationalError) as e:
-        print(f"Error! could not add runways: {e}")
+    except (IntegrityError, SqlalchemyTimeoutError, OperationalError) as error:
+        print(f"Error! could not add runways: {error}")
 
 
 def _add_fuel_types():
@@ -315,8 +313,8 @@ def _add_fuel_types():
     }) for f in csv.csv_to_list(file_path=f"{_PATH}fuel_types.csv")]
 
     try:
-        with Session() as db:
-            db_is_populated = db.query(models.FuelType).first()
+        with Session() as db_session:
+            db_is_populated = db_session.query(models.FuelType).first()
 
             if db_is_populated is None:
                 for fuel_type in data_to_add:
@@ -324,10 +322,10 @@ def _add_fuel_types():
                         name=fuel_type.name,
                         density_lb_gal=fuel_type.density_lb_gal,
                     )
-                    db.add(new_fuel_type)
-                db.commit()
-    except (IntegrityError, TimeoutError, OperationalError) as e:
-        print(f"Error! could not add fuel types: {e}")
+                    db_session.add(new_fuel_type)
+                db_session.commit()
+    except (IntegrityError, SqlalchemyTimeoutError, OperationalError) as error:
+        print(f"Error! could not add fuel types: {error}")
 
 
 def _add_aircraft_manufacturers():
@@ -343,18 +341,18 @@ def _add_aircraft_manufacturers():
     }) for f in csv.csv_to_list(file_path=f"{_PATH}manufacturers.csv")]
 
     try:
-        with Session() as db:
-            db_is_populated = db.query(models.AircraftMake).first()
+        with Session() as db_session:
+            db_is_populated = db_session.query(models.AircraftMake).first()
 
             if db_is_populated is None:
                 for manufacturer in data_to_add:
                     new_manufacturer = models.AircraftMake(
                         name=manufacturer.name
                     )
-                    db.add(new_manufacturer)
-                db.commit()
-    except (IntegrityError, TimeoutError, OperationalError) as e:
-        print(f"Error! could not add fuel types: {e}")
+                    db_session.add(new_manufacturer)
+                db_session.commit()
+    except (IntegrityError, SqlalchemyTimeoutError, OperationalError) as error:
+        print(f"Error! could not add fuel types: {error}")
 
 
 def _populate_db():

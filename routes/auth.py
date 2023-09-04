@@ -12,7 +12,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
-from passlib.context import CryptContext
+from passlib.context import CryptContext  # pylint: disable=unused-import
 from sqlalchemy.orm import Session
 
 import models
@@ -27,7 +27,7 @@ router = APIRouter(tags=["Auth"])
 @router.post("/", status_code=status.HTTP_200_OK, response_model=schemas.JWTData)
 async def login(
     login_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    db: Session = Depends(get_db)
+    db_session: Session = Depends(get_db)
 ):
     """
     Authenticate Endpoint.
@@ -43,7 +43,7 @@ async def login(
     - HTTPException (500): if there is a server error. 
     """
 
-    user = db.query(models.User).filter(
+    user = db_session.query(models.User).filter(
         models.User.email == login_data.username).first()
 
     if not user:

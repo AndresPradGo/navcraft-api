@@ -10,7 +10,6 @@ Usage:
 """
 
 from fastapi import FastAPI
-import asyncio
 
 from startup.create_db import create_database
 from startup.set_up_dp import set_up_database

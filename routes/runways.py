@@ -27,8 +27,8 @@ router = APIRouter(tags=["Runways"])
 
 @router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.RunwayReturn])
 async def get_all_runways(
-    id: Optional[int] = 0,
-    db: Session = Depends(get_db),
+    runway_id: Optional[int] = 0,
+    db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
@@ -49,18 +49,18 @@ async def get_all_runways(
     r = models.Runway
     s = models.RunwaySurface
 
-    aerodromes = db.query(a.id, v.code)\
+    aerodromes = db_session.query(a.id, v.code)\
         .filter(a.vfr_waypoint is not None)\
         .join(v, a.vfr_waypoint_id == v.waypoint_id).all()
     aerodrome_ids = [a[0] for a in aerodromes]
     aerodrome_codes = {a[0]: a[1] for a in aerodromes}
 
-    runways = db.query(r, s.surface)\
+    runways = db_session.query(r, s.surface)\
         .filter(and_(
             models.Runway.aerodrome_id.in_(aerodrome_ids),
             or_(
-                not_(id),
-                models.Runway.id == id
+                not_(runway_id),
+                models.Runway.id == runway_id
             )
         ))\
         .join(s, r.surface_id == s.id).all()
@@ -84,7 +84,7 @@ async def get_all_runways(
 
 @router.get("/csv", status_code=status.HTTP_200_OK)
 async def get_csv_file_with_all_runways(
-    db: Session = Depends(get_db),
+    db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
@@ -109,16 +109,16 @@ async def get_csv_file_with_all_runways(
         "id": a.id,
         "code": v.code,
         "name": v.name
-    } for a, v in db.query(a, v)
+    } for a, v in db_session.query(a, v)
         .filter(a.user_waypoint_id.is_(None))
         .join(v, a.vfr_waypoint_id == v.waypoint_id).all()]
 
     aerodrome_ids = [item["id"] for item in aerodromes]
     aerodrome_codes = {a["id"]: a["code"] for a in aerodromes}
 
-    runways = db.query(models.Runway)\
+    runways = db_session.query(models.Runway)\
         .filter(models.Runway.aerodrome_id.in_(aerodrome_ids)).all()
-    surfaces = db.query(models.RunwaySurface).all()
+    surfaces = db_session.query(models.RunwaySurface).all()
 
     runway_headers = get_table_header("runways")
     aerodrome_headers = get_table_header("aerodrome_codes")
@@ -193,8 +193,8 @@ async def get_csv_file_with_all_runways(
     response_model=List[schemas.RunwaySurfaceReturn]
 )
 async def get_all_runway_surfaces(
-    id: Optional[int] = 0,
-    db: Session = Depends(get_db),
+    runway_id: Optional[int] = 0,
+    db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
@@ -210,16 +210,16 @@ async def get_all_runway_surfaces(
     - HTTPException (500): if there is a server error. 
     """
 
-    return db.query(models.RunwaySurface).filter(or_(
-        not_(id),
-        models.RunwaySurface.id == id
+    return db_session.query(models.RunwaySurface).filter(or_(
+        not_(runway_id),
+        models.RunwaySurface.id == runway_id
     )).order_by(models.RunwaySurface.surface).all()
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.RunwayReturn)
 async def post_runway_(
     runway_data: schemas.RunwayData,
-    db: Session = Depends(get_db),
+    db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
@@ -237,8 +237,8 @@ async def post_runway_(
     """
 
     # Check if aerodrome exists
-    user_id = await get_user_id_from_email(email=current_user.email, db=db)
-    aerodrome = db.query(models.Aerodrome).filter_by(
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    aerodrome = db_session.query(models.Aerodrome).filter_by(
         id=runway_data.aerodrome_id).first()
 
     if not aerodrome:
@@ -259,7 +259,7 @@ async def post_runway_(
     if aerodrome_is_registered and not user_is_active_admin:
         raise no_permission_exception
 
-    aerodrome_created_by_user = db.query(models.UserWaypoint).filter(and_(
+    aerodrome_created_by_user = db_session.query(models.UserWaypoint).filter(and_(
         models.UserWaypoint.waypoint_id == runway_data.aerodrome_id,
         models.UserWaypoint.creator_id == user_id
     )).first()
@@ -268,7 +268,7 @@ async def post_runway_(
         raise no_permission_exception
 
     # Check if surface exists
-    surface_exists = db.query(models.RunwaySurface).filter_by(
+    surface_exists = db_session.query(models.RunwaySurface).filter_by(
         id=runway_data.surface_id).first()
     if not surface_exists:
         raise HTTPException(
@@ -277,7 +277,7 @@ async def post_runway_(
         )
 
     # Check if runway already exists.
-    runway_esxists = db.query(models.Runway).filter(and_(
+    runway_esxists = db_session.query(models.Runway).filter(and_(
         models.Runway.aerodrome_id == runway_data.aerodrome_id,
         models.Runway.number == runway_data.number,
         or_(
@@ -301,9 +301,9 @@ async def post_runway_(
         surface_id=runway_data.surface_id
     )
 
-    db.add(new_runway)
-    db.commit()
-    db.refresh(new_runway)
+    db_session.add(new_runway)
+    db_session.commit()
+    db_session.refresh(new_runway)
 
     # Return runway data
     u = models.UserWaypoint
@@ -312,23 +312,27 @@ async def post_runway_(
     r = models.Runway
     s = models.RunwaySurface
 
-    runway_result = db.query(r, s.surface)\
+    runway_result = db_session.query(r, s.surface)\
         .filter(r.id == new_runway.id)\
         .join(s, r.surface_id == s.id).first()
 
-    aerodrome_result = db.query(a, v.code).filter(a.id == new_runway.aerodrome_id)\
+    aerodrome_result = db_session.query(a, v.code).filter(a.id == new_runway.aerodrome_id)\
         .join(v, a.vfr_waypoint_id == v.waypoint_id).first() if aerodrome_is_registered else\
-        db.query(a, u.code).filter(a.id == new_runway.aerodrome_id)\
+        db_session.query(a, u.code).filter(a.id == new_runway.aerodrome_id)\
         .join(u, a.user_waypoint_id == u.waypoint_id).first()
 
-    return {"aerodrome": aerodrome_result[1], **runway_result[0].__dict__, "surface": runway_result[1]}
+    return {
+        "aerodrome": aerodrome_result[1],
+        **runway_result[0].__dict__,
+        "surface": runway_result[1]
+    }
 
 
 @router.post("/csv", status_code=status.HTTP_204_NO_CONTENT)
 async def manage_runways_with_csv_file(
     csv_file: UploadFile,
-    db: Session = Depends(get_db),
-    current_user: schemas.TokenData = Depends(auth.validate_admin_user)
+    db_session: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
     Manage Runways Endpoint.
@@ -338,13 +342,14 @@ async def manage_runways_with_csv_file(
     - Use this file to update the list in the desired way.
     - New columns can be added for your reference, but they won't be considered for updating the 
       data in the database. 
-    - Do not delete or edit the headers of the existing colums in any way, or the file will be rejected.
+    - Do not delete or edit the headers of the existing colums in any way, 
+      or the file will be rejected.
     - Enter all data in the correct colums to ensure data integrity.
     - Make sure there are no typos or repeated entries.
     - After getting a 204 response, download csv list again to check it has been uploaded correctly.
 
-    NOTE: This endpoint will delete all runways in the database for the given aerodromes, and will post 
-    new data-entries.
+    NOTE: This endpoint will delete all runways in the database for the given aerodromes,
+    and will post new data-entries.
 
 
     Parameters: 
@@ -371,7 +376,7 @@ async def manage_runways_with_csv_file(
 
     aerodrome_codes = {r[headers["aerodrome"]].strip().upper()
                        for r in dict_list}
-    aerodrome_objects = db.query(a, v)\
+    aerodrome_objects = db_session.query(a, v)\
         .join(v, a.vfr_waypoint_id == v.waypoint_id)\
         .filter(and_(a.vfr_waypoint.isnot(None), v.code.in_(aerodrome_codes)))\
         .all()
@@ -394,22 +399,23 @@ async def manage_runways_with_csv_file(
             length_ft=r[headers["length_ft"]],
             surface_id=r[headers["surface_id"]]
         ) for r in dict_list]
-    except ValidationError as e:
+    except ValidationError as error:
+        # pylint: disable=raise-missing-from
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=e.errors()
+            detail=error.errors()
         )
 
     # Check there are no repeated runways
     if not runways_are_unique(data_list):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="There are repeated runway in your list, please make sure all runways are unique."
+            detail="Make sure all runways in the list are unique."
         )
 
     # Check all surface ids are valid
     surface_ids = {r.surface_id for r in data_list}
-    surfaces_in_db = db.query(models.RunwaySurface).filter(
+    surfaces_in_db = db_session.query(models.RunwaySurface).filter(
         models.RunwaySurface.id.in_(surface_ids)).all()
     if not len(surface_ids) == len(surfaces_in_db):
         raise HTTPException(
@@ -418,7 +424,7 @@ async def manage_runways_with_csv_file(
         )
 
     # Delete Runways
-    deleted = db.query(models.Runway).filter(models.Runway.aerodrome_id.in_(
+    _ = db_session.query(models.Runway).filter(models.Runway.aerodrome_id.in_(
         list(aerodrome_ids_in_db.values()))).delete(synchronize_session=False)
 
     # Add data
@@ -430,9 +436,9 @@ async def manage_runways_with_csv_file(
             length_ft=runway.length_ft,
             surface_id=runway.surface_id
         )
-        db.add(new_runway)
+        db_session.add(new_runway)
 
-    db.commit()
+    db_session.commit()
 
 
 @router.post(
@@ -442,7 +448,7 @@ async def manage_runways_with_csv_file(
 )
 async def post_runway_surface(
     surface_data: schemas.RunwaySurfaceData,
-    db: Session = Depends(get_db),
+    db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
@@ -459,11 +465,11 @@ async def post_runway_surface(
     - HTTPException (500): if there is a server error. 
     """
 
-    surface_exists = db.query(models.RunwaySurface).filter(
+    surface_exists = db_session.query(models.RunwaySurface).filter(
         models.RunwaySurface.surface == surface_data.surface).first()
 
     if surface_exists:
-        msg = f"{surface_data.surface} is already in the database, please enter a different surface, or edit the existing one."
+        msg = f"{surface_data.surface} is already in the database."
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=msg
@@ -472,18 +478,18 @@ async def post_runway_surface(
     new_surface = models.RunwaySurface(
         surface=surface_data.surface
     )
-    db.add(new_surface)
-    db.commit()
-    db.refresh(new_surface)
+    db_session.add(new_surface)
+    db_session.commit()
+    db_session.refresh(new_surface)
 
     return new_surface
 
 
-@router.put("/{id}", status_code=status.HTTP_200_OK, response_model=schemas.RunwayReturn)
+@router.put("/{runway_id}", status_code=status.HTTP_200_OK, response_model=schemas.RunwayReturn)
 async def edit_runway(
-    id: int,
+    runway_id: int,
     runway_data: schemas.RunwayDataEdit,
-    db: Session = Depends(get_db),
+    db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
@@ -500,7 +506,8 @@ async def edit_runway(
     - HTTPException (500): if there is a server error. 
     """
     # Check if runway exists
-    runway_query = db.query(models.Runway).filter(models.Runway.id == id)
+    runway_query = db_session.query(models.Runway).filter(
+        models.Runway.id == runway_id)
     if not runway_query.first():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -508,7 +515,7 @@ async def edit_runway(
         )
 
     # Check if user has permission to update this aerodrome
-    user_id = await get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
     aerodrome_id = runway_query.first().aerodrome_id
 
     no_permission_exception = HTTPException(
@@ -516,14 +523,14 @@ async def edit_runway(
         detail=f"You do not have permission to update aerodrome with id {aerodrome_id}."
     )
 
-    aerodrome_is_registered = db.query(models.Aerodrome.vfr_waypoint_id).filter_by(
+    aerodrome_is_registered = db_session.query(models.Aerodrome.vfr_waypoint_id).filter_by(
         id=aerodrome_id).first()[0] is not None
     user_is_active_admin = current_user.is_active and current_user.is_admin
 
     if aerodrome_is_registered and not user_is_active_admin:
         raise no_permission_exception
 
-    aerodrome_created_by_user = db.query(models.UserWaypoint).filter(and_(
+    aerodrome_created_by_user = db_session.query(models.UserWaypoint).filter(and_(
         models.UserWaypoint.waypoint_id == aerodrome_id,
         models.UserWaypoint.creator_id == user_id
     )).first()
@@ -532,7 +539,7 @@ async def edit_runway(
         raise no_permission_exception
 
     # Check if surface exists
-    surface_exists = db.query(models.RunwaySurface).filter_by(
+    surface_exists = db_session.query(models.RunwaySurface).filter_by(
         id=runway_data.surface_id).first()
     if not surface_exists:
         raise HTTPException(
@@ -541,9 +548,9 @@ async def edit_runway(
         )
 
     # Check if another runway with same data exists.
-    runway_esxists = db.query(models.Runway).filter(and_(
+    runway_esxists = db_session.query(models.Runway).filter(and_(
         models.Runway.aerodrome_id == aerodrome_id,
-        not_(models.Runway.id == id),
+        not_(models.Runway.id == runway_id),
         models.Runway.number == runway_data.number,
         or_(
             models.Runway.position.is_(None),
@@ -563,7 +570,7 @@ async def edit_runway(
         "position": runway_data.position,
         "surface_id": runway_data.surface_id
     })
-    db.commit()
+    db_session.commit()
 
     u = models.UserWaypoint
     v = models.VfrWaypoint
@@ -571,27 +578,31 @@ async def edit_runway(
     r = models.Runway
     s = models.RunwaySurface
 
-    runway_result = db.query(r, s.surface)\
-        .filter(r.id == id)\
+    runway_result = db_session.query(r, s.surface)\
+        .filter(r.id == runway_id)\
         .join(s, r.surface_id == s.id).first()
 
-    aerodrome_result = db.query(a, v.code).filter(a.id == aerodrome_id)\
+    aerodrome_result = db_session.query(a, v.code).filter(a.id == aerodrome_id)\
         .join(v, a.vfr_waypoint_id == v.waypoint_id).first() if aerodrome_is_registered else\
-        db.query(a, u.code).filter(a.id == aerodrome_id)\
+        db_session.query(a, u.code).filter(a.id == aerodrome_id)\
         .join(u, a.user_waypoint_id == u.waypoint_id).first()
 
-    return {"aerodrome": aerodrome_result[1], **runway_result[0].__dict__, "surface": runway_result[1]}
+    return {
+        "aerodrome": aerodrome_result[1],
+        **runway_result[0].__dict__,
+        "surface": runway_result[1]
+    }
 
 
 @router.put(
-    "/surface/{id}",
+    "/surface/{surface_id}",
     status_code=status.HTTP_200_OK,
     response_model=schemas.RunwaySurfaceReturn
 )
 async def edit_runway_surface(
-    id: int,
+    surface_id: int,
     surface_data: schemas.RunwaySurfaceData,
-    db: Session = Depends(get_db),
+    db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
@@ -607,20 +618,20 @@ async def edit_runway_surface(
     - HTTPException (400): if runway surface already exists.
     - HTTPException (500): if there is a server error. 
     """
-    surface_exists = db.query(models.RunwaySurface).filter(and_(
+    surface_exists = db_session.query(models.RunwaySurface).filter(and_(
         models.RunwaySurface.surface == surface_data.surface,
-        not_(models.RunwaySurface.id == id)
+        not_(models.RunwaySurface.id == surface_id)
     )).first()
 
     if surface_exists:
-        msg = f"{surface_data.surface} is already in the database, edit the existing record instead."
+        msg = f"{surface_data.surface} is already in the database."
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=msg
         )
 
-    surface_query = db.query(models.RunwaySurface).filter(
-        models.RunwaySurface.id == id
+    surface_query = db_session.query(models.RunwaySurface).filter(
+        models.RunwaySurface.id == surface_id
     )
 
     if not surface_query.first():
@@ -630,10 +641,10 @@ async def edit_runway_surface(
         )
 
     surface_query.update(surface_data.model_dump())
-    db.commit()
+    db_session.commit()
 
-    new_surface = db.query(models.RunwaySurface).filter(
-        models.RunwaySurface.id == id
+    new_surface = db_session.query(models.RunwaySurface).filter(
+        models.RunwaySurface.id == surface_id
     ).first()
 
     return new_surface
@@ -641,15 +652,15 @@ async def edit_runway_surface(
 
 @router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_runways(
-    ids: List[int],
-    db: Session = Depends(get_db),
+    runway_ids: List[int],
+    db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Delete Runways.
 
     Parameters: 
-    ids (List[int]): list of runway ids to be deleted.
+    runway_ids (List[int]): list of runway ids to be deleted.
 
     Returns: None
 
@@ -660,23 +671,23 @@ async def delete_runways(
     """
 
     # Check if runway exists
-    db_runway_ids = {r.id for r in db.query(
-        models.Runway).filter(models.Runway.id.in_(ids)).all()}
+    db_runway_ids = {r.id for r in db_session.query(
+        models.Runway).filter(models.Runway.id.in_(runway_ids)).all()}
 
-    if not all(id in db_runway_ids for id in ids):
+    if not all(id in db_runway_ids for id in runway_ids):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Not all the Runways you're trying to delete are in the database."
         )
 
     # Define some variables
-    user_id = await get_user_id_from_email(email=current_user.email, db=db)
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
     user_is_active_admin = current_user.is_active and current_user.is_admin
 
     # Loop thorugh ids
-    for id in ids:
+    for runway_id in runway_ids:
         # Check if user has permission to update this aerodrome
-        runway_query = db.query(models.Runway).filter_by(id=id)
+        runway_query = db_session.query(models.Runway).filter_by(id=runway_id)
         aerodrome_id = runway_query.first().aerodrome_id
 
         no_permission_exception = HTTPException(
@@ -684,13 +695,13 @@ async def delete_runways(
             detail=f"You do not have permission to update aerodrome with id {aerodrome_id}."
         )
 
-        aerodrome_is_registered = db.query(models.Aerodrome.vfr_waypoint_id).filter_by(
+        aerodrome_is_registered = db_session.query(models.Aerodrome.vfr_waypoint_id).filter_by(
             id=aerodrome_id).first()[0] is not None
 
         if aerodrome_is_registered and not user_is_active_admin:
             raise no_permission_exception
 
-        aerodrome_created_by_user = db.query(models.UserWaypoint).filter(and_(
+        aerodrome_created_by_user = db_session.query(models.UserWaypoint).filter(and_(
             models.UserWaypoint.waypoint_id == aerodrome_id,
             models.UserWaypoint.creator_id == user_id
         )).first()
@@ -703,20 +714,20 @@ async def delete_runways(
         if not deleted:
             raise common_responses.internal_server_error()
 
-    db.commit()
+    db_session.commit()
 
 
-@router.delete("/surface/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/surface/{surface_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_runway_surface(
-    id: int,
-    db: Session = Depends(get_db),
+    surface_id: int,
+    db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
     Delete Runway Surface.
 
     Parameters: 
-    id (int): runway surface id.
+    surface_id (int): runway surface id.
 
     Returns: None
 
@@ -726,29 +737,29 @@ async def delete_runway_surface(
     - HTTPException (500): if there is a server error. 
     """
 
-    surface_query = db.query(models.RunwaySurface).filter(
-        models.RunwaySurface.id == id)
+    surface_query = db_session.query(models.RunwaySurface).filter(
+        models.RunwaySurface.id == surface_id)
 
     if not surface_query.first():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"The runway surface you're trying to delete is not in the database."
+            detail="The runway surface you're trying to delete is not in the database."
         )
 
-    runway_with_surface = db.query(models.Runway).filter(
-        models.Runway.surface_id == id).first()
+    runway_with_surface = db_session.query(models.Runway).filter(
+        models.Runway.surface_id == surface_id).first()
     if runway_with_surface:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"This surface cannot be deleted, as there are runways currently using it."
+            detail="This surface cannot be deleted, as there are runways currently using it."
         )
 
-    aircraft_performance_with_surface = db.query(models.SurfacePerformanceDecrease).\
-        filter(models.SurfacePerformanceDecrease.surface_id == id).first()
+    aircraft_performance_with_surface = db_session.query(models.SurfacePerformanceDecrease).\
+        filter(models.SurfacePerformanceDecrease.surface_id == surface_id).first()
     if aircraft_performance_with_surface:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"This surface cannot be deleted, as there are aircraft performance tables using it."
+            detail="This surface cannot be deleted, as it is being used by aircraft performance."
         )
 
     deleted = surface_query.delete(synchronize_session=False)
@@ -756,4 +767,4 @@ async def delete_runway_surface(
     if not deleted:
         raise common_responses.internal_server_error()
 
-    db.commit()
+    db_session.commit()

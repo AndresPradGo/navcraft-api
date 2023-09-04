@@ -16,22 +16,7 @@ from models.base import BaseModel
 
 class Waypoint(BaseModel):
     """
-    This class defines the database waypoint model.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - lat_degrees (Integer Column): latitude degrees of the waypoint coordinates.
-    - lat_minutes (Integer Column): latitude minutes of the waypoint coordinates.
-    - lat_seconds (Integer Column): latitude seconds of the waypoint coordinates.
-    - lat_direction (String Column): latitude direction of the waypoint coordinates ("N" or "S").
-    - lon_degrees (Integer Column): longitude degrees of the waypoint coordinates.
-    - lon_minutes (Integer Column): longitude minutes of the waypoint coordinates.
-    - lon_seconds (Integer Column): longitude seconds of the waypoint coordinates.
-    - lon_direction (String Column): longitude direction of the waypoint coordinates ("E" or "W").
-    - magnetic_variation (Decimal Column): magnetic variation at the waypoint.
-    - vfr_waypoint (Relationship): defines the one-to-one relationship with the vfr_waypoints child-table.
-    - user_waypoint (Relationship): defines the one-to-one relationship with the user_waypoints child-table.
-    - flight_waypoint (Relationship): defines the one-to-one relationship with the flight_waypoints child-table.
+    This class defines the database waypoints table.
     """
 
     __tablename__ = "waypoints"
@@ -76,17 +61,7 @@ class Waypoint(BaseModel):
 
 class VfrWaypoint(BaseModel):
     """
-    This class defines the database vfr_waypoint model.
-
-    Attributes:
-    - waypoint_id (Integer Column): table primary key. Also a foreignkey with the waypoints table.
-    - code (String Column): waypoint code identifyer.
-    - name (String Column): waypoint name.
-    - hidden (Boolean Column): if true, do not show waypoint to users.
-    - creator_id (Integer Column): foreign key that points to the users table.
-    - creator (Relationship): defines the many-to-one relationship with the users table.
-    - aerodrome (Relationship): Defines the one-to-one relationship with the Aerodrome table.
-    - waypoint (Relationship): defines the one-to-one relationship with the waypoints parent-table.
+    This class defines the database vfr_waypoints table.
     """
 
     __tablename__ = "vfr_waypoints"
@@ -128,16 +103,7 @@ class VfrWaypoint(BaseModel):
 
 class UserWaypoint(BaseModel):
     """
-    This class defines the database user_waypoint model.
-
-    Attributes:
-    - waypoint_id (Integer Column): table primary key. Also a foreignkey with the waypoints table.
-    - code (String Column): waypoint code identifyer.
-    - name (String Column): waypoint name.
-    - creator_id (Integer Column): foreign key that points to the users table.
-    - aerodrome (Relationship): Defines the one-to-one relationship with the Aerodrome table.
-    - creator (Relationship): defines the many-to-one relationship with the users table.
-    - waypoint (Relationship): defines the one-to-one relationship with the waypoints parent-table.
+    This class defines the database user_waypoints table.
     """
 
     __tablename__ = "user_waypoints"
@@ -178,14 +144,7 @@ class UserWaypoint(BaseModel):
 
 class FlightWaypoint(BaseModel):
     """
-    This class defines the database flight_waypoint model.
-
-    Attributes:
-    - waypoint_id (Integer Column): table primary key. Also a foreignkey with the waypoints table.
-    - code (String Column): waypoint code identifyer.
-    - leg_id (Integer Column): 
-    - waypoint (Relationship): defines the one-to-one relationship with the waypoints parent-table.
-    - leg (Relationship): defines the one-to-one relationship with the legs parent-table.
+    This class defines the database flight_waypoints table.
     """
 
     __tablename__ = "flight_waypoints"
@@ -218,22 +177,7 @@ class FlightWaypoint(BaseModel):
 
 class Aerodrome(BaseModel):
     """
-    This class defines the database aerodrome model.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - vfr_waypoint_id (Integer Column): foreignkey with the vfr_waypoints table.
-    - user_waypoint_id (Integer Column): foreignkey with the user_waypoints table.
-    - has_taf (Boolean Column): True if the aerodrome has an official TAF.
-    - has_metar(Boolean Column): True if the aerodrome has an official METAR.
-    - has_fds (Boolean Column): True if the aerodrome has an official FDs.
-    - elevation_ft (Integer Column): aerodrome elevation in feet.
-    - status_id (Integer Column): foreignkey with the aerodrome_status table.
-    - vfr_waypoint (Relationship): defines the one-to-one relationship with the waypoints table.
-    - runways (Relationship): list of runways.
-    - departures (Relationship): defines the one_to_many relationship with the departures table.
-    - arrivals (Relationship): defines the one_to_many relationship with the arrivals table.
-    - status (Relationship): defines the many-to-one relationship with the aerodrome_status table.
+    This class defines the database aerodromes table.
     """
 
     __tablename__ = "aerodromes"
@@ -300,17 +244,7 @@ class Aerodrome(BaseModel):
 
 class Runway(BaseModel):
     """
-    This class defines the database runway model.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - length_ft (Integer Column): length of the runway in ft.
-    - number (integer Column): runway number.
-    - position (String Column): "R", "L" or "C" position for parallel runways.
-    - surface_id (Integer Column): foreign key that points to the runway_surfaces table.
-    - aerodrome_id (Integer Column): foreign key that points to the aerodromes table.
-    - surface (Relationship): defines the many-to-one relationship with the runway_surfaces table.
-    - aerodrome (Relationship): Defines the one-to-one relationship with the aerodromes table.
+    This class defines the database runways table.
     """
 
     __tablename__ = "runways"
@@ -344,17 +278,7 @@ class Runway(BaseModel):
 
 class RunwaySurface(BaseModel):
     """
-    This class defines the database runway_surface model.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - surface (String Column): runway surface material.
-    - performance_level (Integer Column): sorts the surfaces in terms of which one is better; 
-      e.g. if asphalt has a performance_level of 1, grass has a performance level of 2, since 
-      aircraft performe better on asphalt.
-    - runways (Relationship): defines the one_to_many relationship with the runways table.
-    - aircraft_performance_percentages (Relationship): defines the one_to_many relationship 
-      with the surfaces_performance_decrease table.
+    This class defines the database runway_surfaces table.
     """
 
     __tablename__ = "runway_surfaces"
@@ -379,12 +303,7 @@ class RunwaySurface(BaseModel):
 
 class AerodromeStatus(BaseModel):
     """
-    This class defines the database aerodrome_status model.
-
-    Attributes:
-    - id (Integer Column): table primary key.
-    - status (String Column): the aerodrome status (e.g. saved, printed, completed)
-    - aerodromes (Relationship): list of aerodromes with the status.
+    This class defines the database aerodrome_status table.
     """
 
     __tablename__ = "aerodrome_status"

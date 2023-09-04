@@ -31,14 +31,14 @@ def clean_string(input_string: str) -> str:
     return ' '.join([word.capitalize() for word in input_string.strip().split()])
 
 
-async def get_user_id_from_email(email: str, db: Session):
+async def get_user_id_from_email(email: str, db_session: Session):
     """
     This method queries the db for the user with the provided email, 
     and returns the user id.
 
     Parameters:
     - email (str): the user email.
-    - db: an sqlalchemy db Session to query the database.
+    - db_session: an sqlalchemy db Session to query the database.
 
     Returns: 
     - int: the user id.
@@ -48,7 +48,7 @@ async def get_user_id_from_email(email: str, db: Session):
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = db.query(models.User.id).filter(
+    user_id = db_session.query(models.User.id).filter(
         models.User.email == email).first()
     if not user_id:
         raise common_responses.invalid_credentials()
@@ -79,8 +79,14 @@ def runways_are_unique(runways: List[Any]):
     runways_with_position = right_runways | left_runways | center_runways
     all_runways = runways_with_position | none_runways
 
-    if not len(right_runways) + len(left_runways) + len(center_runways) + len(none_runways) == len(runways) or\
-            not len(runways_with_position) + len(none_runways) == len(all_runways):
+    runway_position_repeated = not len(right_runways) + len(left_runways)\
+        + len(center_runways) + len(none_runways) == len(runways)
+
+    runway_number_without_position_repeated = not len(runways_with_position)\
+        + len(none_runways) == len(all_runways)
+
+    if runway_position_repeated or\
+            runway_number_without_position_repeated:
         return False
 
     return True
@@ -96,7 +102,7 @@ def get_table_header(table_name: str):
     Returns: 
     - dict: dictionary with table headers.
     """
-    with open("config/csv_headers.json", "r") as json_file:
+    with open("config/csv_headers.json", mode="r", encoding="utf-8") as json_file:
         tables = json.load(json_file)
 
     return tables[table_name]

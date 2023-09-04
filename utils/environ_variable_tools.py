@@ -25,7 +25,7 @@ def get(var_key: str):
     - str: value of the environment variable.
     """
 
-    with open("config/environment_variables.json", "r") as json_file:
+    with open("config/environment_variables.json", mode="r", encoding="utf-8") as json_file:
         var_names = json.load(json_file)
 
     return environ.get(var_names[var_key])

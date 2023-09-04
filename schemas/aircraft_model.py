@@ -24,7 +24,7 @@ class AircraftMakeData(BaseModel):
         to_upper=True,
         min_length=2,
         max_length=255,
-        pattern="^[\.\-a-zA-Z0-9\(\) ]+$"
+        pattern="^[\.\-a-zA-Z0-9\(\) ]+$"  # pylint: disable=anomalous-backslash-in-string
     )
 
     @field_validator('name')
@@ -108,7 +108,7 @@ class PerformanceProfilePostData(BaseModel):
     performance_profile_name: constr(
         min_length=2,
         max_length=255,
-        pattern="^[\-a-zA-Z0-9 ]+$"
+        pattern="^[\-a-zA-Z0-9 ]+$"  # pylint: disable=anomalous-backslash-in-string
     )
     is_complete: Optional[bool] = None
 
@@ -137,7 +137,7 @@ class BaggageCompartmentData(BaseModel):
     name: constr(
         min_length=2,
         max_length=50,
-        pattern="^[\-a-zA-Z0-9 ]+$"
+        pattern="^[\-a-zA-Z0-9 ]+$"  # pylint: disable=anomalous-backslash-in-string
     )
     arm_in: confloat(ge=0)
     weight_limit_lb: Optional[confloat(ge=0)] = None
@@ -251,14 +251,14 @@ class AircraftModelOfficialBaseData(BaseModel):
         strip_whitespace=True,
         min_length=2,
         max_length=255,
-        pattern="^[\.\-a-zA-Z0-9\(\) ]+$"
+        pattern="^[\.\-a-zA-Z0-9\(\) ]+$"  # pylint: disable=anomalous-backslash-in-string
     )
     code: constr(
         to_upper=True,
         strip_whitespace=True,
         min_length=2,
         max_length=5,
-        pattern="^[\-a-zA-Z0-9]+$"
+        pattern="^[\-a-zA-Z0-9]+$"  # pylint: disable=anomalous-backslash-in-string
     )
 
 
@@ -335,7 +335,7 @@ class WeightBalanceData(BaseModel):
     name: constr(
         min_length=2,
         max_length=50,
-        pattern="^[\-a-zA-Z0-9\(\) ]+$"
+        pattern="^[\-a-zA-Z0-9\(\) ]+$"  # pylint: disable=anomalous-backslash-in-string
     )
     max_take_off_weight_lb: confloat(ge=0)
     limits: List[WeightBalanceLimitData] = []

@@ -14,7 +14,6 @@ from typing import List, Dict, Any
 import zipfile
 
 from fastapi import UploadFile, HTTPException, status
-from pydantic import ValidationError
 
 
 def csv_to_list(file_path: str) -> List[Dict[str, Any]]:

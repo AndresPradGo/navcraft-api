@@ -10,7 +10,7 @@ Usage:
 
 from typing import List
 
-from pydantic import BaseModel, constr, EmailStr, conint, confloat, NaiveDatetime, field_validator
+from pydantic import BaseModel, constr, EmailStr, conint, confloat, field_validator
 
 from utils.functions import clean_string
 
@@ -93,9 +93,6 @@ class UserReturn(UserReturnBasic):
     """
     This class defines the data-structure used to return 
     user data to the client, including the list of passenger profies.
-
-   Attributes:
-    - passenger_profiles (List(PassengerProfileReturn)): List of passenger_profile data.
     """
 
     passenger_profiles: List[PassengerProfileReturn]
@@ -171,14 +168,12 @@ class UserSigin(UserPassword, UserName, UserEmail):
     '''
     This class defines the data required to sign in as a new user.
     '''
-    ...
 
 
 class UserEditProfileData(UserName, UserWeight):
     '''
     This class defines the data required for editing profile data.
     '''
-    ...
 
 
 class PasswordChangeData(UserPassword):
