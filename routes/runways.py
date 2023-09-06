@@ -394,8 +394,9 @@ async def manage_runways_with_csv_file(
             aerodrome_id=aerodrome_ids_in_db[r[headers["aerodrome"]].strip(
             ).upper()],
             number=r[headers["number"]],
-            position=None if not r[headers["position"]] or r[headers["position"]].isspace(
-            ) else r[headers["position"]],
+            position=None if not r[headers["position"]]
+            or r[headers["position"]].isspace()
+            else r[headers["position"]],
             length_ft=r[headers["length_ft"]],
             surface_id=r[headers["surface_id"]]
         ) for r in dict_list]

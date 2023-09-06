@@ -60,5 +60,24 @@
         "pressure_alt_ft": "Pressure Alt[ft]",
         "groundroll_ft": "Ground Roll[ft]",
         "obstacle_clearance_ft": "50ft Obstacle[ft]"
+    },
+    "climb_data": {
+        "weight_lb": "Weight[Lbs]",
+        "pressure_alt_ft": "Pressure Alt[ft]",
+        "temperature_c": "OAT[C]",
+        "kias": "Climb Speed[KIAS]",
+        "fpm": "Rate of Climb[FPM]",
+        "time_min": "Time from S.L.[min]",
+        "fuel_gal": "Fuel Burned from S.L.[gal]",
+        "distance_nm": "Distance from S.L.[NM]"
+    },
+    "cruise_data": {
+        "weight_lb": "Weight[Lbs]",
+        "temperature_c": "OAT[C]",
+        "pressure_alt_ft": "Pressure Alt[ft]",
+        "rpm": "RPM",
+        "bhp_percent": "% BHP",
+        "ktas": "KTAS",
+        "gph": "GPH"
     }
 }

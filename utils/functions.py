@@ -112,7 +112,8 @@ def check_performance_profile_and_permissions(
         db_session: Session,
         user_id: int,
         user_is_active_admin: bool,
-        profile_id: int
+        profile_id: int,
+        auth_non_admin_get_model: bool = False
 ) -> Query[models.PerformanceProfile]:
     """
     Checks if user has permission to edit an aircraft performance profile.
@@ -138,7 +139,7 @@ def check_performance_profile_and_permissions(
     performance_for_model = performance_profile_query.first().aircraft_id is None
 
     if performance_for_model:
-        if not user_is_active_admin:
+        if not user_is_active_admin and not auth_non_admin_get_model:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Unauthorized to edit this performance profile"

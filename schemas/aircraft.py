@@ -73,12 +73,12 @@ class PerformanceProfileData(BaseModel):
     performance_profile_name: constr(
         min_length=2,
         max_length=255,
-        pattern="^[\-a-zA-Z0-9 ]+$"  # pylint: disable=anomalous-backslash-in-string
+        pattern="^[\-a-zA-Z0-9, ]+$"  # pylint: disable=anomalous-backslash-in-string
     )
 
     @field_validator("performance_profile_name")
     @classmethod
-    def clean_performance_profile_name(cls, value: str) -> str:
+    def clean_performance_profile_name(cls, value: str) -> float:
         '''
         Classmethod to clean profile name.
 
@@ -359,12 +359,12 @@ class RunwaySurfacePercentIncrease(BaseModel):
 
     @field_validator('percent')
     @classmethod
-    def round_percentage_adjustments(cls, value: int) -> int:
+    def round_percentage(cls, value: float) -> float:
         '''
         Classmethod to round percentages.
 
         Parameters:
-        - values (Dict): dictionary with the input values.
+        - value (float): percentage adjustment.
 
         Returns:
         (Dict): dictionary with the input values corrected.
@@ -412,7 +412,7 @@ class RunwayDistanceAdjustmentPercentages(BaseModel):
 
 class TakeoffLandingPerformanceDataEntry(BaseModel):
     """
-    This class defines the data structure to of takeoff/landing performance data entries.
+    This class defines the data structure for takeoff/landing performance data entries.
     """
 
     weight_lb: conint(ge=0)
@@ -420,3 +420,122 @@ class TakeoffLandingPerformanceDataEntry(BaseModel):
     temperature_c: int
     groundroll_ft: conint(ge=0)
     obstacle_clearance_ft: conint(ge=0)
+
+
+class TakeoffLandingPerformanceReturn(RunwayDistanceAdjustmentPercentages):
+    '''
+    This class defines the data structure to return takeoff/landing 
+    performance data to the client.
+    '''
+
+    performance_data: List[TakeoffLandingPerformanceDataEntry]
+
+
+class ClimbPerformanceAdjustments(BaseModel):
+    '''
+    This class defines the data structure of climb adjustment data.
+    '''
+
+    take_off_taxi_fuel_gallons: Optional[confloat(ge=0)] = None
+    percent_increase_climb_temperature_c: Optional[confloat(ge=0)] = None
+
+    @model_validator(mode='after')
+    @classmethod
+    def round_data(cls, values: Dict[str, Any]) -> Dict:
+        '''
+        Classmethod to round percentages.
+
+        Parameters:
+        - values (Dict): dictionary with the input values.
+
+        Returns:
+        (Dict): dictionary with the input values corrected.
+
+        '''
+
+        if values.take_off_taxi_fuel_gallons is not None:
+            values.take_off_taxi_fuel_gallons = round(
+                values.take_off_taxi_fuel_gallons, 2)
+
+        if values.percent_increase_climb_temperature_c is not None:
+            values.percent_increase_climb_temperature_c = round(
+                values.percent_increase_climb_temperature_c, 2)
+
+        return values
+
+
+class ClimbPerformanceDataEntry(BaseModel):
+    """
+    This class defines the data structure for climb performance data entries.
+    """
+
+    weight_lb: conint(ge=0)
+    pressure_alt_ft: conint(ge=0)
+    temperature_c: int
+    kias: Optional[conint(ge=0)] = None
+    fpm: Optional[conint(ge=0)] = None
+    time_min: conint(ge=0)
+    fuel_gal: confloat(ge=0)
+    distance_nm: conint(ge=0)
+
+    @field_validator('fuel_gal')
+    @classmethod
+    def round_percentage_adjustments(cls, value: float) -> float:
+        '''
+        Classmethod to round fuel burn.
+
+        Parameters:
+        - value (float): fuel burn.
+
+        Returns:
+        (float): rounded fuel burn.
+
+        '''
+        return round(value, 2)
+
+
+class ClimbPerformanceReturn(ClimbPerformanceAdjustments):
+    '''
+    This class defines the data structure to return climb 
+    performance data to the client.
+    '''
+
+    performance_data: List[ClimbPerformanceDataEntry]
+
+
+class CruisePerformanceDataEntry(BaseModel):
+    """
+    This class defines the data structure for cruise performance data entries.
+    """
+
+    weight_lb: conint(ge=0)
+    pressure_alt_ft: conint(ge=0)
+    temperature_c: int
+    bhp_percent: conint(ge=0)
+    gph: confloat(ge=0)
+    rpm: conint(ge=0)
+    ktas: conint(ge=0)
+
+    @field_validator('gph')
+    @classmethod
+    def round_percentage_adjustments(cls, value: float) -> float:
+        '''
+        Classmethod to round fuel burn.
+
+        Parameters:
+        - value (float): fuel burn.
+
+        Returns:
+        (float): rounded fuel burn.
+
+        '''
+        return round(value, 2)
+
+
+class CruisePerformanceReturn(BaseModel):
+    '''
+    This class defines the data structure to return cruise 
+    performance data to the client.
+    '''
+
+    performance_data: List[CruisePerformanceDataEntry]

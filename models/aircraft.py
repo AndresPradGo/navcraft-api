@@ -30,7 +30,7 @@ class PerformanceProfile(BaseModel):
     max_landing_weight_lb = Column(DECIMAL(7, 2))
     fuel_arm_in = Column(DECIMAL(5, 2))
     fuel_capacity_gallons = Column(DECIMAL(5, 2))
-    take_off_taxi_fuel_gallons = Column(DECIMAL(3, 1))
+    take_off_taxi_fuel_gallons = Column(DECIMAL(4, 2))
     percent_decrease_takeoff_headwind_knot = Column(DECIMAL(4, 2))
     percent_increase_takeoff_tailwind_knot = Column(DECIMAL(4, 2))
     percent_decrease_landing_headwind_knot = Column(DECIMAL(4, 2))
@@ -365,11 +365,13 @@ class ClimbPerformance(BaseModel):
     __tablename__ = "climb_performance_data"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    weight_lb = Column(DECIMAL(7, 2), nullable=False)
+    weight_lb = Column(Integer, nullable=False)
     pressure_alt_ft = Column(Integer, nullable=False)
     temperature_c = Column(Integer, nullable=False)
+    kias = Column(Integer)
+    fpm = Column(Integer)
     time_min = Column(Integer, nullable=False)
-    fuel_gal = Column(DECIMAL(3, 1), nullable=False)
+    fuel_gal = Column(DECIMAL(4, 2), nullable=False)
     distance_nm = Column(Integer, nullable=False)
     performance_profile_id = Column(
         Integer,
@@ -395,13 +397,13 @@ class CruisePerformance(BaseModel):
     __tablename__ = "cruise_performance_data"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    weight_lb = Column(DECIMAL(7, 2), nullable=False)
+    weight_lb = Column(Integer, nullable=False)
     pressure_alt_ft = Column(Integer, nullable=False)
     temperature_c = Column(Integer, nullable=False)
     bhp_percent = Column(Integer, nullable=False)
     rpm = Column(Integer, nullable=False)
     ktas = Column(Integer, nullable=False)
-    gph = Column(DECIMAL(5, 1), nullable=False)
+    gph = Column(DECIMAL(6, 2), nullable=False)
     performance_profile_id = Column(
         Integer,
         ForeignKey(
