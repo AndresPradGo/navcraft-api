@@ -328,33 +328,6 @@ def _add_fuel_types():
         print(f"Error! could not add fuel types: {error}")
 
 
-def _add_aircraft_manufacturers():
-    """
-    This function adds an initial list of aircraft manufacturers.
-
-    Parameters: None
-
-    Returns: None
-    """
-    data_to_add = [schemas.AircraftMakeData(**{
-        "name": f["name"]
-    }) for f in csv.csv_to_list(file_path=f"{_PATH}manufacturers.csv")]
-
-    try:
-        with Session() as db_session:
-            db_is_populated = db_session.query(models.AircraftMake).first()
-
-            if db_is_populated is None:
-                for manufacturer in data_to_add:
-                    new_manufacturer = models.AircraftMake(
-                        name=manufacturer.name
-                    )
-                    db_session.add(new_manufacturer)
-                db_session.commit()
-    except (IntegrityError, SqlalchemyTimeoutError, OperationalError) as error:
-        print(f"Error! could not add fuel types: {error}")
-
-
 def _populate_db():
     """
     This function populates the database with the minimum required data.
@@ -370,7 +343,6 @@ def _populate_db():
     _add_aerodromes()
     _add_runways()
     _add_fuel_types()
-    _add_aircraft_manufacturers()
 
 
 def set_up_database():

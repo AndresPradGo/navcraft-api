@@ -19,9 +19,13 @@ import models
 import schemas
 from utils import common_responses, csv_tools as csv
 from utils.db import get_db
-from utils.functions import get_table_header, get_user_id_from_email
+from utils.functions import (
+    get_table_header,
+    get_user_id_from_email,
+    check_performance_profile_and_permissions
+)
 
-router = APIRouter(tags=["Aircraft Performance Tables"])
+router = APIRouter(tags=["Aircraft Performance Data"])
 
 
 @router.get("/takeoff-landing/csv/{profile_id}", status_code=status.HTTP_200_OK)
@@ -29,7 +33,7 @@ async def get_takeoff_landing_performance_data(
     profile_id: int,
     is_takeoff: bool = True,
     db_session: Session = Depends(get_db),
-    _: schemas.TokenData = Depends(auth.validate_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Get Takeoff/Landing Performance Data Table Endpoint.
@@ -45,6 +49,28 @@ async def get_takeoff_landing_performance_data(
     - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
+
+    # Check permissions
+    performance_profile = db_session.query(
+        models.PerformanceProfile).filter_by(id=profile_id).first()
+    if performance_profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Performance profile with ID {profile_id} not found."
+        )
+
+    if performance_profile.aircraft_id is not None:
+        user_id = await get_user_id_from_email(
+            email=current_user.email, db_session=db_session)
+        user_is_aircraft_owner = db_session.query(models.Aircraft).filter(and_(
+            models.Aircraft.owner_id == user_id,
+            models.Aircraft.id == performance_profile.aircraft_id
+        )).first()
+        if user_is_aircraft_owner is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Not authorized to view this performance profile."
+            )
 
     # Get takeoff/landing data
     if is_takeoff:
@@ -105,7 +131,7 @@ async def get_takeoff_landing_adjustment_percentages(
     profile_id: int,
     is_takeoff: bool = True,
     db_session: Session = Depends(get_db),
-    _: schemas.TokenData = Depends(auth.validate_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Get Runway Distance Adjustment Percentages Endpoint.
@@ -133,6 +159,20 @@ async def get_takeoff_landing_adjustment_percentages(
             detail=f"Performance profile with ID {profile_id} not found."
         )
 
+    # Check permissions
+    if performance_profile.aircraft_id is not None:
+        user_id = await get_user_id_from_email(
+            email=current_user.email, db_session=db_session)
+        user_is_aircraft_owner = db_session.query(models.Aircraft).filter(and_(
+            models.Aircraft.owner_id == user_id,
+            models.Aircraft.id == performance_profile.aircraft_id
+        )).first()
+        if user_is_aircraft_owner is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Not authorized to view this performance profile."
+            )
+
     # Prepare Runway-Distance-Adjustment-Percetages data
     surface_percentage_models = db_session.query(models.SurfacePerformanceDecrease).filter(
         models.SurfacePerformanceDecrease.performance_profile_id == profile_id,
@@ -156,7 +196,7 @@ async def get_takeoff_landing_adjustment_percentages(
     return percent_adjustment_data
 
 
-@router.post("/takeoff-landing/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/takeoff-landing/csv/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def manage_takeoff_landing_performance_data_with_csv_file(
     profile_id: int,
     csv_file: UploadFile,
@@ -197,38 +237,14 @@ async def manage_takeoff_landing_performance_data_with_csv_file(
     """
 
     # Check performance profile and permissions.
-    performance_profile_query = db_session.query(
-        models.PerformanceProfile).filter_by(id=profile_id)
-    if performance_profile_query.first() is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Performance profile with ID {profile_id} not found."
-        )
-
-    performance_for_model = performance_profile_query.first().model_id is not None
-    user_is_active_admin = current_user.is_active and current_user.is_admin
-
-    if performance_for_model:
-        if not user_is_active_admin:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Unauthorized to edit this performance profile"
-            )
-    else:
-        aircraft = db_session.query(models.Aircraft).filter_by(
-            id=performance_profile_query.first().aircraft_id).first()
-
-        user_id = get_user_id_from_email(
-            email=current_user.email,
-            db_session=db_session
-        )
-
-        if not aircraft.owner_id == user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Unauthorized to edit this performance profile"
-            )
-
+    _ = check_performance_profile_and_permissions(
+        db_session=db_session,
+        user_id=await get_user_id_from_email(
+            email=current_user.email, db_session=db_session
+        ),
+        user_is_active_admin=current_user.is_active and current_user.is_admin,
+        profile_id=profile_id
+    )
     # Check csv-file
     csv.check_format(csv_file)
 
@@ -323,31 +339,14 @@ async def edit_takeoff_landing_adjustment_percentages(
     """
 
     # Check performance profile and permissions.
-    performance_profile_query = db_session.query(
-        models.PerformanceProfile).filter_by(id=profile_id)
-    if performance_profile_query.first() is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Performance profile with ID {profile_id} not found."
-        )
-
-    performance_for_model = performance_profile_query.first().model_id is not None
-    user_is_active_admin = current_user.is_active and current_user.is_admin
-
-    if performance_for_model:
-        if not user_is_active_admin:
-            raise common_responses.invalid_credentials()
-    else:
-        aircraft = db_session.query(models.Aircraft).filter_by(
-            id=performance_profile_query.first().aircraft_id).first()
-
-        user_id = get_user_id_from_email(
-            email=current_user.email,
-            db_session=db_session
-        )
-
-        if not aircraft.owner_id == user_id:
-            raise common_responses.invalid_credentials()
+    performance_profile_query = check_performance_profile_and_permissions(
+        db_session=db_session,
+        user_id=await get_user_id_from_email(
+            email=current_user.email, db_session=db_session
+        ),
+        user_is_active_admin=current_user.is_active and current_user.is_admin,
+        profile_id=profile_id
+    )
 
     # Check runway surface data
     list_surface_ids = [

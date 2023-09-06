@@ -17,12 +17,16 @@ import models
 import schemas
 from utils import common_responses
 from utils.db import get_db
+from utils.functions import (
+    check_performance_profile_and_permissions,
+    get_user_id_from_email
+)
 
-router = APIRouter(tags=["Aircraft Weight and Balance"])
+router = APIRouter(tags=["Aircraft Weight and Balance Data"])
 
 
 @router.post(
-    "/model/baggage-compartment/{profile_id}",
+    "/baggage-compartment/{profile_id}",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.BaggageCompartmentReturn
 )
@@ -30,7 +34,7 @@ async def post_new_baggage_compartment(
     profile_id: int,
     data: schemas.BaggageCompartmentData,
     db_session: Session = Depends(get_db),
-    _: schemas.TokenData = Depends(auth.validate_admin_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Post New Baggage Compartment Endpoint.
@@ -48,18 +52,15 @@ async def post_new_baggage_compartment(
     - HTTPException (500): if there is a server error. 
     """
 
-    # Check if performance profile exists
-    performance_profile = db_session.query(
-        models.PerformanceProfile).filter(and_(
-            models.PerformanceProfile.id == profile_id,
-            models.PerformanceProfile.model_id.isnot(None),
-            models.PerformanceProfile.aircraft_id.is_(None)
-        )).first()
-    if performance_profile is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Performance profile with id {profile_id} doesn't exist."
-        )
+    # Check performance profile and permissions.
+    _ = check_performance_profile_and_permissions(
+        db_session=db_session,
+        user_id=await get_user_id_from_email(
+            email=current_user.email, db_session=db_session
+        ),
+        user_is_active_admin=current_user.is_active and current_user.is_admin,
+        profile_id=profile_id
+    )
     # Check baggage compartment name is not repeated
     baggage_compartment_exists = db_session.query(models.BaggageCompartment).filter(and_(
         models.BaggageCompartment.name == data.name,
@@ -87,7 +88,7 @@ async def post_new_baggage_compartment(
 
 
 @router.post(
-    "/model/seat-row/{profile_id}",
+    "/seat-row/{profile_id}",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.SeatRowReturn,
 )
@@ -95,7 +96,7 @@ async def post_new_seat_row(
     profile_id: int,
     data: schemas.SeatRowData,
     db_session: Session = Depends(get_db),
-    _: schemas.TokenData = Depends(auth.validate_admin_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Post New Seat Row Endpoint.
@@ -113,18 +114,16 @@ async def post_new_seat_row(
     - HTTPException (500): if there is a server error. 
     """
 
-    # Check if performance profile exists
-    performance_profile = db_session.query(
-        models.PerformanceProfile).filter(and_(
-            models.PerformanceProfile.id == profile_id,
-            models.PerformanceProfile.model_id.isnot(None),
-            models.PerformanceProfile.aircraft_id.is_(None)
-        )).first()
-    if performance_profile is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Performance profile with id {profile_id} doesn't exist."
-        )
+    # Check performance profile and permissions.
+    _ = check_performance_profile_and_permissions(
+        db_session=db_session,
+        user_id=await get_user_id_from_email(
+            email=current_user.email, db_session=db_session
+        ),
+        user_is_active_admin=current_user.is_active and current_user.is_admin,
+        profile_id=profile_id
+    )
+
     # Check seat row name is not repeated
     seat_row_exists = db_session.query(models.SeatRow).filter(and_(
         models.SeatRow.name == data.name,
@@ -153,7 +152,7 @@ async def post_new_seat_row(
 
 
 @router.post(
-    "/model/{profile_id}",
+    "/weight-balance-profile/{profile_id}",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.WeightBalanceReturn
 )
@@ -161,7 +160,7 @@ async def post_new_weight_and_balance_profile(
     profile_id: int,
     data: schemas.WeightBalanceData,
     db_session: Session = Depends(get_db),
-    _: schemas.TokenData = Depends(auth.validate_admin_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Post New Weight And Balance Profile Endpoint.
@@ -179,21 +178,22 @@ async def post_new_weight_and_balance_profile(
     - HTTPException (500): if there is a server error. 
     """
 
-    # Check performance profile exists
-    performance_profile = db_session.query(models.PerformanceProfile).filter(and_(
-        models.PerformanceProfile.id == profile_id,
-        models.PerformanceProfile.aircraft_id.is_(None),
-        models.PerformanceProfile.model_id.isnot(None)
-    )).first()
-    if performance_profile is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Model performance profile with ID {profile_id} was not found."
-        )
+    # Check performance profile and permissions.
+    _ = check_performance_profile_and_permissions(
+        db_session=db_session,
+        user_id=await get_user_id_from_email(
+            email=current_user.email, db_session=db_session
+        ),
+        user_is_active_admin=current_user.is_active and current_user.is_admin,
+        profile_id=profile_id
+    )
 
     # Check weight and balance profile doesn't already exist
     wb_profile_exists = db_session.query(
-        models.WeightBalanceProfile).filter_by(name=data.name).first()
+        models.WeightBalanceProfile).filter(and_(
+            models.WeightBalanceProfile.name == data.name,
+            models.WeightBalanceProfile.performance_profile_id == profile_id
+        )).first()
     if wb_profile_exists:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -236,18 +236,18 @@ async def post_new_weight_and_balance_profile(
 
 
 @router.put(
-    "/model/performance/{profile_id}",
+    "/{profile_id}",
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.PerformanceProfilePostReturn
+    response_model=schemas.PerformanceProfileReturn
 )
-async def edit_weight_and_balance_data_for_aircraft_model_performance_profile(
+async def edit_weight_and_balance_data_for_performance_profile(
     profile_id: int,
     performance_data: schemas.PerformanceProfileWightBalanceData,
     db_session: Session = Depends(get_db),
-    _: schemas.TokenData = Depends(auth.validate_admin_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit  Weight And Balance Data For Model Performance Profile Endpoint.
+    Edit Weight And Balance Data For Performance Profile Endpoint.
 
     Parameters: 
     - profile_id (int): performance profile id.
@@ -262,18 +262,16 @@ async def edit_weight_and_balance_data_for_aircraft_model_performance_profile(
     - HTTPException (500): if there is a server error. 
     """
 
-    # Check profile exists
-    performance_profile_query = db_session.query(
-        models.PerformanceProfile).filter(and_(
-            models.PerformanceProfile.id == profile_id,
-            models.PerformanceProfile.model_id.isnot(None),
-            models.PerformanceProfile.aircraft_id.is_(None)
-        ))
-    if performance_profile_query.first() is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Performance profile with id {profile_id} doesn't exist."
-        )
+    # Check performance profile and permissions.
+    performance_profile_query = check_performance_profile_and_permissions(
+        db_session=db_session,
+        user_id=await get_user_id_from_email(
+            email=current_user.email, db_session=db_session
+        ),
+        user_is_active_admin=current_user.is_active and current_user.is_admin,
+        profile_id=profile_id
+    )
+
     # Update profile
     performance_profile_query.update({
         "center_of_gravity_in": performance_data.center_of_gravity_in,
@@ -294,7 +292,7 @@ async def edit_weight_and_balance_data_for_aircraft_model_performance_profile(
 
 
 @router.put(
-    "/performance/baggage-compartment/{compartment_id}",
+    "/baggage-compartment/{compartment_id}",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.BaggageCompartmentReturn
 )
@@ -302,7 +300,7 @@ async def edit_baggage_compartment(
     compartment_id: int,
     data: schemas.BaggageCompartmentData,
     db_session: Session = Depends(get_db),
-    _: schemas.TokenData = Depends(auth.validate_admin_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Edit Baggage Compartment Endpoint.
@@ -329,18 +327,15 @@ async def edit_baggage_compartment(
             detail=f"Baggage compartment with ID {compartment_id} not found."
         )
 
-    # Check performance profile
-    performance_profile = db_session.query(
-        models.PerformanceProfile).filter(and_(
-            models.PerformanceProfile.id == compartment_query.first().performance_profile_id,
-            models.PerformanceProfile.model_id.isnot(None),
-            models.PerformanceProfile.aircraft_id.is_(None)
-        )).first()
-    if performance_profile is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The Performance profile you're trying to edit, is not for an aircraft model."
-        )
+    # Check performance profile and permissions.
+    performance_profile = check_performance_profile_and_permissions(
+        db_session=db_session,
+        user_id=await get_user_id_from_email(
+            email=current_user.email, db_session=db_session
+        ),
+        user_is_active_admin=current_user.is_active and current_user.is_admin,
+        profile_id=compartment_query.first().performance_profile_id
+    ).first()
 
     # Check baggage compartment name is not repeated
     baggage_compartment_exists = db_session.query(models.BaggageCompartment).filter(and_(
@@ -348,11 +343,10 @@ async def edit_baggage_compartment(
         models.BaggageCompartment.performance_profile_id == performance_profile.id,
         not_(models.BaggageCompartment.id == compartment_id)
     )).first()
-    error_msg = f"Baggage compartment {data.name} already exists."
     if baggage_compartment_exists:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=error_msg
+            detail=f"Baggage compartment {data.name} already exists."
         )
 
     # Edit baggage compartment
@@ -367,7 +361,7 @@ async def edit_baggage_compartment(
 
 
 @router.put(
-    "/performance/seat-row/{row_id}",
+    "/seat-row/{row_id}",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.SeatRowReturn
 )
@@ -375,7 +369,7 @@ async def edit_seat_row(
     row_id: int,
     data: schemas.SeatRowData,
     db_session: Session = Depends(get_db),
-    _: schemas.TokenData = Depends(auth.validate_admin_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Edit Seat Row Endpoint.
@@ -401,18 +395,15 @@ async def edit_seat_row(
             detail=f"Seat row with ID {row_id} not found."
         )
 
-    # Check performance profile
-    performance_profile = db_session.query(
-        models.PerformanceProfile).filter(and_(
-            models.PerformanceProfile.id == row_query.first().performance_profile_id,
-            models.PerformanceProfile.model_id.isnot(None),
-            models.PerformanceProfile.aircraft_id.is_(None)
-        )).first()
-    if performance_profile is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The Performance profile you're trying to edit, is not for an aircraft model."
-        )
+    # Check performance profile and permissions.
+    performance_profile = check_performance_profile_and_permissions(
+        db_session=db_session,
+        user_id=await get_user_id_from_email(
+            email=current_user.email, db_session=db_session
+        ),
+        user_is_active_admin=current_user.is_active and current_user.is_admin,
+        profile_id=row_query.first().performance_profile_id
+    ).first()
 
     # Check seat row name is not repeated
     seat_row_exists = db_session.query(models.SeatRow).filter(and_(
@@ -439,7 +430,7 @@ async def edit_seat_row(
 
 
 @router.put(
-    "/model/{wb_profile_id}",
+    "/weight-balance-profile/{wb_profile_id}",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.WeightBalanceReturn
 )
@@ -447,7 +438,7 @@ async def edit_weight_and_balance_profile(
     wb_profile_id: int,
     data: schemas.WeightBalanceData,
     db_session: Session = Depends(get_db),
-    _: schemas.TokenData = Depends(auth.validate_admin_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Edit Weight And Balance Profile Endpoint.
@@ -474,18 +465,15 @@ async def edit_weight_and_balance_profile(
             detail=f"W&B Profile with ID {wb_profile_id} was not found."
         )
 
-    # Check if performance profile is for model
-    performance_profile = db_session.query(models.PerformanceProfile).filter(and_(
-        models.PerformanceProfile.id == wb_profile_query.first().performance_profile_id,
-        models.PerformanceProfile.aircraft_id.is_(None),
-        models.PerformanceProfile.model_id.isnot(None)
-    )).first()
-
-    if performance_profile is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The performance profile you are trying to edit is not for and aircraft model."
-        )
+    # Check performance profile and permissions.
+    performance_profile = check_performance_profile_and_permissions(
+        db_session=db_session,
+        user_id=await get_user_id_from_email(
+            email=current_user.email, db_session=db_session
+        ),
+        user_is_active_admin=current_user.is_active and current_user.is_admin,
+        profile_id=wb_profile_query.first().performance_profile_id
+    ).first()
 
     # Check weight and balance profile doesn't already exist
     wb_profile_exists = db_session.query(
@@ -510,7 +498,8 @@ async def edit_weight_and_balance_profile(
     ) for limit in data.limits]
 
     _ = db_session.query(models.WeightBalanceLimit).filter(
-        models.WeightBalanceLimit.weight_balance_profile_id == wb_profile_id).delete(synchronize_session="evaluate")
+        models.WeightBalanceLimit.weight_balance_profile_id == wb_profile_id
+    ).delete(synchronize_session="evaluate")
 
     db_session.add_all(new_limits)
 
@@ -541,7 +530,7 @@ async def edit_weight_and_balance_profile(
 async def delete_baggage_compartment(
     compartment_id: int,
     db_session: Session = Depends(get_db),
-    _: schemas.TokenData = Depends(auth.validate_admin_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Delete Baggage Compartment Endpoint.
@@ -566,18 +555,15 @@ async def delete_baggage_compartment(
             detail=f"Baggage compartment with ID {compartment_id} not found."
         )
 
-    # Check parformance profile is for an aircraft model
-    performance_profile = db_session.query(
-        models.PerformanceProfile).filter(and_(
-            models.PerformanceProfile.id == compartment_query.first().performance_profile_id,
-            models.PerformanceProfile.model_id.isnot(None),
-            models.PerformanceProfile.aircraft_id.is_(None)
-        )).first()
-    if performance_profile is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The Performance profile you're trying to edit, is not for an aircraft model."
-        )
+    # Check performance profile and permissions.
+    _ = check_performance_profile_and_permissions(
+        db_session=db_session,
+        user_id=await get_user_id_from_email(
+            email=current_user.email, db_session=db_session
+        ),
+        user_is_active_admin=current_user.is_active and current_user.is_admin,
+        profile_id=compartment_query.first().performance_profile_id
+    ).first()
 
     # Delete baggage compartment
     deleted = compartment_query.delete(synchronize_session=False)
@@ -590,7 +576,7 @@ async def delete_baggage_compartment(
 async def delete_seat_row(
     row_id: int,
     db_session: Session = Depends(get_db),
-    _: schemas.TokenData = Depends(auth.validate_admin_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Delete Seat Row Endpoint.
@@ -614,18 +600,15 @@ async def delete_seat_row(
             detail=f"Seat row with ID {row_id} not found."
         )
 
-    # Check performance profile is for an aircraft model
-    performance_profile = db_session.query(
-        models.PerformanceProfile).filter(and_(
-            models.PerformanceProfile.id == row_query.first().performance_profile_id,
-            models.PerformanceProfile.model_id.isnot(None),
-            models.PerformanceProfile.aircraft_id.is_(None)
-        )).first()
-    if performance_profile is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The Performance profile you're trying to edit, is not for an aircraft model."
-        )
+    # Check performance profile and permissions.
+    _ = check_performance_profile_and_permissions(
+        db_session=db_session,
+        user_id=await get_user_id_from_email(
+            email=current_user.email, db_session=db_session
+        ),
+        user_is_active_admin=current_user.is_active and current_user.is_admin,
+        profile_id=row_query.first().performance_profile_id
+    ).first()
 
     # Delete seat row
     deleted = row_query.delete(synchronize_session=False)
@@ -634,11 +617,11 @@ async def delete_seat_row(
     db_session.commit()
 
 
-@router.delete("/model/{wb_profile_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/weight-balance-profile/{wb_profile_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_weight_and_balance_profile(
     wb_profile_id: int,
     db_session: Session = Depends(get_db),
-    _: schemas.TokenData = Depends(auth.validate_admin_user)
+    current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
     Delete Weight and Balance Profile Endpoint.
@@ -663,18 +646,15 @@ async def delete_weight_and_balance_profile(
             detail=f"W&B Profile with ID {wb_profile_id} was not found."
         )
 
-    # Check if performance profile is for model
-    is_aircraft_model_profile = db_session.query(models.PerformanceProfile).filter(and_(
-        models.PerformanceProfile.id == wb_profile_query.first().performance_profile_id,
-        models.PerformanceProfile.aircraft_id.is_(None),
-        models.PerformanceProfile.model_id.isnot(None)
-    )).first()
-
-    if is_aircraft_model_profile is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The performance profile you are trying to edit is not for and aircraft model."
-        )
+    # Check if performance profile and permissions
+    _ = check_performance_profile_and_permissions(
+        db_session=db_session,
+        user_id=await get_user_id_from_email(
+            email=current_user.email, db_session=db_session
+        ),
+        user_is_active_admin=current_user.is_active and current_user.is_admin,
+        profile_id=wb_profile_query.first().performance_profile_id
+    ).first()
 
     # Delete W&B Profile
     deleted = wb_profile_query.delete(synchronize_session=False)

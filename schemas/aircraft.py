@@ -15,41 +15,6 @@ from pydantic import BaseModel, constr, conint, confloat, field_validator, model
 from utils.functions import clean_string
 
 
-class AircraftMakeData(BaseModel):
-    '''
-    This class defines the data-structure required from client to post a new aircraft manufacturer.
-    '''
-
-    name: constr(
-        to_upper=True,
-        min_length=2,
-        max_length=255,
-        pattern="^[\.\-a-zA-Z0-9\(\) ]+$"  # pylint: disable=anomalous-backslash-in-string
-    )
-
-    @field_validator('name')
-    @classmethod
-    def clean_name(cls, value: str) -> str:
-        '''
-        Classmethod to clean name string.
-
-        Parameters:
-        - value (str): the name string to be validated.
-
-        Returns:
-        (str): cleaned name string.
-        '''
-        return clean_string(value)
-
-
-class AircraftMakeReturn(AircraftMakeData):
-    """
-    This class defines the data-structure required to return aircraft manufacturer data to the client.
-    """
-
-    id: conint(gt=0)
-
-
 class FuelTypeData(BaseModel):
     """
     This class defines the data-structure required from client to post fuel type data.
@@ -99,10 +64,10 @@ class FuelTypeReturn(FuelTypeData):
     id: conint(gt=0)
 
 
-class PerformanceProfilePostData(BaseModel):
+class PerformanceProfileData(BaseModel):
     '''
     This class defines the data structure reuired from the client, in order to add
-    a new performance profile to the database
+    a new performance profile to the database.
     '''
     fuel_type_id: conint(gt=0)
     performance_profile_name: constr(
@@ -110,7 +75,6 @@ class PerformanceProfilePostData(BaseModel):
         max_length=255,
         pattern="^[\-a-zA-Z0-9 ]+$"  # pylint: disable=anomalous-backslash-in-string
     )
-    is_complete: Optional[bool] = None
 
     @field_validator("performance_profile_name")
     @classmethod
@@ -127,6 +91,30 @@ class PerformanceProfilePostData(BaseModel):
         '''
 
         return clean_string(value)
+
+
+class OfficialPerformanceProfileData(PerformanceProfileData):
+    '''
+    This class defines the data structure reuired from the client, in order to add
+    an official performance profile to the database.
+    '''
+
+    is_complete: Optional[bool] = None
+
+
+class PerformanceProfileReturn(OfficialPerformanceProfileData):
+    """
+    This class defines the data-structure required to return performance profile data
+    to the client.
+    """
+
+    id: conint(gt=0)
+    center_of_gravity_in: Optional[confloat(ge=0)] = None
+    empty_weight_lb: Optional[confloat(ge=0)] = None
+    max_ramp_weight_lb: Optional[confloat(ge=0)] = None
+    max_landing_weight_lb: Optional[confloat(ge=0)] = None
+    fuel_arm_in: Optional[confloat(ge=0)] = None
+    fuel_capacity_gallons: Optional[confloat(ge=0)] = None
 
 
 class BaggageCompartmentData(BaseModel):
@@ -221,62 +209,58 @@ class PerformanceProfileWightBalanceData(BaseModel):
         return values
 
 
-class PerformanceProfilePostReturn(PerformanceProfilePostData):
-    """
-    This class defines the data-structure required to return performance profile data
-    to the client.
-    """
-
-    id: conint(gt=0)
-    center_of_gravity_in: Optional[confloat(ge=0)] = None
-    empty_weight_lb: Optional[confloat(ge=0)] = None
-    max_ramp_weight_lb: Optional[confloat(ge=0)] = None
-    max_landing_weight_lb: Optional[confloat(ge=0)] = None
-    fuel_arm_in: Optional[confloat(ge=0)] = None
-    fuel_capacity_gallons: Optional[confloat(ge=0)] = None
-
-
-class AircraftModelOfficialBaseData(BaseModel):
+class AircraftBaseData(BaseModel):
     '''
-    This class defines the base data structure reuired from the client, in order to edit
-    a official aircraft models.
+    This class defines the data required form the client to edit an aircraft.
     '''
 
-    make_id: conint(gt=0)
+    make: constr(
+        strip_whitespace=True,
+        min_length=2,
+        max_length=255,
+        pattern="^[\.\-a-zA-Z0-9\(\) ]+$"  # pylint: disable=anomalous-backslash-in-string
+    )
     model: constr(
         strip_whitespace=True,
         min_length=2,
         max_length=255,
         pattern="^[\.\-a-zA-Z0-9\(\) ]+$"  # pylint: disable=anomalous-backslash-in-string
     )
-    code: constr(
+    abbreviation: constr(
         to_upper=True,
         strip_whitespace=True,
         min_length=2,
-        max_length=5,
+        max_length=10,
+        pattern="^[\-a-zA-Z0-9]+$"  # pylint: disable=anomalous-backslash-in-string
+    )
+    registration: constr(
+        to_upper=True,
+        strip_whitespace=True,
+        min_length=2,
+        max_length=50,
         pattern="^[\-a-zA-Z0-9]+$"  # pylint: disable=anomalous-backslash-in-string
     )
 
 
-class AircraftModelOfficialPostData(AircraftModelOfficialBaseData, PerformanceProfilePostData):
+class AircraftData(AircraftBaseData, PerformanceProfileData):
     '''
     This class defines the data structure reuired from the client, in order to add
-    a new official aircraft model to the database as an admin user.
+    a new aircraft to the database.
     '''
 
 
-class AircraftModelOfficialBaseReturn(AircraftModelOfficialBaseData):
+class AircraftBaseReturn(AircraftBaseData):
     """
-    This class defines the base data-structure required to return Official aircraft model data
+    This class defines the base data-structure required to return aircraft data
     to the client.
     """
 
     id: conint(gt=0)
 
 
-class AircraftModelOfficialPostReturn(AircraftModelOfficialBaseReturn, PerformanceProfilePostData):
+class AircraftReturn(AircraftBaseReturn, PerformanceProfileData):
     """
-    This class defines the data-structure required to return Official aircraft model data
+    This class defines the data-structure required to return aircraft data
     to the client.
     """
 

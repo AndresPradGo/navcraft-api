@@ -8,7 +8,8 @@ Usage:
 import json
 from typing import List, Any
 
-from sqlalchemy.orm import Session
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session, Query
 
 import models
 from utils import common_responses
@@ -47,7 +48,6 @@ async def get_user_id_from_email(email: str, db_session: Session):
     - HTTPException (401): if it doesn't find a user with the provided email.
     - HTTPException (500): if there is a server error. 
     """
-
     user_id = db_session.query(models.User.id).filter(
         models.User.email == email).first()
     if not user_id:
@@ -106,3 +106,51 @@ def get_table_header(table_name: str):
         tables = json.load(json_file)
 
     return tables[table_name]
+
+
+def check_performance_profile_and_permissions(
+        db_session: Session,
+        user_id: int,
+        user_is_active_admin: bool,
+        profile_id: int
+) -> Query[models.PerformanceProfile]:
+    """
+    Checks if user has permission to edit an aircraft performance profile.
+
+    Parameters:
+    - db_session (sqlalchemy Session): database session.
+    - user_id (int): user id.
+    - user_is_active_admin (bool): true if user is an active admin.
+    - profile_id (int): performance profile id.
+
+    Returns: 
+    - Query[models.PerformanceProfile]: returns the performance profile query.
+    """
+
+    performance_profile_query = db_session.query(
+        models.PerformanceProfile).filter_by(id=profile_id)
+    if performance_profile_query.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Performance profile with ID {profile_id} not found."
+        )
+
+    performance_for_model = performance_profile_query.first().aircraft_id is None
+
+    if performance_for_model:
+        if not user_is_active_admin:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Unauthorized to edit this performance profile"
+            )
+    else:
+        aircraft = db_session.query(models.Aircraft).filter_by(
+            id=performance_profile_query.first().aircraft_id).first()
+
+        if not aircraft.owner_id == user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Unauthorized to edit this performance profile"
+            )
+
+    return performance_profile_query

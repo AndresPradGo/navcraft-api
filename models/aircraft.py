@@ -14,58 +14,6 @@ from sqlalchemy.orm import Relationship
 from models.base import BaseModel
 
 
-class AircraftMake(BaseModel):
-    """
-    This class defines the database aircraft_makes table.
-    """
-
-    __tablename__ = "aircraft_makes"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(255), nullable=False, unique=True)
-
-    models = Relationship(
-        "AircraftModel",
-        back_populates="make",
-        passive_deletes=True,
-        passive_updates=True
-    )
-
-
-class AircraftModel(BaseModel):
-    """
-    This class defines the database aircraft_models table.
-    """
-
-    __tablename__ = "aircraft_models"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    model = Column(String(255), nullable=False, unique=True)
-    code = Column(String(5), nullable=False)
-    make_id = Column(
-        Integer,
-        ForeignKey(
-            "aircraft_makes.id",
-            ondelete="RESTRICT",
-            onupdate="CASCADE"
-        )
-    )
-
-    performance_profiles = Relationship(
-        "PerformanceProfile",
-        back_populates="model",
-        passive_deletes=True,
-        passive_updates=True
-    )
-    make = Relationship("AircraftMake", back_populates="models")
-    aircraft = Relationship(
-        "Aircraft",
-        back_populates="model",
-        passive_deletes=True,
-        passive_updates=True
-    )
-
-
 class PerformanceProfile(BaseModel):
     """
     This class defines the database performance_profiles table.
@@ -74,8 +22,8 @@ class PerformanceProfile(BaseModel):
     __tablename__ = "performance_profiles"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(50), nullable=False)
-    is_complete = Column(Boolean, nullable=False, default=False)
+    name = Column(String(255), nullable=False)
+    is_complete = Column(Boolean)
     center_of_gravity_in = Column(DECIMAL(5, 2))
     empty_weight_lb = Column(DECIMAL(7, 2))
     max_ramp_weight_lb = Column(DECIMAL(7, 2))
@@ -96,14 +44,6 @@ class PerformanceProfile(BaseModel):
             onupdate="CASCADE"
         )
     )
-    model_id = Column(
-        Integer,
-        ForeignKey(
-            "aircraft_models.id",
-            ondelete="CASCADE",
-            onupdate="CASCADE"
-        )
-    )
     aircraft_id = Column(
         Integer,
         ForeignKey(
@@ -112,8 +52,6 @@ class PerformanceProfile(BaseModel):
             onupdate="CASCADE"
         )
     )
-    model = Relationship(
-        "AircraftModel", back_populates="performance_profiles")
     aircraft = Relationship(
         "Aircraft", back_populates="performance_profiles")
     fuel_type = Relationship("FuelType", back_populates="performance_profiles")
@@ -175,17 +113,10 @@ class Aircraft(BaseModel):
     __tablename__ = "aircraft"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    make = Column(String(255), nullable=False)
+    model = Column(String(255), nullable=False)
+    abbreviation = Column(String(10), nullable=False)
     registration = Column(String(50), nullable=False)
-
-    model_id = Column(
-        Integer,
-        ForeignKey(
-            "aircraft_models.id",
-            ondelete="RESTRICT",
-            onupdate="CASCADE"
-        ),
-        nullable=False
-    )
     owner_id = Column(
         Integer,
         ForeignKey(
@@ -195,8 +126,6 @@ class Aircraft(BaseModel):
         ),
         nullable=False
     )
-
-    model = Relationship("AircraftModel", back_populates="aircraft")
     performance_profiles = Relationship(
         "PerformanceProfile",
         back_populates="aircraft",
