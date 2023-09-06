@@ -564,11 +564,11 @@ async def manage_takeoff_landing_performance_data_with_csv_file(
 
     try:
         data_list = [schemas.TakeoffLandingPerformanceDataEntry(
-            weight_lb=row[headers["weight_lb"]],
-            temperature_c=row[headers["temperature_c"]],
-            pressure_alt_ft=row[headers["pressure_alt_ft"]],
-            groundroll_ft=row[headers["groundroll_ft"]],
-            obstacle_clearance_ft=row[headers["obstacle_clearance_ft"]]
+            weight_lb=float(row[headers["weight_lb"]]),
+            temperature_c=float(row[headers["temperature_c"]]),
+            pressure_alt_ft=float(row[headers["pressure_alt_ft"]]),
+            groundroll_ft=float(row[headers["groundroll_ft"]]),
+            obstacle_clearance_ft=float(row[headers["obstacle_clearance_ft"]])
         ) for row in await csv.extract_data(file=csv_file)]
     except ValidationError as error:
         # pylint: disable=raise-missing-from
@@ -679,20 +679,20 @@ async def manage_climb_performance_data_with_csv_file(
 
     try:
         data_list = [schemas.ClimbPerformanceDataEntry(
-            weight_lb=row[headers["weight_lb"]],
-            temperature_c=row[headers["temperature_c"]],
-            pressure_alt_ft=row[headers["pressure_alt_ft"]],
-            time_min=row[headers["time_min"]],
+            weight_lb=int(float(row[headers["weight_lb"]])),
+            temperature_c=int(float(row[headers["temperature_c"]])),
+            pressure_alt_ft=int(float(row[headers["pressure_alt_ft"]])),
+            time_min=int(float(row[headers["time_min"]])),
             fuel_gal=row[headers["fuel_gal"]],
-            distance_nm=row[headers["distance_nm"]],
+            distance_nm=int(float(row[headers["distance_nm"]])),
             kias=None if headers["kias"] not in row
             or not row[headers["kias"]]
             or row[headers["kias"]].isspace()
-            else row[headers["kias"]],
+            else int(float(row[headers["kias"]])),
             fpm=None if headers["fpm"] not in row
             or not row[headers["fpm"]]
             or row[headers["fpm"]].isspace()
-            else row[headers["fpm"]]
+            else int(float(row[headers["fpm"]]))
         ) for row in await csv.extract_data(file=csv_file)]
     except ValidationError as error:
         # pylint: disable=raise-missing-from
@@ -782,13 +782,13 @@ async def manage_cruise_performance_data_with_csv_file(
     headers = get_table_header(table_name)
 
     try:
-        data_list = [schemas.ClimbPerformanceDataEntry(
-            weight_lb=row[headers["weight_lb"]],
-            temperature_c=row[headers["temperature_c"]],
-            pressure_alt_ft=row[headers["pressure_alt_ft"]],
-            rpm=row[headers["rpm"]],
-            bhp_percent=row[headers["bhp_percent"]],
-            ktas=row[headers["ktas"]],
+        data_list = [schemas.CruisePerformanceDataEntry(
+            weight_lb=int(float(row[headers["weight_lb"]])),
+            temperature_c=int(float(row[headers["temperature_c"]])),
+            pressure_alt_ft=int(float(row[headers["pressure_alt_ft"]])),
+            rpm=int(float(row[headers["rpm"]])),
+            bhp_percent=int(float(row[headers["bhp_percent"]])),
+            ktas=int(float(row[headers["ktas"]])),
             gph=row[headers["gph"]]
         ) for row in await csv.extract_data(file=csv_file)]
     except ValidationError as error:

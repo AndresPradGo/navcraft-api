@@ -391,14 +391,14 @@ async def manage_runways_with_csv_file(
 
     try:
         data_list = [schemas.RunwayData(
-            aerodrome_id=aerodrome_ids_in_db[r[headers["aerodrome"]].strip(
-            ).upper()],
-            number=r[headers["number"]],
+            aerodrome_id=int(float(aerodrome_ids_in_db[r[headers["aerodrome"]].strip(
+            ).upper()])),
+            number=int(float(r[headers["number"]])),
             position=None if not r[headers["position"]]
             or r[headers["position"]].isspace()
             else r[headers["position"]],
-            length_ft=r[headers["length_ft"]],
-            surface_id=r[headers["surface_id"]]
+            length_ft=int(float(r[headers["length_ft"]])),
+            surface_id=int(float(r[headers["surface_id"]]))
         ) for r in dict_list]
     except ValidationError as error:
         # pylint: disable=raise-missing-from
