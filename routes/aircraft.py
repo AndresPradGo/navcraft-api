@@ -7,7 +7,7 @@ Usage:
 - Import the router to add it to the FastAPI app.
 
 """
-from typing import List, Optional
+from typing import List, Dict, Any, Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException
 from pydantic import ValidationError
@@ -208,7 +208,8 @@ async def post_new_aircraft_performance_profile(
     new_performance_profile = models.PerformanceProfile(
         aircraft_id=aircraft_id,
         fuel_type_id=performance_data.fuel_type_id,
-        name=performance_data.performance_profile_name
+        name=performance_data.performance_profile_name,
+        is_complete=True
     )
     db_session.add(new_performance_profile)
     db_session.commit()
@@ -219,6 +220,161 @@ async def post_new_aircraft_performance_profile(
         **new_performance_profile.__dict__,
         "performance_profile_name": new_performance_profile.name
     }
+
+
+@router.post(
+    "/performance-profile/{aircraft_id}/{model_id}",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.PerformanceProfileReturn
+)
+async def post_new_aircraft_performance_profile_from_model(
+    aircraft_id: int,
+    model_id,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Post New Performance Profile Frpm Model Endpoint.
+
+    Parameters: 
+    - aircraft_id (int): the aircraft id.
+    - model_id (int): the model id.
+
+    Returns: 
+    - Dic: dictionary with the data added to the database, and the id.
+
+    Raise:
+    - HTTPException (400): if data is wrong.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+    # Check if user has permission
+    user_id = await get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
+    aircraft = db_session.query(models.Aircraft).filter(and_(
+        models.Aircraft.id == aircraft_id,
+        models.Aircraft.owner_id == user_id
+    )).first()
+    if aircraft is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Aircraft not found."
+        )
+
+    # Get model performance profile
+    model_profile = db_session.query(models.PerformanceProfile).filter(and_(
+        models.PerformanceProfile.aircraft_id.is_(None),
+        models.PerformanceProfile.id == model_id,
+        models.PerformanceProfile.is_complete.is_(True)
+    )).first()
+    if model_profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid model ID."
+        )
+
+    # define reusable function to pop key-value pairs form dictionaries
+    def remove_key_value_pairs(dictionary: Dict[str, Any], keys: List[str]):
+        """
+        This function removes a list of keys form a dictionary
+        """
+        keys.append('id')
+        keys.append('_sa_instance_state')
+        keys.append('created_at')
+        keys.append('last_updated')
+
+        for key in keys:
+            if key in dictionary:
+                dictionary.pop(key)
+
+        return dictionary
+
+    # Check profile is not repeated
+    profile_exists = db_session.query(models.PerformanceProfile).filter(and_(
+        models.PerformanceProfile.aircraft_id == aircraft_id,
+        models.PerformanceProfile.name == model_profile.name
+    )).first() is not None
+
+    if profile_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"'{model_profile.name}' Profile already exists for your aircraft."
+        )
+
+    # Post profile
+    profile_values = remove_key_value_pairs(
+        dictionary=model_profile.__dict__,
+        keys=["aircraft_id"]
+    )
+    new_performance_profile = models.PerformanceProfile(**{
+        **profile_values,
+        "aircraft_id": aircraft_id
+    })
+    db_session.add(new_performance_profile)
+    db_session.commit()
+    db_session.refresh(new_performance_profile)
+    new_profile_dict = {**new_performance_profile.__dict__}
+    new_profile_id = new_performance_profile.id
+
+    # Add weight and balance profiles
+    wb_query_results = db_session.query(models.WeightBalanceProfile)\
+        .filter_by(performance_profile_id=model_id).all()
+    for row in wb_query_results:
+        limits_query_results = db_session.query(models.WeightBalanceLimit)\
+            .filter_by(weight_balance_profile_id=row.id).all()
+
+        new_weight_balance = models.WeightBalanceProfile(**{
+            **remove_key_value_pairs(
+                dictionary=row.__dict__,
+                keys=["performance_profile_id"]
+            ),
+            "performance_profile_id": new_profile_id
+        })
+        db_session.add(new_weight_balance)
+        db_session.commit()
+        db_session.refresh(new_weight_balance)
+
+        limits_to_add = [models.WeightBalanceLimit(**{
+            **remove_key_value_pairs(
+                dictionary=row.__dict__,
+                keys=["weight_balance_profile_id"]
+            ),
+            "weight_balance_profile_id": new_weight_balance.id
+        }) for row in limits_query_results]
+        db_session.add_all(limits_to_add)
+        db_session.commit()
+
+    # Define reusable function to add performance data
+    def add_performance_models(models_list: List[Any]):
+        """
+        This function copies the performance data from the model performance profile,
+        and adds it to the new performance profile.
+        """
+        for model in models_list:
+            query_results = db_session.query(model)\
+                .filter_by(performance_profile_id=model_id).all()
+            rows_to_add = [model(**{
+                **remove_key_value_pairs(
+                    dictionary=row.__dict__,
+                    keys=["performance_profile_id"]
+                ),
+                "performance_profile_id": new_profile_id
+            }) for row in query_results]
+            db_session.add_all(rows_to_add)
+
+    # Add all other performance data tables
+    add_performance_models([
+        models.BaggageCompartment,
+        models.SeatRow,
+        models.SurfacePerformanceDecrease,
+        models.TakeoffPerformance,
+        models.LandingPerformance,
+        models.ClimbPerformance,
+        models.CruisePerformance
+    ])
+
+    db_session.commit()
+    return {**new_profile_dict, "performance_profile_name": new_profile_dict["name"]}
 
 
 @router.put(
