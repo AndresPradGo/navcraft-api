@@ -366,6 +366,16 @@ class WeightBalanceReturn(WeightBalanceData):
     limits: List[WeightBalanceLimitReturn] = []
 
 
+class GetWeightBalanceData(PerformanceProfileWightBalanceData):
+    """
+    This class defines the data-structure required to return all the weight 
+    and balance data from a performance profile.
+    """
+    baggage_compartments: Optional[List[BaggageCompartmentReturn]] = []
+    seat_rows: Optional[List[SeatRowReturn]] = []
+    weight_balance_profiles: Optional[List[WeightBalanceReturn]] = []
+
+
 class RunwaySurfacePercentIncrease(BaseModel):
     '''
     This class defines the percentage increase by runway surface data structure.

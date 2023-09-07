@@ -25,6 +25,104 @@ from utils.functions import (
 router = APIRouter(tags=["Aircraft Weight and Balance Data"])
 
 
+@router.get(
+    "/{profile_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=schemas.GetWeightBalanceData
+)
+async def get_weight_balance_data(
+    profile_id: int,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Get Weight and Balance Data Endpoint.
+
+    Parameters: 
+    - profile_id (int): performance profile id.
+
+    Returns: 
+    - dict: dictionary with the weight and balance data.
+
+    Raise:
+    - HTTPException (401): if user is not authenticated.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Get the performance profile and check permissions.
+    performance_profile = check_performance_profile_and_permissions(
+        db_session=db_session,
+        user_id=await get_user_id_from_email(
+            email=current_user.email, db_session=db_session
+        ),
+        user_is_active_admin=current_user.is_active and current_user.is_admin,
+        profile_id=profile_id,
+        auth_non_admin_get_model=True
+    ).first()
+
+    # Get bagage compartments and seat rows
+    baggage_compartments = db_session.query(models.BaggageCompartment).filter(
+        models.BaggageCompartment.performance_profile_id == profile_id
+    ).all()
+
+    seat_rows = db_session.query(models.SeatRow).filter(
+        models.SeatRow.performance_profile_id == profile_id
+    )
+
+    # Get weight and balance profiles
+    weight_balance_profiles = db_session.query(models.WeightBalanceProfile).filter(
+        models.WeightBalanceProfile.performance_profile_id == profile_id
+    ).all()
+
+    wb_profile_ids = [wb.id for wb in weight_balance_profiles]
+    weight_balance_profile_limits = db_session.query(models.WeightBalanceLimit).filter(
+        models.WeightBalanceLimit.weight_balance_profile_id.in_(wb_profile_ids)
+    ).all()
+
+    # Return weight and balance data
+    data = {
+        "center_of_gravity_in": performance_profile.center_of_gravity_in
+        if performance_profile.center_of_gravity_in is not None else 0,
+        "empty_weight_lb": performance_profile.empty_weight_lb
+        if performance_profile.empty_weight_lb is not None else 0,
+        "max_ramp_weight_lb": performance_profile.max_ramp_weight_lb
+        if performance_profile.max_ramp_weight_lb is not None else 0,
+        "max_landing_weight_lb": performance_profile.max_landing_weight_lb
+        if performance_profile.max_landing_weight_lb is not None else 0,
+        "fuel_arm_in": performance_profile.fuel_arm_in
+        if performance_profile.fuel_arm_in is not None else 0,
+        "fuel_capacity_gallons": performance_profile.fuel_capacity_gallons
+        if performance_profile.fuel_capacity_gallons is not None else 0,
+        "baggage_compartments": [{
+            "id": compartment.id,
+            "name": compartment.name,
+            "arm_in": compartment.arm_in,
+            "weight_limit_lb": compartment.weight_limit_lb
+        } for compartment in baggage_compartments],
+        "seat_rows": [{
+            "id": seat.id,
+            "name": seat.name,
+            "arm_in": seat.arm_in,
+            "weight_limit_lb": seat.weight_limit_lb,
+            "number_of_seats": seat.number_of_seats
+        } for seat in seat_rows],
+        "weight_balance_profiles": [{
+            "id": profile.id,
+            "name": profile.name,
+            "max_take_off_weight_lb": profile.max_take_off_weight_lb,
+            "limits": [{
+                "id": limit.id,
+                "from_cg_in": limit.from_cg_in,
+                "from_weight_lb": limit.from_weight_lb,
+                "to_cg_in": limit.to_cg_in,
+                "to_weight_lb": limit.to_weight_lb
+            } for limit in weight_balance_profile_limits]
+        } for profile in weight_balance_profiles]
+    }
+
+    return data
+
+
 @router.post(
     "/baggage-compartment/{profile_id}",
     status_code=status.HTTP_201_CREATED,
