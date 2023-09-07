@@ -30,6 +30,8 @@ class PerformanceProfile(BaseModel):
     max_landing_weight_lb = Column(DECIMAL(7, 2))
     fuel_arm_in = Column(DECIMAL(5, 2))
     fuel_capacity_gallons = Column(DECIMAL(5, 2))
+    unusable_fuel_gallons = Column(DECIMAL(5, 2))
+    baggage_allowance_lb = Column(DECIMAL(6, 2))
     take_off_taxi_fuel_gallons = Column(DECIMAL(4, 2))
     percent_decrease_takeoff_headwind_knot = Column(DECIMAL(4, 2))
     percent_increase_takeoff_tailwind_knot = Column(DECIMAL(4, 2))

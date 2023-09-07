@@ -115,6 +115,8 @@ class PerformanceProfileReturn(OfficialPerformanceProfileData):
     max_landing_weight_lb: Optional[confloat(ge=0)] = None
     fuel_arm_in: Optional[confloat(ge=0)] = None
     fuel_capacity_gallons: Optional[confloat(ge=0)] = None
+    unusable_fuel_gallons: Optional[confloat(ge=0)] = None
+    baggage_allowance_lb: Optional[confloat(ge=0)] = None
 
 
 class BaggageCompartmentData(BaseModel):
@@ -185,6 +187,8 @@ class PerformanceProfileWightBalanceData(BaseModel):
     max_landing_weight_lb: confloat(ge=0)
     fuel_arm_in: confloat(ge=0)
     fuel_capacity_gallons: confloat(ge=0)
+    unusable_fuel_gallons: confloat(ge=0)
+    baggage_allowance_lb: confloat(ge=0)
 
     @model_validator(mode='after')
     @classmethod
@@ -206,6 +210,8 @@ class PerformanceProfileWightBalanceData(BaseModel):
         values.max_landing_weight_lb = round(values.max_landing_weight_lb, 2)
         values.fuel_arm_in = round(values.fuel_arm_in, 2)
         values.fuel_capacity_gallons = round(values.fuel_capacity_gallons, 2)
+        values.unusable_fuel_gallons = round(values.unusable_fuel_gallons, 2)
+        values.baggage_allowance_lb = round(values.baggage_allowance_lb, 2)
         return values
 
 

@@ -93,6 +93,10 @@ async def get_weight_balance_data(
         if performance_profile.fuel_arm_in is not None else 0,
         "fuel_capacity_gallons": performance_profile.fuel_capacity_gallons
         if performance_profile.fuel_capacity_gallons is not None else 0,
+        "unusable_fuel_gallons": performance_profile.unusable_fuel_gallons
+        if performance_profile.unusable_fuel_gallons is not None else 0,
+        "baggage_allowance_lb": performance_profile.baggage_allowance_lb
+        if performance_profile.baggage_allowance_lb is not None else 0,
         "baggage_compartments": [{
             "id": compartment.id,
             "name": compartment.name,
@@ -377,7 +381,9 @@ async def edit_weight_and_balance_data_for_performance_profile(
         "max_ramp_weight_lb": performance_data.max_ramp_weight_lb,
         "max_landing_weight_lb": performance_data.max_landing_weight_lb,
         "fuel_arm_in": performance_data.fuel_arm_in,
-        "fuel_capacity_gallons": performance_data.fuel_capacity_gallons
+        "fuel_capacity_gallons": performance_data.fuel_capacity_gallons,
+        "unusable_fuel_gallons": performance_data.unusable_fuel_gallons,
+        "baggage_allowance_lb": performance_data.baggage_allowance_lb
     })
     db_session.commit()
 
