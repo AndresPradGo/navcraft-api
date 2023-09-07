@@ -7,9 +7,11 @@ Usage:
 - Import the router to add it to the FastAPI app.
 
 """
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException
-from sqlalchemy import and_, not_
+from pydantic import ValidationError
+from sqlalchemy import and_, not_, or_
 from sqlalchemy.orm import Session
 
 import auth
@@ -20,6 +22,72 @@ from utils.db import get_db
 from utils.functions import get_user_id_from_email
 
 router = APIRouter(tags=["Aircraft"])
+
+
+@router.get(
+    "/",
+    status_code=status.HTTP_200_OK,
+    response_model=List[schemas.GetAircraftList]
+)
+async def get_aircraft_list(
+    aircraft_id: Optional[int] = 0,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Get Aircraft List Endpoint.
+
+    Parameters: 
+    - aircraft_id (int optional): If provided, only 1 aircraft will be provided.
+
+    Returns: 
+    - List: list of dictionaries with aircraft data.
+
+    Raise:
+    - HTTPException (401): if user is not valid.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Get aircraft models
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    aircraft_models = db_session.query(models.Aircraft)\
+        .filter(and_(
+            models.Aircraft.owner_id == user_id,
+            or_(
+                not_(aircraft_id),
+                models.Aircraft.id == aircraft_id
+            )
+        )).order_by(models.Aircraft.model).all()
+
+    # Get profiles
+    aircraft_ids = [aircraft.id for aircraft in aircraft_models]
+    performance_profiles = db_session.query(models.PerformanceProfile).filter(
+        models.PerformanceProfile.aircraft_id.in_(aircraft_ids)
+    ).all()
+
+    # Organize aircraft list
+    try:
+        aircraft_list = [schemas.GetAircraftList(
+            id=aircraft.id,
+            make=aircraft.make,
+            model=aircraft.model,
+            abbreviation=aircraft.abbreviation,
+            registration=aircraft.registration,
+            profiles=[{
+                "id": profile.id,
+                "performance_profile_name": profile.name,
+                "is_complete": profile.is_complete,
+                "fuel_type_id": profile.fuel_type_id
+            } for profile in performance_profiles if profile.aircraft_id == aircraft.id]
+        ) for aircraft in aircraft_models]
+    except ValidationError as error:
+        # pylint: disable=raise-missing-from
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error.errors()
+        )
+
+    return aircraft_list
 
 
 @router.post(

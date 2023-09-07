@@ -11,6 +11,7 @@ Usage:
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException
+from pydantic import ValidationError
 from sqlalchemy import and_, or_, not_
 from sqlalchemy.orm import Session
 
@@ -21,6 +22,62 @@ from utils import common_responses
 from utils.db import get_db
 
 router = APIRouter(tags=["Aircraft Model"])
+
+
+@router.get(
+    "/",
+    status_code=status.HTTP_200_OK,
+    response_model=List[schemas.GetPerformanceProfileList]
+)
+async def get_performance_profile_list(
+    profile_id: Optional[int] = 0,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Get Performance Profile List Endpoint.
+
+    Parameters: 
+    - profile_id (int optional): If provided, only 1 profile will be provided.
+
+    Returns: 
+    - List: list of dictionaries with profile data.
+
+    Raise:
+    - HTTPException (401): if user is not valid.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Get performance profile models
+    user_is_active_admin = current_user.is_active and current_user.is_admin
+    performance_profiles = db_session.query(models.PerformanceProfile).filter(and_(
+        models.PerformanceProfile.aircraft_id.is_(None),
+        or_(
+            not_(profile_id),
+            models.PerformanceProfile.id == profile_id
+        ),
+        or_(
+            models.PerformanceProfile.is_complete,
+            user_is_active_admin
+        )
+    )).all()
+
+    # Organize performance profile list
+    try:
+        profiles = [schemas.GetPerformanceProfileList(
+            id=profile.id,
+            performance_profile_name=profile.name,
+            is_complete=profile.is_complete,
+            fuel_type_id=profile.fuel_type_id
+        ) for profile in performance_profiles]
+    except ValidationError as error:
+        # pylint: disable=raise-missing-from
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error.errors()
+        )
+
+    return profiles
 
 
 @router.get(

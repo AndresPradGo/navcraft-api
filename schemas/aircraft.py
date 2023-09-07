@@ -258,6 +258,23 @@ class AircraftBaseReturn(AircraftBaseData):
     id: conint(gt=0)
 
 
+class GetPerformanceProfileList(OfficialPerformanceProfileData):
+    """
+    This class defines the data-structure required to return 
+    a list of performance profiles to the client.
+    """
+    id: conint(gt=0)
+
+
+class GetAircraftList(AircraftBaseReturn):
+    """
+    This class defines the data-structure required to return 
+    a list of aircraft to the client.
+    """
+
+    profiles: Optional[List[GetPerformanceProfileList]] = []
+
+
 class AircraftReturn(AircraftBaseReturn, PerformanceProfileData):
     """
     This class defines the data-structure required to return aircraft data
