@@ -128,16 +128,7 @@ async def post_new_aircraft(
             detail=f"Aircraft {aircraft_data.registration} already registered."
         )
 
-    # Check fuel type exists
-    fuel_type_id_exists = db_session.query(models.FuelType).filter_by(
-        id=aircraft_data.fuel_type_id).first()
-    if not fuel_type_id_exists:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Fuel type ID {aircraft_data.fuel_type_id} doesn't exist."
-        )
-
-    # Post aircraft model
+    # Post aircraft
     new_aircraft = models.Aircraft(
         make=aircraft_data.make,
         model=aircraft_data.model,
@@ -148,24 +139,8 @@ async def post_new_aircraft(
     db_session.add(new_aircraft)
     db_session.commit()
     db_session.refresh(new_aircraft)
-    new_aircraft_data_dict = {**new_aircraft.__dict__}
 
-    # Post performance profile
-    new_performance_profile = models.PerformanceProfile(
-        aircraft_id=new_aircraft_data_dict["id"],
-        fuel_type_id=aircraft_data.fuel_type_id,
-        name=aircraft_data.performance_profile_name
-    )
-    db_session.add(new_performance_profile)
-    db_session.commit()
-    db_session.refresh(new_performance_profile)
-
-    return {
-        **new_aircraft_data_dict,
-        "fuel_type_id": new_performance_profile.fuel_type_id,
-        "performance_profile_name": new_performance_profile.name,
-        "performance_profile_id": new_performance_profile.id,
-    }
+    return {**new_aircraft.__dict__}
 
 
 @router.post(
@@ -249,11 +224,11 @@ async def post_new_aircraft_performance_profile(
 @router.put(
     "/{aircraft_id}",
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.AircraftBaseReturn
+    response_model=schemas.AircraftReturn
 )
 async def edit_aircraft(
     aircraft_id: int,
-    aircraft_data: schemas.AircraftBaseData,
+    aircraft_data: schemas.AircraftData,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):

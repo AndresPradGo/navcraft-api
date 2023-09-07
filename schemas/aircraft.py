@@ -209,7 +209,7 @@ class PerformanceProfileWightBalanceData(BaseModel):
         return values
 
 
-class AircraftBaseData(BaseModel):
+class AircraftData(BaseModel):
     '''
     This class defines the data required form the client to edit an aircraft.
     '''
@@ -242,14 +242,7 @@ class AircraftBaseData(BaseModel):
     )
 
 
-class AircraftData(AircraftBaseData, PerformanceProfileData):
-    '''
-    This class defines the data structure reuired from the client, in order to add
-    a new aircraft to the database.
-    '''
-
-
-class AircraftBaseReturn(AircraftBaseData):
+class AircraftReturn(AircraftData):
     """
     This class defines the base data-structure required to return aircraft data
     to the client.
@@ -266,22 +259,13 @@ class GetPerformanceProfileList(OfficialPerformanceProfileData):
     id: conint(gt=0)
 
 
-class GetAircraftList(AircraftBaseReturn):
+class GetAircraftList(AircraftReturn):
     """
     This class defines the data-structure required to return 
     a list of aircraft to the client.
     """
 
     profiles: Optional[List[GetPerformanceProfileList]] = []
-
-
-class AircraftReturn(AircraftBaseReturn, PerformanceProfileData):
-    """
-    This class defines the data-structure required to return aircraft data
-    to the client.
-    """
-
-    performance_profile_id: conint(gt=0)
 
 
 class WeightBalanceLimitData(BaseModel):
