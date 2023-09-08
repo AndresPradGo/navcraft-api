@@ -54,6 +54,7 @@ class PerformanceProfile(BaseModel):
             onupdate="CASCADE"
         )
     )
+
     aircraft = Relationship(
         "Aircraft", back_populates="performance_profiles")
     fuel_type = Relationship("FuelType", back_populates="performance_profiles")

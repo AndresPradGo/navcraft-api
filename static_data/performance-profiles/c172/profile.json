@@ -1,0 +1,131 @@
+{
+    "name": "Cessna 172 M Skyhawk, Standard Tanks, Avro Lucoming 0-320-E2D 150 BHP at 2700RPM",
+    "is_complete": true,
+    "fuel_type_id": 1,
+    "center_of_gravity_in": 39.12,
+    "empty_weight_lb": 1400,
+    "max_ramp_weight_lb": 2300,
+    "max_landing_weight_lb": 2300,
+    "fuel_arm_in": 48.0,
+    "fuel_capacity_gallons":42.0,
+    "unusable_fuel_gallons": 4.0,
+    "baggage_allowance_lb": 120,
+    "percent_decrease_takeoff_headwind_knot": 1.11,
+    "percent_increase_takeoff_tailwind_knot": 5.0,
+    "take_off_taxi_fuel_gallons": 1.1,
+    "percent_increase_climb_temperature_c": 1,
+    "percent_decrease_landing_headwind_knot": 1.11,
+    "percent_increase_landing_tailwind_knot": 5.0,
+    "baggage_compartments": [
+        {
+            "name":"Baggage Area 1",
+            "arm_in": 95.0,
+            "weight_limit_lb": 120
+        },
+        {
+            "name":"Baggage Area 2",
+            "arm_in": 123.0,
+            "weight_limit_lb": 50
+        }
+    ],
+    "seat_rows": [
+        {
+            "name": "Pilot and Co-pilot",
+            "number_of_seats": 2,
+            "arm_in": 37.0,
+            "weight_limit_lb": null
+        },
+        {
+            "name": "Rear Passengers",
+            "number_of_seats": 2,
+            "arm_in": 73.0,
+            "weight_limit_lb": null
+        }
+    ],
+    "weight_balance_profiles": [
+        {
+            "name": "Normal Category",
+            "max_take_off_weight_lb": 2300,
+            "limits":[
+                {
+                    "from_cg_in": 47.3,
+                    "from_weight_lb": 1500,
+                    "to_cg_in": 35,
+                    "to_weight_lb": 1500 
+                },
+                {
+                    "from_cg_in": 35,
+                    "from_weight_lb": 1500,
+                    "to_cg_in": 35,
+                    "to_weight_lb": 1950 
+                },
+                {
+                    "from_cg_in": 35,
+                    "from_weight_lb": 1950,
+                    "to_cg_in": 38.5,
+                    "to_weight_lb": 2300 
+                },
+                {
+                    "from_cg_in": 38.5,
+                    "from_weight_lb": 2300,
+                    "to_cg_in": 47.3,
+                    "to_weight_lb": 2300 
+                },
+                {
+                    "from_cg_in": 47.3,
+                    "from_weight_lb": 2300,
+                    "to_cg_in": 47.3,
+                    "to_weight_lb": 1500 
+                }
+            ]
+        },
+        {
+            "name": "Utility Category",
+            "max_take_off_weight_lb": 2000,
+            "limits":[
+                {
+                    "from_cg_in": 40.5,
+                    "from_weight_lb": 1500,
+                    "to_cg_in": 35,
+                    "to_weight_lb": 1500 
+                },
+                {
+                    "from_cg_in": 35,
+                    "from_weight_lb": 1500,
+                    "to_cg_in": 35,
+                    "to_weight_lb": 1950 
+                },
+                {
+                    "from_cg_in": 35,
+                    "from_weight_lb": 1950,
+                    "to_cg_in": 35.5,
+                    "to_weight_lb": 2000 
+                },
+                {
+                    "from_cg_in": 35.5,
+                    "from_weight_lb": 2000,
+                    "to_cg_in": 40.5,
+                    "to_weight_lb": 2000 
+                },
+                {
+                    "from_cg_in": 40.5,
+                    "from_weight_lb": 2000,
+                    "to_cg_in": 40.5,
+                    "to_weight_lb": 1500 
+                }
+            ]
+        }
+    ],
+    "surface_performance_decreas_data": [
+        {
+            "surface_id": 4,
+            "percent": 15,
+            "is_takeoff":true
+        },
+        {
+            "surface_id": 4,
+            "percent": 45,
+            "is_takeoff":false
+        }
+    ]
+}
