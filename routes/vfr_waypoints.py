@@ -162,6 +162,30 @@ async def update_vfr_waypoint(
 
 
 @router.get(
+    "/aerodrome-status",
+    status_code=status.HTTP_200_OK,
+    response_model=List[schemas.AerodromeStatusReturn]
+)
+async def get_all_aerodrome_status(
+    db_session: Session = Depends(get_db),
+    _: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Get All Aerodrome Status Endpoint.
+
+    Returns: 
+    - list: list of aerodrome status.
+
+    Raise:
+    - HTTPException (500): if there is a server error. 
+    """
+
+    return [
+        status.__dict__ for status in db_session.query(models.AerodromeStatus).all()
+    ]
+
+
+@router.get(
     "/vfr",
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.VfrWaypointReturn]
