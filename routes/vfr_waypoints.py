@@ -585,7 +585,7 @@ async def delete_aerodrome_status(
     Delete Aerodrome Status.
 
     Parameters: 
-    status_id (int): waypoint id.
+    status_id (int): status id.
 
     Returns: None
 
