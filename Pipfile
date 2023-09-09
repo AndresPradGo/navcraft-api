@@ -12,6 +12,7 @@ passlib = {extras = ["bcrypt"], version = "*"}
 pydantic = {extras = ["email"], version = "*"}
 python-jose = {extras = ["cryptography"], version = "*"}
 python-multipart = "*"
+pytz = "*"
 
 [dev-packages]
 

@@ -16,7 +16,7 @@ from pydantic import (
     conint,
     confloat,
     conlist,
-    NaiveDatetime,
+    AwareDatetime,
     field_validator,
     model_validator
 )
@@ -73,10 +73,11 @@ class UserWaypointReturn(WaypointBase):
 
     id: conint(gt=0)
     name: Optional[constr(min_length=2, max_length=50)] = None
-    created_at: NaiveDatetime
-    last_updated: NaiveDatetime
+    created_at_utc: AwareDatetime
+    last_updated_utc: AwareDatetime
 
     class Config():
+        "Confirgaration parameters."
         from_attributes = True
 
 

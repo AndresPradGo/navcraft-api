@@ -11,6 +11,7 @@ Usage:
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException
+import pytz
 from sqlalchemy import and_, or_, not_
 from sqlalchemy.orm import Session
 
@@ -60,7 +61,12 @@ async def get_all_user_waypoints(
         ))\
         .join(u, w.id == u.waypoint_id).order_by(u.name).all()
 
-    return [{**w.__dict__, **v.__dict__} for w, v in user_waypoints]
+    return [{
+        **w.__dict__,
+        **v.__dict__,
+        "created_at_utc": pytz.timezone('UTC').localize((v.created_at)),
+        "last_updated_utc": pytz.timezone('UTC').localize((v.last_updated))
+    } for w, v in user_waypoints]
 
 
 @router.get(
@@ -112,6 +118,8 @@ async def get_all_vfr_waypoints(
         "code": v.code,
         "name": v.name,
         "hidden": v.hidden if user_is_active_admin else None,
+        "created_at_utc": pytz.timezone('UTC').localize((v.created_at)),
+        "last_updated_utc": pytz.timezone('UTC').localize((v.last_updated))
     } for w, v in query_results]
 
 
@@ -187,10 +195,12 @@ async def get_all_aerodromes(
         **w.__dict__,
         "code": v.code,
         "name": v.name,
-        "hidden": v.hidden if user_is_active_admin else None,
+        "hidden": v.hidden if a.vfr_waypoint_id is not None and user_is_active_admin else None,
         **a.__dict__,
         "status": s,
         "registered": a.vfr_waypoint_id is not None,
+        "created_at_utc": pytz.timezone('UTC').localize((a.created_at)),
+        "last_updated_utc": pytz.timezone('UTC').localize((a.last_updated)),
         "runways": [
             schemas.RunwayInAerodromeReturn(
                 id=r.id,
@@ -302,7 +312,12 @@ async def post_new_user_waypoint(
     new_user_waypoint = db_session.query(models.UserWaypoint).filter_by(
         waypoint_id=new_waypoint.id).first()
 
-    return {**new_user_waypoint.__dict__, **new_waypoint.__dict__}
+    return {
+        **new_user_waypoint.__dict__,
+        **new_waypoint.__dict__,
+        "created_at_utc": pytz.timezone('UTC').localize((new_user_waypoint.created_at)),
+        "last_updated_utc": pytz.timezone('UTC').localize((new_user_waypoint.last_updated))
+    }
 
 
 @router.post(
@@ -404,7 +419,9 @@ async def post_private_aerodrome(
         **return_aerodrome_data[1].__dict__,
         **return_aerodrome_data[2].__dict__,
         "status": return_aerodrome_data[3],
-        "registered": False
+        "registered": False,
+        "created_at_utc": pytz.timezone('UTC').localize((return_aerodrome_data[2].created_at)),
+        "last_updated_utc": pytz.timezone('UTC').localize((return_aerodrome_data[2].last_updated))
     }
 
 
@@ -484,7 +501,12 @@ async def edit_user_waypoint(
 
     new_waypoint = db_session.query(w, u).join(
         w, u.waypoint_id == w.id).filter(u.waypoint_id == waypoint_id).first()
-    return {**new_waypoint[0].__dict__, **new_waypoint[1].__dict__}
+    return {
+        **new_waypoint[0].__dict__,
+        **new_waypoint[1].__dict__,
+        "created_at_utc": pytz.timezone('UTC').localize((new_waypoint[1].created_at)),
+        "last_updated_utc": pytz.timezone('UTC').localize((new_waypoint[1].last_updated))
+    }
 
 
 @router.put(
@@ -603,7 +625,9 @@ async def edit_private_aerodrome(
         **data[1].__dict__,
         **data[2].__dict__,
         "status": data[3],
-        "registered": False
+        "registered": False,
+        "created_at_utc": pytz.timezone('UTC').localize((data[2].created_at)),
+        "last_updated_utc": pytz.timezone('UTC').localize((data[2].last_updated))
     }
 
 

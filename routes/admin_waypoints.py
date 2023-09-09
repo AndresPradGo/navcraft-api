@@ -12,6 +12,7 @@ import re
 from typing import List
 
 from fastapi import APIRouter, Depends, status, HTTPException
+import pytz
 from sqlalchemy import and_, not_
 from sqlalchemy.orm import Session
 
@@ -189,7 +190,11 @@ async def post_new_vfr_waypoint(
     user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
     result = await post_vfr_waypoint(waypoint=waypoint, db_session=db_session, creator_id=user_id)
 
-    return result
+    return {
+        **result,
+        "created_at_utc": pytz.timezone('UTC').localize((result["created_at"])),
+        "last_updated_utc": pytz.timezone('UTC').localize((result["last_updated"]))
+    }
 
 
 @router.post(
@@ -256,7 +261,9 @@ async def post_registered_aerodrome(
         **new_aerodrome[0].__dict__,
         "status": new_aerodrome[1],
         **waypoint_result,
-        "registered": True
+        "registered": True,
+        "created_at_utc": pytz.timezone('UTC').localize((new_aerodrome[0].created_at)),
+        "last_updated_utc": pytz.timezone('UTC').localize((new_aerodrome[0].last_updated))
     }
 
 
@@ -360,7 +367,11 @@ async def edit_vfr_waypoint(
 
     new_waypoint = db_session.query(w, v).join(
         w, v.waypoint_id == w.id).filter(v.waypoint_id == waypoint_id).first()
-    return {**new_waypoint[0].__dict__, **new_waypoint[1].__dict__}
+    return {
+        **new_waypoint[0].__dict__,
+        **new_waypoint[1].__dict__,
+        "created_at_utc": pytz.timezone('UTC').localize((new_waypoint[0].created_at)),
+        "last_updated_utc": pytz.timezone('UTC').localize((new_waypoint[0].last_updated))}
 
 
 @router.put(
@@ -418,7 +429,8 @@ async def edit_registered_aerodrome(
         lon_minutes=aerodrome.lon_minutes,
         lon_seconds=aerodrome.lon_seconds,
         lon_direction=aerodrome.lon_direction,
-        magnetic_variation=aerodrome.magnetic_variation
+        magnetic_variation=aerodrome.magnetic_variation,
+        hidden=aerodrome.hidden
     )
     db_session = await update_vfr_waypoint(
         waypoint=waypoint_data,
@@ -455,7 +467,9 @@ async def edit_registered_aerodrome(
         **data[1].__dict__,
         **data[2].__dict__,
         "status": data[3],
-        "registered": True
+        "registered": True,
+        "created_at_utc": pytz.timezone('UTC').localize((data[0].created_at)),
+        "last_updated_utc": pytz.timezone('UTC').localize((data[0].last_updated))
     }
 
 
