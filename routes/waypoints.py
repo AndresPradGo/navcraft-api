@@ -21,7 +21,7 @@ from utils import common_responses
 from utils.db import get_db
 from utils.functions import get_user_id_from_email
 
-router = APIRouter(tags=["User Waypoints"])
+router = APIRouter(tags=["Waypoints"])
 
 
 @router.get(
@@ -61,6 +61,58 @@ async def get_all_user_waypoints(
         .join(u, w.id == u.waypoint_id).order_by(u.name).all()
 
     return [{**w.__dict__, **v.__dict__} for w, v in user_waypoints]
+
+
+@router.get(
+    "/vfr",
+    status_code=status.HTTP_200_OK,
+    response_model=List[schemas.VfrWaypointReturn]
+)
+async def get_all_vfr_waypoints(
+    waypoint_id: Optional[int] = 0,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Get All VFR Waypoints Endpoint.
+
+    Parameters: 
+    - waypoint_id (int): waypoint id.
+
+    Returns: 
+    - list: list of waypoint dictionaries.
+
+    Raise:
+    - HTTPException (500): if there is a server error. 
+    """
+    a = models.Aerodrome
+    v = models.VfrWaypoint
+    w = models.Waypoint
+
+    aerodromes = [item[0] for item in db_session.query(
+        a.vfr_waypoint_id).filter(not_(a.vfr_waypoint_id.is_(None))).all()]
+
+    user_is_active_admin = current_user.is_active and current_user.is_admin
+    query_results = db_session.query(w, v)\
+        .filter(and_(
+            or_(
+                not_(waypoint_id),
+                w.id == waypoint_id
+            ),
+            not_(w.id.in_(aerodromes)),
+            or_(
+                not_(v.hidden),
+                user_is_active_admin
+            )
+        ))\
+        .join(v, w.id == v.waypoint_id).order_by(v.name).all()
+
+    return [{
+        **w.__dict__,
+        "code": v.code,
+        "name": v.name,
+        "hidden": v.hidden if user_is_active_admin else None,
+    } for w, v in query_results]
 
 
 @router.get(
@@ -556,13 +608,13 @@ async def edit_private_aerodrome(
 
 
 @router.delete("/user/{waypoint_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user_waypoint(
+async def delete_user_waypoint_or_private_aerodrome(
     waypoint_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Delete User Waypoint.
+    Delete User Waypoint or Private Aerodrome.
 
     Parameters: 
     waypoint_id (int): waypoint id.
@@ -584,7 +636,7 @@ async def delete_user_waypoint(
     if not waypoint_exists:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="The VFR waypoint you're trying to delete is not in the database."
+            detail="The waypoint you're trying to delete is not in the database."
         )
 
     deleted = db_session.query(models.Waypoint).filter(

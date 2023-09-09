@@ -38,7 +38,7 @@ async def get_aircraft_list(
     Get Aircraft List Endpoint.
 
     Parameters: 
-    - aircraft_id (int optional): If provided, only 1 aircraft will be provided.
+    - aircraft_id (int optional): If provided, only 1 aircraft will be returned.
 
     Returns: 
     - List: list of dictionaries with aircraft data.

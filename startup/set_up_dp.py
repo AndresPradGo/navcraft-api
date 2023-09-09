@@ -157,6 +157,51 @@ def _add_flight_status():
         print(f"Error! could not add aerodrome status: {error}")
 
 
+def _add_vfr_waypoints():
+    """
+    This function adds an initial list of vfr_waypoint.
+    """
+
+    data_to_add = [schemas.VfrWaypointData(
+        **w) for w in csv.csv_to_list(file_path=f"{_PATH}vfr_waypoints.csv")]
+
+    try:
+        with Session() as db_session:
+            db_is_populated = db_session.query(models.VfrWaypoint).first()
+
+            if db_is_populated is None:
+                user_id = db_session.query(models.User.id).first()[0]
+
+                for waypoint in data_to_add:
+                    new_waypoint = models.Waypoint(
+                        lat_degrees=waypoint.lat_degrees,
+                        lat_minutes=waypoint.lat_minutes,
+                        lat_seconds=waypoint.lat_seconds,
+                        lat_direction=waypoint.lat_direction,
+                        lon_degrees=waypoint.lon_degrees,
+                        lon_minutes=waypoint.lon_minutes,
+                        lon_seconds=waypoint.lon_seconds,
+                        lon_direction=waypoint.lon_direction,
+                        magnetic_variation=waypoint.magnetic_variation,
+                    )
+                    db_session.add(new_waypoint)
+                    db_session.commit()
+                    db_session.refresh(new_waypoint)
+
+                    new_vfr_waypoint = models.VfrWaypoint(
+                        waypoint_id=new_waypoint.id,
+                        code=waypoint.code,
+                        name=waypoint.name,
+                        hidden=waypoint.hidden,
+                        creator_id=user_id
+                    )
+                    db_session.add(new_vfr_waypoint)
+                    db_session.commit()
+
+    except (IntegrityError, SqlalchemyTimeoutError, OperationalError) as error:
+        print(f"Error! could not add vfr waypoints: {error}")
+
+
 def _add_aerodromes():
     """
     This function adds an initial list of aerodromes.
@@ -212,51 +257,6 @@ def _add_aerodromes():
 
     except (IntegrityError, SqlalchemyTimeoutError, OperationalError) as error:
         print(f"Error! could not add aerodromes: {error}")
-
-
-def _add_vfr_waypoints():
-    """
-    This function adds an initial list of vfr_waypoint.
-    """
-
-    data_to_add = [schemas.VfrWaypointData(
-        **w) for w in csv.csv_to_list(file_path=f"{_PATH}vfr_waypoints.csv")]
-
-    try:
-        with Session() as db_session:
-            db_is_populated = db_session.query(models.VfrWaypoint).first()
-
-            if db_is_populated is None:
-                user_id = db_session.query(models.User.id).first()[0]
-
-                for waypoint in data_to_add:
-                    new_waypoint = models.Waypoint(
-                        lat_degrees=waypoint.lat_degrees,
-                        lat_minutes=waypoint.lat_minutes,
-                        lat_seconds=waypoint.lat_seconds,
-                        lat_direction=waypoint.lat_direction,
-                        lon_degrees=waypoint.lon_degrees,
-                        lon_minutes=waypoint.lon_minutes,
-                        lon_seconds=waypoint.lon_seconds,
-                        lon_direction=waypoint.lon_direction,
-                        magnetic_variation=waypoint.magnetic_variation,
-                    )
-                    db_session.add(new_waypoint)
-                    db_session.commit()
-                    db_session.refresh(new_waypoint)
-
-                    new_vfr_waypoint = models.VfrWaypoint(
-                        waypoint_id=new_waypoint.id,
-                        code=waypoint.code,
-                        name=waypoint.name,
-                        hidden=waypoint.hidden,
-                        creator_id=user_id
-                    )
-                    db_session.add(new_vfr_waypoint)
-                    db_session.commit()
-
-    except (IntegrityError, SqlalchemyTimeoutError, OperationalError) as error:
-        print(f"Error! could not add vfr waypoints: {error}")
 
 
 def _add_runways():
@@ -537,8 +537,8 @@ def _populate_db():
     _add_ruway_surfaces()
     _add_aerodrome_status()
     _add_flight_status()
-    _add_aerodromes()
     _add_vfr_waypoints()
+    _add_aerodromes()
     _add_runways()
     _add_fuel_types()
     _add_performance_profile_models()

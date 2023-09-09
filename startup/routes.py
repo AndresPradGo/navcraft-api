@@ -16,10 +16,10 @@ from routes.aircraft_performance_data import router as aircraft_performance_data
 from routes.aircraft_weight_balance_data import router as aircraft_weight_balnace_data
 from routes.auth import router as auth
 from routes.flights import router as flights
-from routes.manage_vfr_waypoints import router as manage_vfr_waypoints
+from routes.manage_waypoints import router as manage_waypoints
 from routes.users import router as users
-from routes.user_waypoints import router as user_waypoints
-from routes.vfr_waypoints import router as vfr_waypoints
+from routes.waypoints import router as waypoints
+from routes.admin_waypoints import router as admin_waypoints
 from routes.runways import router as runways
 
 
@@ -44,7 +44,7 @@ def link_routes(app: FastAPI) -> None:
                        prefix="/aircraft-performance-data")
     app.include_router(aircraft_weight_balnace_data,
                        prefix="/aircraft-weight-balance-data")
-    app.include_router(vfr_waypoints, prefix="/vfr_waypoints")
-    app.include_router(manage_vfr_waypoints, prefix="/manage_vfr_waypoints")
-    app.include_router(user_waypoints, prefix="/user_waypoints")
+    app.include_router(waypoints, prefix="/waypoints")
+    app.include_router(admin_waypoints, prefix="/admin_waypoints")
+    app.include_router(manage_waypoints, prefix="/manage_waypoints")
     app.include_router(runways, prefix="/runways")

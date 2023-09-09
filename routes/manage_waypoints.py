@@ -21,7 +21,7 @@ from utils import csv_tools as csv
 from utils.db import get_db
 from utils.functions import get_user_id_from_email, get_table_header
 
-router = APIRouter(tags=["Manage VFR Waypoints"])
+router = APIRouter(tags=["Manage Waypoints"])
 
 
 @router.get("/", status_code=status.HTTP_200_OK)
