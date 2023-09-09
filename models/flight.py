@@ -10,6 +10,7 @@ Usage:
 
 from datetime import datetime
 
+
 from sqlalchemy import Column, Integer, DECIMAL, DateTime, String, ForeignKey
 from sqlalchemy.orm import Relationship
 
@@ -249,14 +250,15 @@ class Passenger(BaseModel):
 
     __tablename__ = "passengers"
 
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    weight_lb = Column(DECIMAL(4, 2))
     flight_id = Column(
         Integer,
         ForeignKey(
             "flights.id",
             ondelete="CASCADE",
             onupdate="CASCADE"
-        ),
-        primary_key=True
+        )
     )
     profile_id = Column(
         Integer,
@@ -264,8 +266,7 @@ class Passenger(BaseModel):
             "passenger_profiles.id",
             ondelete="CASCADE",
             onupdate="CASCADE"
-        ),
-        primary_key=True
+        )
     )
     seat_id = Column(
         Integer,
@@ -290,7 +291,7 @@ class Baggage(BaseModel):
     __tablename__ = "baggages"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    weight_lb = Column(DECIMAL(4, 1), nullable=False, default=5.0)
+    weight_lb = Column(DECIMAL(4, 2), nullable=False, default=5.0)
     flight_id = Column(
         Integer,
         ForeignKey(
