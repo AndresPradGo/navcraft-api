@@ -45,24 +45,24 @@ class WaypointBase(BaseModel):
     lat_degrees: conint(ge=0, le=90)
     lat_minutes: conint(ge=0, le=59)
     lat_seconds: Optional[conint(ge=0, le=59)] = None
-    lat_direction: Optional[constr(
+    lat_direction: constr(
         strip_whitespace=True,
         to_upper=True,
         min_length=1,
         max_length=1,
         pattern='^[NSns]$'
-    )] = None
+    )
     lon_degrees: conint(ge=0, le=180)
     lon_minutes: conint(ge=0, le=59)
     lon_seconds: Optional[conint(ge=0, le=59)] = None
-    lon_direction: Optional[constr(
+    lon_direction: constr(
         strip_whitespace=True,
         to_upper=True,
         min_length=1,
         max_length=1,
         pattern='^[EWew]$'
-    )] = None
-    magnetic_variation: Optional[confloat(allow_inf_nan=False)] = None
+    )
+    magnetic_variation: confloat(allow_inf_nan=False)
 
 
 class UserWaypointReturn(WaypointBase):
@@ -178,14 +178,6 @@ class VfrWaypointData(UserWaypointData):
     """
 
     hidden: bool
-
-
-class FlightWaypointData(UserWaypointData):
-    """
-    This class defines the data-structure required form client to post flight-waypoint data.
-    Name is optional. It includes data validation.
-    """
-    name: Optional[constr(min_length=2, max_length=50)] = None
 
 
 class AerodromeBase(BaseModel):

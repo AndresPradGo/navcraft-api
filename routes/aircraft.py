@@ -77,7 +77,8 @@ async def get_aircraft_list(
                 "id": profile.id,
                 "performance_profile_name": profile.name,
                 "is_complete": profile.is_complete,
-                "fuel_type_id": profile.fuel_type_id
+                "fuel_type_id": profile.fuel_type_id,
+                "is_preferred": profile.is_preferred
             } for profile in performance_profiles if profile.aircraft_id == aircraft.id]
         ) for aircraft in aircraft_models]
     except ValidationError as error:
@@ -184,16 +185,27 @@ async def post_new_aircraft_performance_profile(
         )
 
     # Check profile is not repeated
-    profile_exists = db_session.query(models.PerformanceProfile).filter(and_(
+    aircraft_profiles = db_session.query(models.PerformanceProfile).filter(
         models.PerformanceProfile.aircraft_id == aircraft_id,
-        models.PerformanceProfile.name == performance_data.performance_profile_name
-    )).first()
+    ).all()
 
+    if len(aircraft_profiles) >= 3:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This aircraft already has 3 profiles."
+        )
+
+    profile_exists = len([
+        profile.name for profile in aircraft_profiles
+        if profile.name == performance_data.performance_profile_name
+    ]) > 0
     if profile_exists:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"'{performance_data.performance_profile_name}' Profile already exists."
         )
+
+    is_preferred = len(aircraft_profiles) == 0
 
     # Check fuel type exists
     fuel_type_id_exists = db_session.query(models.FuelType).filter_by(
@@ -207,6 +219,7 @@ async def post_new_aircraft_performance_profile(
     # Post profile
     new_performance_profile = models.PerformanceProfile(
         aircraft_id=aircraft_id,
+        is_preferred=is_preferred,
         fuel_type_id=performance_data.fuel_type_id,
         name=performance_data.performance_profile_name,
         is_complete=True
@@ -290,16 +303,27 @@ async def post_new_aircraft_performance_profile_from_model(
         return dictionary
 
     # Check profile is not repeated
-    profile_exists = db_session.query(models.PerformanceProfile).filter(and_(
-        models.PerformanceProfile.aircraft_id == aircraft_id,
-        models.PerformanceProfile.name == model_profile.name
-    )).first() is not None
+    aircraft_profiles = db_session.query(models.PerformanceProfile).filter(
+        models.PerformanceProfile.aircraft_id == aircraft_id
+    ).all()
 
+    if len(aircraft_profiles) >= 3:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This aircraft already has 3 profiles."
+        )
+
+    profile_exists = len([
+        profile.name for profile in aircraft_profiles
+        if profile.name == model_profile.performance_profile_name
+    ]) > 0
     if profile_exists:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"'{model_profile.name}' Profile already exists for your aircraft."
+            detail=f"'{model_profile.performance_profile_name}' Profile already exists."
         )
+
+    is_preferred = len(aircraft_profiles) == 0
 
     # Post profile
     profile_values = remove_key_value_pairs(
@@ -308,7 +332,8 @@ async def post_new_aircraft_performance_profile_from_model(
     )
     new_performance_profile = models.PerformanceProfile(**{
         **profile_values,
-        "aircraft_id": aircraft_id
+        "aircraft_id": aircraft_id,
+        "is_preferred": is_preferred
     })
     db_session.add(new_performance_profile)
     db_session.commit()
@@ -320,8 +345,8 @@ async def post_new_aircraft_performance_profile_from_model(
     wb_query_results = db_session.query(models.WeightBalanceProfile)\
         .filter_by(performance_profile_id=model_id).all()
     for row in wb_query_results:
-        limits_query_results = db_session.query(models.WeightBalanceLimit)\
-            .filter_by(weight_balance_profile_id=row.id).all()
+        limits_query = db_session.query(models.WeightBalanceLimit)\
+            .filter_by(weight_balance_profile_id=row.id)
 
         new_weight_balance = models.WeightBalanceProfile(**{
             **remove_key_value_pairs(
@@ -340,7 +365,7 @@ async def post_new_aircraft_performance_profile_from_model(
                 keys=["weight_balance_profile_id"]
             ),
             "weight_balance_profile_id": new_weight_balance.id
-        }) for row in limits_query_results]
+        }) for row in limits_query.all()]
         db_session.add_all(limits_to_add)
         db_session.commit()
 
@@ -514,6 +539,72 @@ async def edit_aircraft_performance_profile(
         "name": performance_data.performance_profile_name,
         "fuel_type_id": performance_data.fuel_type_id
     })
+    db_session.commit()
+
+    new_performance_profile = db_session.query(
+        models.PerformanceProfile).filter_by(id=performance_profile_id).first()
+    return {
+        **new_performance_profile.__dict__,
+        "performance_profile_name": new_performance_profile.name
+    }
+
+
+@router.put(
+    "/performance-profile/make_preferred/{performance_profile_id}",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.PerformanceProfileReturn
+)
+async def edit_make_aircraft_performance_profile_preferred_profile(
+    performance_profile_id: int,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Make Aircraft Performance Profile, Preferred Profile Endpoint.
+
+    Parameters: 
+    - performance_profile_id (int): performance profile id.
+
+    Returns: 
+    - Dic: dictionary with the profile data.
+
+    Raise:
+    - HTTPException (400): if performance profile doesn't exists.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check profile exists
+    performance_profile_query = db_session.query(models.PerformanceProfile).filter(and_(
+        models.PerformanceProfile.id == performance_profile_id,
+        models.PerformanceProfile.aircraft_id.isnot(None)
+    ))
+    if performance_profile_query.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Performance profile with id {performance_profile_id} doesn't exist."
+        )
+
+    # Check if user has permission to edit this profile
+    user_id = await get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
+    user_is_aircraft_owner = db_session.query(models.Aircraft).filter(and_(
+        models.Aircraft.id == performance_profile_query.first().aircraft_id,
+        models.Aircraft.owner_id == user_id
+    )).first()
+    if user_is_aircraft_owner is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You do not have an aircraft with this profile"
+        )
+
+    # Make all aircraft profiles not preferred
+    db_session.query(models.PerformanceProfile).filter(
+        performance_profile_query.first().aircraft_id
+    ).update({"is_preferred": False})
+
+    # Update profile
+    performance_profile_query.update({"is_preferred": True})
     db_session.commit()
 
     new_performance_profile = db_session.query(

@@ -100,6 +100,7 @@ class OfficialPerformanceProfileData(PerformanceProfileData):
     '''
 
     is_complete: Optional[bool] = None
+    is_preferred: Optional[bool] = None
 
 
 class PerformanceProfileReturn(OfficialPerformanceProfileData):
@@ -117,6 +118,7 @@ class PerformanceProfileReturn(OfficialPerformanceProfileData):
     fuel_capacity_gallons: Optional[confloat(ge=0)] = None
     unusable_fuel_gallons: Optional[confloat(ge=0)] = None
     baggage_allowance_lb: Optional[confloat(ge=0)] = None
+    is_preferred: Optional[bool] = None
 
 
 class BaggageCompartmentData(BaseModel):

@@ -35,11 +35,7 @@ class Waypoint(BaseModel):
     lon_minutes = Column(Integer, nullable=False)
     lon_seconds = Column(Integer, nullable=False, default=0)
     lon_direction = Column(String(1), nullable=False, default="E")
-    magnetic_variation = Column(
-        DECIMAL(4, 2),
-        nullable=False,
-        default=0.0
-    )
+    magnetic_variation = Column(DECIMAL(4, 2))
 
     vfr_waypoint = Relationship(
         "VfrWaypoint",
@@ -123,7 +119,11 @@ class Waypoint(BaseModel):
             earth_radius * math.sin(to_waypoint.lat())
         ])
 
-        return round(earth_radius * math.acos(np.dot(cartesian_from, cartesian_to) / earth_radius**2), 2)
+        return round(
+            earth_radius *
+            math.acos(np.dot(cartesian_from, cartesian_to) / earth_radius**2),
+            2
+        )
 
     def track_to(self, to_waypoint: 'Waypoint') -> int:
         """

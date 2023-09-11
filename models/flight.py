@@ -32,12 +32,17 @@ class Flight(BaseModel):
     )
     bhp_percent = Column(Integer, nullable=False, default=65)
     reserve_fuel_hours = Column(
-        DECIMAL(precision=3, scale=1),
+        DECIMAL(4, 2),
         nullable=False,
         default=0.5
     )
     contingency_fuel_hours = Column(
-        DECIMAL(precision=3, scale=1),
+        DECIMAL(4, 2),
+        nullable=False,
+        default=0.0
+    )
+    fuel_on_board_gallons = Column(
+        DECIMAL(5, 2),
         nullable=False,
         default=0.0
     )
@@ -183,18 +188,10 @@ class Leg(BaseModel):
     sequence = Column(Integer, nullable=False)
     altitude_ft = Column(Integer, nullable=False, default=1000)
     temperature_c = Column(Integer, nullable=False, default=13)
-    rpm = Column(Integer, nullable=False)
-    ktas = Column(Integer, nullable=False)
-    gph = Column(DECIMAL(6, 2), nullable=False)
     wind_direction = Column(Integer)
     wind_magnitude_knot = Column(Integer, nullable=False, default=0)
     weather_valid_from = Column(DateTime)
     weather_valid_to = Column(DateTime)
-    magnetic_variation = Column(
-        DECIMAL(4, 2),
-        nullable=False,
-        default=0.0
-    )
     flight_id = Column(
         Integer,
         ForeignKey(

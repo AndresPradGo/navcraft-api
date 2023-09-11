@@ -38,6 +38,7 @@ class PerformanceProfile(BaseModel):
     percent_decrease_landing_headwind_knot = Column(DECIMAL(4, 2))
     percent_increase_landing_tailwind_knot = Column(DECIMAL(4, 2))
     percent_increase_climb_temperature_c = Column(DECIMAL(4, 2))
+    is_preferred = Column(Boolean)
     fuel_type_id = Column(
         Integer,
         ForeignKey(
