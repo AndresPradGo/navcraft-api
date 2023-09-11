@@ -145,24 +145,11 @@ class UserWaypointData(WaypointBase):
         '''
 
         err_message = {
-            "lat": "Latitude must be between S89 59 59 and N90 0 0",
+            "lat": "Latitude must be between S89 59 59 and N89 59 59",
             "lon": "Longitude must be between W179 59 59 and E180 0 0"
         }
 
-        if (
-            values.lat_direction == 'N' and
-            values.lat_degrees >= 90 and
-            (
-                values.lat_minutes > 0 or
-                values.lat_seconds > 0
-            )
-        ):
-            raise ValueError(err_message['lat'])
-
-        if (
-            values.lat_direction == 'S' and
-            values.lat_degrees > 89
-        ):
+        if values.lat_degrees > 89:
             raise ValueError(err_message['lat'])
 
         if (

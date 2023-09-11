@@ -13,6 +13,7 @@ pydantic = {extras = ["email"], version = "*"}
 python-jose = {extras = ["cryptography"], version = "*"}
 python-multipart = "*"
 pytz = "*"
+numpy = "*"
 
 [dev-packages]
 
