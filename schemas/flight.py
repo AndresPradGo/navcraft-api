@@ -26,6 +26,8 @@ class NewFlightReturn(NewFlightData):
     This class defines the flight data returned to the client after posting a new flight.
     """
     id: conint(gt=0)
+    departure_aerodrome_is_private: bool
+    arrival_aerodrome_is_private: bool
 
 
 class FlightStatusReturn(BaseModel):

@@ -181,27 +181,17 @@ class Leg(BaseModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     sequence = Column(Integer, nullable=False)
-    altitude_ft = Column(Integer, nullable=False, default=0)
-    temperature_c = Column(Integer, nullable=False, default=15)
+    altitude_ft = Column(Integer, nullable=False, default=1000)
+    temperature_c = Column(Integer, nullable=False, default=13)
     rpm = Column(Integer, nullable=False)
     ktas = Column(Integer, nullable=False)
-    gph = Column(DECIMAL(5, 1), nullable=False)
-    wind_direction = Column(Integer, nullable=False, default=0)
+    gph = Column(DECIMAL(6, 2), nullable=False)
+    wind_direction = Column(Integer)
     wind_magnitude_knot = Column(Integer, nullable=False, default=0)
-    weather_valid_from = Column(
-        DateTime,
-        nullable=False,
-        default=datetime.utcnow(),
-        onupdate=datetime.utcnow()
-    )
-    weather_valid_to = Column(
-        DateTime,
-        nullable=False,
-        default=datetime.utcnow(),
-        onupdate=datetime.utcnow()
-    )
+    weather_valid_from = Column(DateTime)
+    weather_valid_to = Column(DateTime)
     magnetic_variation = Column(
-        DECIMAL(precision=3, scale=1),
+        DECIMAL(4, 2),
         nullable=False,
         default=0.0
     )

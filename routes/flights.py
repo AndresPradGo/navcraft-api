@@ -168,7 +168,10 @@ async def post_new_flight(
         "departure_time": flight_data.departure_time,
         "aircraft_id": aircraft.id,
         "departure_aerodrome_id": departure[0].id,
-        "arrival_aerodrome_id": arrival[0].id
+        "departure_aerodrome_is_private": departure[0].user_waypoint is not None,
+        "arrival_aerodrome_id": arrival[0].id,
+        "arrival_aerodrome_is_private": arrival[0].user_waypoint is not None
+
     }
 
 
