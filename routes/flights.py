@@ -14,7 +14,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends, status, HTTPException
 import pytz
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, not_
 from sqlalchemy.orm import Session
 
 import auth
@@ -102,7 +102,10 @@ async def post_new_flight(
         .filter(and_(
             a.id == flight_data.departure_aerodrome_id,
             or_(
-                a.vfr_waypoint_id.isnot(None),
+                and_(
+                    a.vfr_waypoint_id.isnot(None),
+                    not_(v.hidden)
+                ),
                 u.creator_id == user_id
             )
         )).first()
@@ -160,7 +163,15 @@ async def post_new_flight(
     )
     db_session.add(new_arrival)
 
+    # Post Leg
+    new_leg = models.Leg(
+        sequence=1,
+        flight_id=new_flight_data["id"]
+    )
+    db_session.add(new_leg)
+
     db_session.commit()
+    db_session.refresh(new_leg)
 
     # Return flight data
     return {
@@ -170,8 +181,204 @@ async def post_new_flight(
         "departure_aerodrome_id": departure[0].id,
         "departure_aerodrome_is_private": departure[0].user_waypoint is not None,
         "arrival_aerodrome_id": arrival[0].id,
-        "arrival_aerodrome_is_private": arrival[0].user_waypoint is not None
+        "arrival_aerodrome_is_private": arrival[0].user_waypoint is not None,
+        "legs": [{
+            "id": new_leg.id,
+            "sequence": new_leg.sequence,
+            "altitude_ft": new_leg.altitude_ft,
+            "temperature_c": new_leg.temperature_c,
+            "wind_magnitude_knot": new_leg.wind_magnitude_knot
+        }]
+    }
 
+
+@router.post(
+    "/leg/{flight_id}",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.NewFlightReturn
+)
+async def post_new_leg(
+    flight_id: int,
+    leg_data: schemas.NewLegData,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Post New Leg Endpoint.
+
+    Parameters: 
+    - flight_id (int): flight id.
+    - flight_data (dict): the flight data to be added.
+
+    Returns: 
+    - List: new list of legs.
+
+    Raise:
+    - HTTPException (400): if flight doesn't exist.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check flight exists
+    user_id = await get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
+    flight = db_session.query(models.Flight).filter(and_(
+        models.Flight.id == flight_id,
+        models.Flight.pilot_id == user_id
+    )).first()
+
+    if flight is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Flight ID is not valid."
+        )
+
+    # Get all legs
+    legs_query = db_session.query(models.Leg)\
+        .filter(models.Leg.flight_id == flight_id)\
+        .order_by(models.Leg.sequence)
+
+    # Check sequence is not out of range
+    if leg_data.sequence > legs_query.all()[-1].sequence:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Make sure the leg sequence is within range."
+        )
+
+    # Check waypoint data and create waypoint object
+    if leg_data.existing_waypoint_id is not None:
+        w_model = models.Waypoint
+        u_model = models.UserWaypoint
+        v_model = models.VfrWaypoint
+
+        waypoint = db_session.query(w_model, u_model, v_model)\
+            .outerjoin(u_model, u_model.waypoint_id == w_model.id)\
+            .outerjoin(v_model, v_model.waypoint_id == w_model.id)\
+            .filter(and_(
+                w_model.id == leg_data.existing_waypoint_id,
+                or_(
+                    not_(v_model.hidden),
+                    u_model.creator_id == user_id
+                )
+            )).first()
+
+        if waypoint is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Waypoint not found."
+            )
+
+        is_user_waypoint = waypoint[1] is not None
+        waypoint_code = waypoint[1].code if is_user_waypoint\
+            else waypoint[2].code
+
+        new_waypoint = models.Waypoint(
+            lat_degrees=waypoint[0].lat_degrees,
+            lat_minutes=waypoint[0].lat_minutes,
+            lat_seconds=waypoint[0].lat_seconds,
+            lat_direction=waypoint[0].lat_direction,
+            lon_degrees=waypoint[0].lon_degrees,
+            lon_minutes=waypoint[0].lon_minutes,
+            lon_seconds=waypoint[0].lon_seconds,
+            lon_direction=waypoint[0].lon_direction,
+            magnetic_variation=waypoint[0].magnetic_variation
+        )
+        new_flight_waypoint = {"code": waypoint_code}
+
+    else:
+
+        new_waypoint = models.Waypoint(
+            lat_degrees=leg_data.new_waypoint.lat_degrees,
+            lat_minutes=leg_data.new_waypoint.lat_minutes,
+            lat_seconds=leg_data.new_waypoint.lat_seconds,
+            lat_direction=leg_data.new_waypoint.lat_direction,
+            lon_degrees=leg_data.new_waypoint.lon_degrees,
+            lon_minutes=leg_data.new_waypoint.lon_minutes,
+            lon_seconds=leg_data.new_waypoint.lon_seconds,
+            lon_direction=leg_data.new_waypoint.lon_direction,
+            magnetic_variation=leg_data.new_waypoint.magnetic_variation
+        )
+        new_flight_waypoint = {"code": leg_data.new_waypoint.code}
+
+    # Update sequence of legs that go after the new leg
+    legs_to_update = [
+        {
+            "id": leg.id,
+            "sequence": leg.sequence + 1
+        } for leg in legs_query.all() if leg.sequence >= leg_data.sequence
+    ]
+    for leg in legs_to_update:
+        db_session.query(models.Leg).filter_by(id=leg["id"]).update(leg)
+
+    # Add new leg
+    new_leg = models.Leg(
+        sequence=leg_data.sequence,
+        flight_id=flight_id
+    )
+    db_session.add(new_leg)
+
+    # Add waypoint
+    db_session.add(new_waypoint)
+    db_session.commit()
+    db_session.refresh(new_leg)
+    new_flight_waypoint["leg_id"] = new_leg.id
+    db_session.refresh(new_waypoint)
+    new_flight_waypoint["waypoint_id"] = new_waypoint.id
+    db_session.add(models.FlightWaypoint(**new_flight_waypoint))
+    db_session.commit()
+
+    # Return flight data
+    flight = db_session.query(models.Flight).filter(and_(
+        models.Flight.id == flight_id,
+        models.Flight.pilot_id == user_id
+    )).first()
+
+    departure = db_session.query(models.Departure, models.Aerodrome)\
+        .join(models.Aerodrome, models.Departure.aerodrome_id == models.Aerodrome.id)\
+        .filter(models.Departure.flight_id == flight_id).first()
+
+    arrival = db_session.query(models.Arrival, models.Aerodrome)\
+        .join(models.Aerodrome, models.Arrival.aerodrome_id == models.Aerodrome.id)\
+        .filter(models.Arrival.flight_id == flight_id).first()
+
+    legs = db_session.query(models.Leg, models.FlightWaypoint, models.Waypoint)\
+        .outerjoin(models.FlightWaypoint, models.Leg.id == models.FlightWaypoint.leg_id)\
+        .outerjoin(models.Waypoint, models.FlightWaypoint.waypoint_id == models.Waypoint.id)\
+        .filter(models.Leg.flight_id == flight_id).order_by(models.Leg.sequence).all()
+
+    return {
+        "id": flight.id,
+        "departure_time": pytz.timezone('UTC').localize((flight.departure_time)),
+        "aircraft_id": flight.aircraft_id,
+        "departure_aerodrome_id": departure[1].id,
+        "departure_aerodrome_is_private": departure[1].user_waypoint is not None,
+        "arrival_aerodrome_id": arrival[1].id,
+        "arrival_aerodrome_is_private": arrival[1].user_waypoint is not None,
+        "legs": [{
+            "id": leg.id,
+            "sequence": leg.sequence,
+            "waypoint": {
+                "id": wp.id,
+                "code": flight_wp.code,
+                "lat_degrees": wp.lat_degrees,
+                "lat_minutes": wp.lat_minutes,
+                "lat_seconds": wp.lat_seconds,
+                "lat_direction": wp.lat_direction,
+                "lon_degrees": wp.lon_degrees,
+                "lon_minutes": wp.lon_minutes,
+                "lon_seconds": wp.lon_seconds,
+                "lon_direction": wp.lon_direction,
+                "magnetic_variation": wp.magnetic_variation
+            } if flight_wp is not None else None,
+            "altitude_ft": leg.altitude_ft,
+            "temperature_c": leg.temperature_c,
+            "wind_magnitude_knot": leg.wind_magnitude_knot,
+            "wind_direction": leg.wind_direction,
+            "weather_valid_from": pytz.timezone('UTC').localize((leg.weather_valid_from))
+            if leg.weather_valid_from is not None else None,
+            "weather_valid_to": pytz.timezone('UTC').localize((leg.weather_valid_to))
+            if leg.weather_valid_to is not None else None,
+        } for leg, flight_wp, wp in legs]
     }
 
 

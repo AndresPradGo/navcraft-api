@@ -8,7 +8,7 @@ Usage:
 
 """
 
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import (
     BaseModel,
@@ -119,12 +119,62 @@ class NewFlightWaypointData(BaseModel):
         return values
 
 
+class NewFlightWaypointReturn(NewFlightWaypointData):
+    """
+    This class defines the data structured returned to 
+    the client after posting new flight waypoints.
+    """
+    id: conint(ge=0)
+
+
 class NewLegData(BaseModel):
     """
     This class defines the data required to post new flight-legs.
     """
+    sequence: conint(ge=1)
     new_waypoint: Optional[NewFlightWaypointData] = None
     existing_waypoint_id: Optional[conint(ge=0)] = None
+
+    @model_validator(mode='after')
+    @classmethod
+    def validate_waypoint_schema(cls, values):
+        '''
+        Classmethod to check that only new_waypoint or existing_waypoint_id are provided.
+
+        Parameters:
+        - values (Any): The object with the values to be validated.
+
+        Returns:
+        (Any) : The object of validated values.
+
+        Raises:
+        ValueError: if both new_waypoint and existing_waypoint_id are None.
+
+        '''
+
+        if values.existing_waypoint_id is None and values.new_waypoint is None:
+            raise ValueError(
+                "Please provide waypoint data, or a valid waypoint id.")
+        if values.existing_waypoint_id is not None and values.new_waypoint is not None:
+            raise ValueError(
+                "Please provide only waypoint data, or a valid waypoint id.")
+
+        return values
+
+
+class NewLegReturn(BaseModel):
+    """
+    This class defines the data returned to the client, after posting new flight-legs.
+    """
+    id: conint(ge=0)
+    sequence: conint(ge=1)
+    waypoint: Optional[NewFlightWaypointReturn] = None
+    altitude_ft: conint(ge=500)
+    temperature_c: int
+    wind_direction: Optional[conint(gt=0, le=360)] = None
+    wind_magnitude_knot: conint(ge=0)
+    weather_valid_from: Optional[AwareDatetime] = None
+    weather_valid_to: Optional[AwareDatetime] = None
 
 
 class NewFlightData(BaseModel):
@@ -144,6 +194,7 @@ class NewFlightReturn(NewFlightData):
     id: conint(gt=0)
     departure_aerodrome_is_private: bool
     arrival_aerodrome_is_private: bool
+    legs: List[NewLegReturn]
 
 
 class FlightStatusReturn(BaseModel):

@@ -554,7 +554,7 @@ async def edit_aircraft_performance_profile(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.PerformanceProfileReturn
 )
-async def edit_make_aircraft_performance_profile_preferred_profile(
+async def make_aircraft_performance_profile_preferred_profile(
     performance_profile_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
