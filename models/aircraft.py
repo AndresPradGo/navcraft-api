@@ -302,8 +302,8 @@ class SeatRow(BaseModel):
         "PerformanceProfile",
         back_populates="seat_rows"
     )
-    passengers = Relationship(
-        "Passenger",
+    persons_on_board = Relationship(
+        "PersonOnBoard",
         back_populates="seat_row",
         passive_deletes=True,
         passive_updates=True

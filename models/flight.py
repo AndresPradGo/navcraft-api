@@ -95,8 +95,8 @@ class Flight(BaseModel):
         passive_deletes=True,
         passive_updates=True
     )
-    passengers = Relationship(
-        "Passenger",
+    persons_on_board = Relationship(
+        "PersonOnBoard",
         back_populates="flight",
         passive_deletes=True,
         passive_updates=True
@@ -230,12 +230,12 @@ class FlightStatus(BaseModel):
     )
 
 
-class Passenger(BaseModel):
+class PersonOnBoard(BaseModel):
     """
-    This class defines the database passengers table.
+    This class defines the database persons_on_board table.
     """
 
-    __tablename__ = "passengers"
+    __tablename__ = "persons_on_board"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     weight_lb = Column(DECIMAL(4, 2))
@@ -257,8 +257,8 @@ class Passenger(BaseModel):
         nullable=False
     )
 
-    flight = Relationship("Flight", back_populates="passengers")
-    seat_row = Relationship("SeatRow", back_populates="passengers")
+    flight = Relationship("Flight", back_populates="persons_on_board")
+    seat_row = Relationship("SeatRow", back_populates="persons_on_board")
 
 
 class Baggage(BaseModel):

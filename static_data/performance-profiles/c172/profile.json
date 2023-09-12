@@ -30,8 +30,14 @@
     ],
     "seat_rows": [
         {
-            "name": "Pilot and Co-pilot",
-            "number_of_seats": 2,
+            "name": "Pilot Seat",
+            "number_of_seats": 1,
+            "arm_in": 37.0,
+            "weight_limit_lb": null
+        },
+        {
+            "name": "Co-Pilot Seat",
+            "number_of_seats": 1,
             "arm_in": 37.0,
             "weight_limit_lb": null
         },
