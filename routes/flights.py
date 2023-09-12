@@ -434,8 +434,60 @@ async def post_new_flight_status(
     return new_flight_status
 
 
+@router.delete("/{flight_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_flight(
+    flight_id: int,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Delete Flight.
+
+    Parameters: 
+    flight_id (int): flight id.
+
+    Returns: None
+
+    Raise:
+    - HTTPException (401): invalid credentials.
+    - HTTPException (404): status not found.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Create flight query and check if flight exists
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    flight_query = db_session.query(models.Flight).filter(and_(
+        models.Flight.pilot_id == user_id,
+        models.Flight.id == flight_id
+    ))
+
+    if not flight_query.first():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The flight you're trying to delete is not in the database."
+        )
+
+    # Get all waypoint IDs
+    waypoint_ids = [
+        waypoint.waypoint_id for _, waypoint in db_session
+        .query(models.Leg, models.FlightWaypoint)
+        .outerjoin(models.FlightWaypoint, models.Leg.id == models.FlightWaypoint.leg_id)
+        .filter(models.Leg.flight_id == flight_id).all() if waypoint is not None
+    ]
+
+    # Delete flight and waypoints
+    deleted_flight = flight_query.delete(synchronize_session=False)
+    deleterd_waypoints = db_session.query(models.Waypoint)\
+        .filter(models.Waypoint.id.in_(waypoint_ids))\
+        .delete(synchronize_session=False)
+    if not deleted_flight or not deleterd_waypoints:
+        raise common_responses.internal_server_error()
+
+    db_session.commit()
+
+
 @router.delete("/status/{status_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_aerodrome_status(
+async def delete_flight_status(
     status_id: int,
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
