@@ -115,9 +115,3 @@ class PassengerProfile(BaseModel):
     )
 
     creator = Relationship("User", back_populates="passenger_profiles")
-    passengers = Relationship(
-        "Passenger",
-        back_populates="profile",
-        passive_deletes=True,
-        passive_updates=True
-    )

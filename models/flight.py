@@ -247,14 +247,6 @@ class Passenger(BaseModel):
             onupdate="CASCADE"
         )
     )
-    profile_id = Column(
-        Integer,
-        ForeignKey(
-            "passenger_profiles.id",
-            ondelete="CASCADE",
-            onupdate="CASCADE"
-        )
-    )
     seat_id = Column(
         Integer,
         ForeignKey(
@@ -266,7 +258,6 @@ class Passenger(BaseModel):
     )
 
     flight = Relationship("Flight", back_populates="passengers")
-    profile = Relationship("PassengerProfile", back_populates="passengers")
     seat_row = Relationship("SeatRow", back_populates="passengers")
 
 
