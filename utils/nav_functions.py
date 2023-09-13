@@ -60,8 +60,10 @@ def find_closest_waypoint(
     other_waypoints: List[models.Waypoint]
 ) -> models.Waypoint:
     """
-    This function finds and resturns the waypoint closest to a given waypoint, from a list of waypoints.
+    This function finds and resturns the waypoint closest to a given waypoint, 
+    from a list of waypoints.
     """
+    # pylint: disable=unnecessary-lambda
     other_waypoints.sort(key=lambda w: waypoint.great_arc_to(w))
     return other_waypoints[0]
 

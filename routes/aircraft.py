@@ -205,8 +205,6 @@ async def post_new_aircraft_performance_profile(
             detail=f"'{performance_data.performance_profile_name}' Profile already exists."
         )
 
-    is_preferred = len(aircraft_profiles) == 0
-
     # Check fuel type exists
     fuel_type_id_exists = db_session.query(models.FuelType).filter_by(
         id=performance_data.fuel_type_id).first()
@@ -219,10 +217,10 @@ async def post_new_aircraft_performance_profile(
     # Post profile
     new_performance_profile = models.PerformanceProfile(
         aircraft_id=aircraft_id,
-        is_preferred=is_preferred,
+        is_preferred=False,
         fuel_type_id=performance_data.fuel_type_id,
         name=performance_data.performance_profile_name,
-        is_complete=True
+        is_complete=False
     )
     db_session.add(new_performance_profile)
     db_session.commit()
@@ -323,7 +321,10 @@ async def post_new_aircraft_performance_profile_from_model(
             detail=f"'{model_profile.performance_profile_name}' Profile already exists."
         )
 
-    is_preferred = len(aircraft_profiles) == 0
+    completed_aircraft_profiles = [
+        profile for profile in aircraft_profiles if profile.is_complete
+    ]
+    is_preferred = len(completed_aircraft_profiles) == 0
 
     # Post profile
     profile_values = remove_key_value_pairs(
@@ -333,7 +334,8 @@ async def post_new_aircraft_performance_profile_from_model(
     new_performance_profile = models.PerformanceProfile(**{
         **profile_values,
         "aircraft_id": aircraft_id,
-        "is_preferred": is_preferred
+        "is_preferred": is_preferred,
+        "is_complete": True
     })
     db_session.add(new_performance_profile)
     db_session.commit()
@@ -598,6 +600,12 @@ async def make_aircraft_performance_profile_preferred_profile(
             detail="You do not have an aircraft with this profile"
         )
 
+    # Check if profiles is complete
+    if not performance_profile_query.first().is_complete:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Complete the profile before making it preferred."
+        )
     # Make all aircraft profiles not preferred
     db_session.query(models.PerformanceProfile).filter(
         performance_profile_query.first().aircraft_id

@@ -22,7 +22,8 @@ from utils.config import get_table_header
 from utils.db import get_db
 from utils.functions import (
     get_user_id_from_email,
-    check_performance_profile_and_permissions
+    check_performance_profile_and_permissions,
+    check_completeness_and_make_preferred_if_complete
 )
 
 router = APIRouter(tags=["Aircraft Performance Data"])
@@ -555,6 +556,7 @@ async def manage_takeoff_landing_performance_data_with_csv_file(
         user_is_active_admin=current_user.is_active and current_user.is_admin,
         profile_id=profile_id
     )
+
     # Check csv-file
     csv.check_format(csv_file)
 
@@ -621,6 +623,12 @@ async def manage_takeoff_landing_performance_data_with_csv_file(
 
     db_session.add_all(table_data)
     db_session.commit()
+
+    # Check completeness
+    check_completeness_and_make_preferred_if_complete(
+        profile_id=profile_id,
+        db_session=db_session
+    )
 
 
 @router.post("/climb/csv/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -726,6 +734,12 @@ async def manage_climb_performance_data_with_csv_file(
     db_session.add_all(table_data)
     db_session.commit()
 
+    # Check completeness
+    check_completeness_and_make_preferred_if_complete(
+        profile_id=profile_id,
+        db_session=db_session
+    )
+
 
 @router.post("/cruise/csv/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def manage_cruise_performance_data_with_csv_file(
@@ -821,6 +835,12 @@ async def manage_cruise_performance_data_with_csv_file(
 
     db_session.add_all(table_data)
     db_session.commit()
+
+    # Check completeness
+    check_completeness_and_make_preferred_if_complete(
+        profile_id=profile_id,
+        db_session=db_session
+    )
 
 
 @router.put("/takeoff-landing-adjustments/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)

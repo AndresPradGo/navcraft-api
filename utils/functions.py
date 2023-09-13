@@ -8,6 +8,7 @@ Usage:
 from typing import List, Any
 
 from fastapi import HTTPException, status
+from sqlalchemy import and_, not_
 from sqlalchemy.orm import Session, Query
 
 import models
@@ -138,3 +139,80 @@ def check_performance_profile_and_permissions(
             )
 
     return performance_profile_query
+
+
+def performance_profile_is_complete(profile_id: int, db_session: Session) -> bool:
+    """
+    This function checks if an aircraft performance profile meets 
+    the minimum requirements to be complete, and if so, it returns True.
+    """
+    # Check table data
+    table_data_modes_and_min_requireemnts = [
+        {"model": models.TakeoffPerformance, "min_quantity": 2},
+        {"model": models.LandingPerformance, "min_quantity": 2},
+        {"model": models.ClimbPerformance, "min_quantity": 2},
+        {"model": models.CruisePerformance, "min_quantity": 2},
+        {"model": models.SeatRow, "min_quantity": 1},
+        {"model": models.WeightBalanceProfile, "min_quantity": 1}
+    ]
+
+    for item in table_data_modes_and_min_requireemnts:
+        data = db_session.query(item["model"]).filter(
+            item["model"].performance_profile_id == profile_id
+        ).all()
+        if len(data) < item["min_quantity"]:
+            return False
+
+    # Check profile performance values
+    profile_data = db_session.query(models.PerformanceProfile).filter(
+        models.PerformanceProfile.id == profile_id
+    ).first()
+
+    values = [
+        profile_data.center_of_gravity_in,
+        profile_data.empty_weight_lb,
+        profile_data.max_ramp_weight_lb,
+        profile_data.max_landing_weight_lb,
+        profile_data.fuel_arm_in,
+        profile_data.fuel_capacity_gallons
+    ]
+    there_are_null_values = sum(
+        [1 for value in values if value is not None]) < len(values)
+    if there_are_null_values:
+        return False
+
+    return True
+
+
+def check_completeness_and_make_preferred_if_complete(profile_id: int, db_session: Session) -> None:
+    """
+    This function checks if the performance profile is complete and updates it accordingly.
+    """
+    performance_profile = db_session.query(models.PerformanceProfile).filter(
+        models.PerformanceProfile.id == profile_id
+    ).first()
+    if performance_profile.aircraft_id is not None:
+        profile_is_complete = performance_profile_is_complete(
+            profile_id=profile_id,
+            db_session=db_session
+        )
+
+        if profile_is_complete:
+            aircraft_preferred_profile = db_session.query(models.PerformanceProfile).filter(and_(
+                models.PerformanceProfile.aircraft_id == performance_profile.aircraft_id,
+                models.PerformanceProfile.is_preferred.is_(True),
+                not_(models.PerformanceProfile.id == profile_id)
+            )).first()
+
+            make_preferred = aircraft_preferred_profile is None
+        else:
+            make_preferred = False
+
+        db_session.query(models.PerformanceProfile).filter(
+            models.PerformanceProfile.id == profile_id
+        ).update({
+            "is_complete": profile_is_complete,
+            "is_preferred": make_preferred
+        })
+
+        db_session.commit()

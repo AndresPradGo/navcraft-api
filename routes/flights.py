@@ -29,6 +29,9 @@ router = APIRouter(tags=["Flights"])
 
 
 def get_basic_flight_data_for_return(flight_id: int, db_session: Session, user_id: int):
+    """
+    This functions organizes basic flight data for returning to user.
+    """
     flight = db_session.query(models.Flight).filter(and_(
         models.Flight.id == flight_id,
         models.Flight.pilot_id == user_id
@@ -137,14 +140,19 @@ async def post_new_flight(
         email=current_user.email, db_session=db_session)
 
     # Check aircraft exists and is owned by user
-    aircraft = db_session.query(models.Aircraft).filter(and_(
-        models.Aircraft.id == flight_data.aircraft_id,
-        models.Aircraft.owner_id == user_id
-    )).first()
+    aircraft = db_session.query(models.Aircraft, models.PerformanceProfile)\
+        .join(models.PerformanceProfile,
+              models.Aircraft.id == models.PerformanceProfile.aircraft_id)\
+        .filter(and_(
+            models.Aircraft.id == flight_data.aircraft_id,
+            models.Aircraft.owner_id == user_id,
+            models.PerformanceProfile.is_preferred.is_(True),
+            models.PerformanceProfile.is_complete(True)
+        )).first()
     if aircraft is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Please provide a valid aircraft ID."
+            detail="Provide a valid aircraft ID, or complete the preferred performance profile."
         )
 
     # Check departure and arrival aerodromes exist
@@ -203,7 +211,7 @@ async def post_new_flight(
     new_flight = models.Flight(
         pilot_id=user_id,
         departure_time=flight_data.departure_time,
-        aircraft_id=aircraft.id,
+        aircraft_id=aircraft[0].id,
         status_id=1
     )
     db_session.add(new_flight)
@@ -258,7 +266,7 @@ async def post_new_flight(
     return {
         "id": new_flight_data["id"],
         "departure_time": flight_data.departure_time,
-        "aircraft_id": aircraft.id,
+        "aircraft_id": aircraft[0].id,
         "departure_aerodrome_id": departure[0].id,
         "departure_aerodrome_is_private": departure[0].user_waypoint is not None,
         "arrival_aerodrome_id": arrival[0].id,

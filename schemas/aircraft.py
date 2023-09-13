@@ -99,7 +99,7 @@ class OfficialPerformanceProfileData(PerformanceProfileData):
     an official performance profile to the database.
     '''
 
-    is_complete: Optional[bool] = None
+    is_complete: bool
 
 
 class PerformanceProfileReturn(OfficialPerformanceProfileData):
@@ -177,7 +177,7 @@ class SeatRowReturn(SeatRowData):
     id: conint(gt=0)
 
 
-class PerformanceProfileWightBalanceData(BaseModel):
+class PerformanceProfileWeightBalanceData(BaseModel):
     '''
     This class defines the data structure reuired from the client, in order to add
     weight and balance data to a performance profile.
@@ -264,6 +264,7 @@ class GetPerformanceProfileList(OfficialPerformanceProfileData):
     a list of performance profiles to the client.
     """
     id: conint(gt=0)
+    is_preferred: Optional[bool] = None
 
 
 class GetAircraftList(AircraftReturn):
@@ -357,7 +358,7 @@ class WeightBalanceReturn(WeightBalanceData):
     limits: List[WeightBalanceLimitReturn] = []
 
 
-class GetWeightBalanceData(PerformanceProfileWightBalanceData):
+class GetWeightBalanceData(PerformanceProfileWeightBalanceData):
     """
     This class defines the data-structure required to return all the weight 
     and balance data from a performance profile.

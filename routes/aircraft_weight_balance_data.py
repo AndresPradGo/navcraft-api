@@ -19,7 +19,8 @@ from utils import common_responses
 from utils.db import get_db
 from utils.functions import (
     check_performance_profile_and_permissions,
-    get_user_id_from_email
+    get_user_id_from_email,
+    check_completeness_and_make_preferred_if_complete
 )
 
 router = APIRouter(tags=["Aircraft Weight and Balance Data"])
@@ -249,8 +250,16 @@ async def post_new_seat_row(
     db_session.add(new_seat_row)
     db_session.commit()
     db_session.refresh(new_seat_row)
+    new_seat_row_dict = {**new_seat_row.__dict__}
 
-    return new_seat_row.__dict__
+    # Check completeness
+    check_completeness_and_make_preferred_if_complete(
+        profile_id=profile_id,
+        db_session=db_session
+    )
+
+    print(new_seat_row_dict)
+    return new_seat_row_dict
 
 
 @router.post(
@@ -325,6 +334,12 @@ async def post_new_weight_and_balance_profile(
     db_session.add_all(new_limits)
     db_session.commit()
 
+    # Check completeness
+    check_completeness_and_make_preferred_if_complete(
+        profile_id=profile_id,
+        db_session=db_session
+    )
+
     # Return weight and balance profile
     weight_balance_profile = db_session.query(
         models.WeightBalanceProfile).filter_by(id=wb_profile_id).first()
@@ -344,7 +359,7 @@ async def post_new_weight_and_balance_profile(
 )
 async def edit_weight_and_balance_data_for_performance_profile(
     profile_id: int,
-    performance_data: schemas.PerformanceProfileWightBalanceData,
+    performance_data: schemas.PerformanceProfileWeightBalanceData,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
@@ -386,6 +401,11 @@ async def edit_weight_and_balance_data_for_performance_profile(
         "baggage_allowance_lb": performance_data.baggage_allowance_lb
     })
     db_session.commit()
+
+    check_completeness_and_make_preferred_if_complete(
+        profile_id=profile_id,
+        db_session=db_session
+    )
 
     new_performance_profile = db_session.query(
         models.PerformanceProfile).filter_by(id=profile_id).first()
@@ -705,13 +725,14 @@ async def delete_seat_row(
         )
 
     # Check performance profile and permissions.
+    performance_profile_id = row_query.first().performance_profile_id
     _ = check_performance_profile_and_permissions(
         db_session=db_session,
         user_id=await get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
-        profile_id=row_query.first().performance_profile_id
+        profile_id=performance_profile_id
     ).first()
 
     # Delete seat row
@@ -719,6 +740,12 @@ async def delete_seat_row(
     if not deleted:
         raise common_responses.internal_server_error()
     db_session.commit()
+
+    # Check completeness
+    check_completeness_and_make_preferred_if_complete(
+        profile_id=performance_profile_id,
+        db_session=db_session
+    )
 
 
 @router.delete("/weight-balance-profile/{wb_profile_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -751,13 +778,14 @@ async def delete_weight_and_balance_profile(
         )
 
     # Check if performance profile and permissions
+    performance_profile_id = wb_profile_query.first().performance_profile_id
     _ = check_performance_profile_and_permissions(
         db_session=db_session,
         user_id=await get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
-        profile_id=wb_profile_query.first().performance_profile_id
+        profile_id=performance_profile_id
     ).first()
 
     # Delete W&B Profile
@@ -766,3 +794,9 @@ async def delete_weight_and_balance_profile(
         raise common_responses.internal_server_error()
 
     db_session.commit()
+
+    # Check completeness
+    check_completeness_and_make_preferred_if_complete(
+        profile_id=performance_profile_id,
+        db_session=db_session
+    )

@@ -23,22 +23,27 @@ class PerformanceProfile(BaseModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255), nullable=False)
-    is_complete = Column(Boolean)
+    is_complete = Column(Boolean, nullable=False, default=False)
     center_of_gravity_in = Column(DECIMAL(5, 2))
     empty_weight_lb = Column(DECIMAL(7, 2))
     max_ramp_weight_lb = Column(DECIMAL(7, 2))
     max_landing_weight_lb = Column(DECIMAL(7, 2))
     fuel_arm_in = Column(DECIMAL(5, 2))
     fuel_capacity_gallons = Column(DECIMAL(5, 2))
-    unusable_fuel_gallons = Column(DECIMAL(5, 2))
+    unusable_fuel_gallons = Column(DECIMAL(5, 2), nullable=False, default=0.0)
     baggage_allowance_lb = Column(DECIMAL(6, 2))
     take_off_taxi_fuel_gallons = Column(DECIMAL(4, 2))
-    percent_decrease_takeoff_headwind_knot = Column(DECIMAL(4, 2))
-    percent_increase_takeoff_tailwind_knot = Column(DECIMAL(4, 2))
-    percent_decrease_landing_headwind_knot = Column(DECIMAL(4, 2))
-    percent_increase_landing_tailwind_knot = Column(DECIMAL(4, 2))
-    percent_increase_climb_temperature_c = Column(DECIMAL(4, 2))
-    is_preferred = Column(Boolean)
+    percent_decrease_takeoff_headwind_knot = Column(
+        DECIMAL(4, 2), nullable=False, default=0.0)
+    percent_increase_takeoff_tailwind_knot = Column(
+        DECIMAL(4, 2), nullable=False, default=0.0)
+    percent_decrease_landing_headwind_knot = Column(
+        DECIMAL(4, 2), nullable=False, default=0.0)
+    percent_increase_landing_tailwind_knot = Column(
+        DECIMAL(4, 2), nullable=False, default=0.0)
+    percent_increase_climb_temperature_c = Column(
+        DECIMAL(4, 2), nullable=False, default=0.0)
+    is_preferred = Column(Boolean, nullable=False, default=False)
     fuel_type_id = Column(
         Integer,
         ForeignKey(

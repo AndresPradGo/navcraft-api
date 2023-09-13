@@ -356,7 +356,7 @@ def _add_performance_profile_models():
                                 fuel_type_id=profile_satic_data["fuel_type_id"],
                                 is_complete=profile_satic_data["is_complete"]
                             ),
-                            "weight_balance": schemas.PerformanceProfileWightBalanceData(**profile_satic_data),
+                            "weight_balance": schemas.PerformanceProfileWeightBalanceData(**profile_satic_data),
                             "takeoff": schemas.RunwayDistanceAdjustmentPercentages(
                                 percent_decrease_knot_headwind=profile_satic_data[
                                     "percent_decrease_takeoff_headwind_knot"
