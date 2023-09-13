@@ -91,13 +91,14 @@ class Waypoint(BaseModel):
 
         return math.radians(lon_degrees)
 
-    def great_arc_to(self, to_waypoint: 'Waypoint') -> float:
+    def great_arc_to(self, to_lat: float, to_lon: float) -> float:
         """
         This method finds the distance of a great arc from self, 
-        to another waypoint, in nautical miles.
+        to a given latitude and longitude, in nautical miles.
 
         Parameters: 
-        to_waypoint (Waypoint): destination waypoint.
+        to_lat (float): latitude of destination.
+        to_lon (float): latitude of destination.
 
         Returns: 
         - float: great arc distance in nautical miles.
@@ -112,11 +113,11 @@ class Waypoint(BaseModel):
             earth_radius * math.sin(self.lat())
         ])
         cartesian_to = np.array([
-            earth_radius * math.cos(to_waypoint.lat()) *
-            math.cos(to_waypoint.lon()),
-            earth_radius * math.cos(to_waypoint.lat()) *
-            math.sin(to_waypoint.lon()),
-            earth_radius * math.sin(to_waypoint.lat())
+            earth_radius * math.cos(to_lat) *
+            math.cos(to_lon),
+            earth_radius * math.cos(to_lat) *
+            math.sin(to_lon),
+            earth_radius * math.sin(to_lat)
         ])
 
         return round(
@@ -125,44 +126,54 @@ class Waypoint(BaseModel):
             2
         )
 
-    def track_to(self, to_waypoint: 'Waypoint') -> int:
+    def great_arc_to_waypoint(self, to_waypoint: 'Waypoint') -> float:
         """
-        This method finds the true track from self, 
-        to another waypoint, in degrees.
+        This method finds the distance of a great arc from self, 
+        to another waypoint, in nautical miles.
 
         Parameters: 
         to_waypoint (Waypoint): destination waypoint.
 
         Returns: 
+        - float: great arc distance in nautical miles.
+        """
+
+        return self.great_arc_to(to_waypoint.lat(), to_waypoint.lon())
+
+    def true_track_to(self, to_lat: float, to_lon: float) -> int:
+        """
+        This method finds the true track from self, 
+        to a given latitude and longitude, in degrees.
+
+        Parameters: 
+        to_lat (float): latitude of destination.
+        to_lon (float): latitude of destination.
+
+        Returns: 
         - int: true track in degrees.
         """
-        # Define latitudes, longitudes and constants
-        lat1 = self.lat()
-        lon1 = self.lon()
-        lat2 = to_waypoint.lat()
-        lon2 = to_waypoint.lon()
 
         earth_radius = get_constant(
             "earth_radius_ft") * get_constant("ft_to_nm")
 
         # Calculate differences in latitude and longitude
         from_waypoint = np.array([
-            earth_radius * math.cos(lat1) * math.cos(lon1),
-            earth_radius * math.cos(lat1) * math.sin(lon1),
-            earth_radius * math.sin(lat1)
+            earth_radius * math.cos(self.lat()) * math.cos(self.lon()),
+            earth_radius * math.cos(self.lat()) * math.sin(self.lon()),
+            earth_radius * math.sin(self.lat())
         ])
         to_waypoint = np.array([
-            earth_radius * math.cos(lat2) * math.cos(lon2),
-            earth_radius * math.cos(lat2) * math.sin(lon2),
-            earth_radius * math.sin(lat2)
+            earth_radius * math.cos(to_lat) * math.cos(to_lon),
+            earth_radius * math.cos(to_lat) * math.sin(to_lon),
+            earth_radius * math.sin(to_lat)
         ])
 
-        delta_lon = lon2 - lon1
+        delta_lon = to_lon - self.lon()
         if delta_lon > math.pi:
             delta_lon -= 2 * math.pi
         elif delta_lon < -math.pi:
             delta_lon += 2 * math.pi
-        halfway_lon = delta_lon / 2 + lon1
+        halfway_lon = delta_lon / 2 + self.lon()
 
         half_waypoint = np.array([
             earth_radius * math.cos(halfway_lon),
@@ -186,6 +197,19 @@ class Waypoint(BaseModel):
 
         return int(round(track, 0))
 
+    def true_track_to_waypoint(self, to_waypoint: 'Waypoint') -> int:
+        """
+        This method finds the true track from self, 
+        to another waypoint, in degrees.
+
+        Parameters: 
+        to_waypoint (Waypoint): destination waypoint.
+
+        Returns: 
+        - int: true track in degrees.
+        """
+        return self.true_track_to(to_waypoint.lat(), to_waypoint.lon())
+
     def is_equal(self, other_waypoint: 'Waypoint') -> bool:
         """
         This method returns true if self and another waypoint are within 0.5 NM of eachother
@@ -197,7 +221,30 @@ class Waypoint(BaseModel):
         - int: true if both waypoints are located within 0.5 NM of eachother.
         """
 
-        return self.great_arc_to(other_waypoint) < 0.5
+        return self.great_arc_to_waypoint(to_waypoint=other_waypoint) < 0.5
+
+    def get_magnetic_var(self, other_waypoint: 'Waypoint') -> float:
+        """
+        This method returns the magnetic variation between 2 points:
+         - If both have magnetic variation, it returns the average.
+         - If only one has magnetic variation, it returns that one.
+         - If none have magnetic variaiton it returns 0.
+
+        Parameters: 
+        other_waypoint (Waypoint): other waypoint.
+
+        Returns: 
+        - float: magnetic variation.
+        """
+
+        if self.magnetic_variation is not None\
+                and other_waypoint.magnetic_variation is not None:
+            return (self.magnetic_variation + other_waypoint.magnetic_variation) / 2
+        if self.magnetic_variation is not None:
+            return self.magnetic_variation
+        if other_waypoint.magnetic_variation is not None:
+            return other_waypoint.magnetic_variation
+        return 0.0
 
 
 class VfrWaypoint(BaseModel):

@@ -25,9 +25,24 @@ class PassengerProfileData(BaseModel):
         strict=True,
         min_length=2,
         max_length=255,
-        pattern="^[-a-zA-Z0-9 ]+$",
+        pattern="^[-a-zA-Z0-9' ]+$",
     )
-    weight_lb: confloat(ge=0)
+    weight_lb: confloat(allow_inf_nan=False, ge=0, le=999.99)
+
+    @field_validator('name')
+    @classmethod
+    def clean_name(cls, value: str) -> str:
+        '''
+        Classmethod to clean name string.
+
+        Parameters:
+        - value (str): the name string to be validated.
+
+        Returns:
+        (str): cleaned name string.
+
+        '''
+        return clean_string(value)
 
 
 class PassengerProfileReturn(PassengerProfileData):
@@ -57,7 +72,7 @@ class UserName(BaseModel):
         strict=True,
         min_length=2,
         max_length=255,
-        pattern="^[-a-zA-Z0-9 ]+$",
+        pattern="^[-a-zA-Z0-9' ]+$",
     )
 
     @field_validator('name')

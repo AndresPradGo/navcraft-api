@@ -100,7 +100,6 @@ class OfficialPerformanceProfileData(PerformanceProfileData):
     '''
 
     is_complete: Optional[bool] = None
-    is_preferred: Optional[bool] = None
 
 
 class PerformanceProfileReturn(OfficialPerformanceProfileData):

@@ -186,7 +186,7 @@ class Leg(BaseModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     sequence = Column(Integer, nullable=False)
-    altitude_ft = Column(Integer, nullable=False, default=1000)
+    altitude_ft = Column(Integer, nullable=False, default=2000)
     temperature_c = Column(Integer, nullable=False, default=13)
     wind_direction = Column(Integer)
     wind_magnitude_knot = Column(Integer, nullable=False, default=0)
@@ -238,7 +238,8 @@ class PersonOnBoard(BaseModel):
     __tablename__ = "persons_on_board"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    weight_lb = Column(DECIMAL(4, 2))
+    name = Column(String(255), nullable=False)
+    weight_lb = Column(DECIMAL(5, 2))
     flight_id = Column(
         Integer,
         ForeignKey(
@@ -269,7 +270,8 @@ class Baggage(BaseModel):
     __tablename__ = "baggages"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    weight_lb = Column(DECIMAL(4, 2), nullable=False, default=5.0)
+    name = Column(String(255), nullable=False)
+    weight_lb = Column(DECIMAL(5, 2), nullable=False, default=5.0)
     flight_id = Column(
         Integer,
         ForeignKey(

@@ -23,6 +23,7 @@ import schemas
 from utils import common_responses
 from utils.db import get_db
 from utils.functions import clean_string, get_user_id_from_email
+from utils import nav_functions
 
 router = APIRouter(tags=["Flights"])
 
@@ -150,10 +151,13 @@ async def post_new_flight(
     a = models.Aerodrome
     u = models.UserWaypoint
     v = models.VfrWaypoint
+    w = models.Waypoint
 
-    departure = db_session.query(a, u, v)\
+    departure = db_session.query(a, u, v, w)\
         .outerjoin(u, a.user_waypoint_id == u.waypoint_id)\
         .outerjoin(v, a.vfr_waypoint_id == v.waypoint_id)\
+        .outerjoin(w, u.waypoint_id == w.id)\
+        .outerjoin(w, v.waypoint_id == w.id)\
         .filter(and_(
             a.id == flight_data.departure_aerodrome_id,
             or_(
@@ -170,9 +174,11 @@ async def post_new_flight(
             detail="Departure aerodrome not found."
         )
 
-    arrival = db_session.query(a, u, v)\
+    arrival = db_session.query(a, u, v, w)\
         .outerjoin(u, a.user_waypoint_id == u.waypoint_id)\
         .outerjoin(v, a.vfr_waypoint_id == v.waypoint_id)\
+        .outerjoin(w, u.waypoint_id == w.id)\
+        .outerjoin(w, v.waypoint_id == w.id)\
         .filter(and_(
             a.id == flight_data.arrival_aerodrome_id,
             or_(
@@ -219,9 +225,29 @@ async def post_new_flight(
     db_session.add(new_arrival)
 
     # Post Leg
+    magnetic_var = nav_functions.get_magnetic_variation_for_leg(
+        from_waypoint=departure[3],
+        to_waypoint=arrival[3],
+        db_session=db_session
+    )
+    track_magnetic = departure[3].track_to(arrival[3]) + magnetic_var
+    easterly = track_magnetic >= 0 and track_magnetic < 180
+    altitude_ft = nav_functions.round_to_odd_thousand_plus_500(
+        min_altitude=max(
+            departure[0].elevation_ft,
+            arrival[0].elevation_ft
+        ) + 2000
+    ) if easterly else\
+        nav_functions.round_to_even_thousand_plus_500(
+            min_altitude=max(
+                departure[0].elevation_ft,
+                arrival[0].elevation_ft
+            ) + 2000
+    )
     new_leg = models.Leg(
         sequence=1,
-        flight_id=new_flight_data["id"]
+        flight_id=new_flight_data["id"],
+        altitude_ft=altitude_ft
     )
     db_session.add(new_leg)
 
@@ -359,14 +385,32 @@ async def post_new_leg(
     legs_to_update = [
         {
             "id": leg.id,
-            "sequence": leg.sequence + 1
+            "sequence": leg.sequence + 1,
+            "altitude_ft": leg.altitude_ft
         } for leg in legs_query.all() if leg.sequence >= leg_data.sequence
     ]
     for leg in legs_to_update:
         db_session.query(models.Leg).filter_by(id=leg["id"]).update(leg)
 
     # Add new leg
+    from_waypoint = db_session.query(models.FlightWaypoint, models.Waypoint)\
+        .join(models.Waypoint, models.FlightWaypoint.waypoint_id == models.Waypoint.id)\
+        .filter(models.FlightWaypoint.leg_id == legs_to_update[0]["id"]).first()
+    magnetic_var = nav_functions.get_magnetic_variation_for_leg(
+        from_waypoint=from_waypoint[1],
+        to_waypoint=new_waypoint,
+        db_session=db_session
+    )
+    track_magnetic = from_waypoint[1].track_to(new_waypoint) + magnetic_var
+    easterly = track_magnetic >= 0 and track_magnetic < 180
+    altitude_ft = nav_functions.round_to_odd_thousand_plus_500(
+        min_altitude=legs_to_update[0]["altitude_ft"]
+    ) if easterly else\
+        nav_functions.round_to_even_thousand_plus_500(
+            min_altitude=legs_to_update[0]["altitude_ft"]
+    )
     new_leg = models.Leg(
+        altitude_ft=altitude_ft,
         sequence=leg_data.sequence,
         flight_id=flight_id
     )
