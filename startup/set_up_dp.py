@@ -129,34 +129,6 @@ def _add_aerodrome_status():
         print(f"Error! could not add aerodrome status: {error}")
 
 
-def _add_flight_status():
-    """
-    This function adds an initial list of flight status.
-    """
-
-    pattern = r"^[-A-Za-z ]*$"
-
-    status = [
-        clean_string(s["status"]) for s in csv.csv_to_list(
-            file_path=f"{_PATH}flight_status.csv"
-        ) if re.match(pattern, s["status"]) is not None
-    ]
-
-    try:
-        with Session() as db_session:
-            db_is_populated = db_session.query(models.FlightStatus).first()
-            if db_is_populated is None:
-                status_to_add = [models.FlightStatus(
-                    status=s
-                ) for s in status]
-
-                db_session.add_all(status_to_add)
-                db_session.commit()
-
-    except (IntegrityError, SqlalchemyTimeoutError, OperationalError) as error:
-        print(f"Error! could not add aerodrome status: {error}")
-
-
 def _add_vfr_waypoints():
     """
     This function adds an initial list of vfr_waypoint.
@@ -536,7 +508,6 @@ def _populate_db():
     _create_master_user()
     _add_ruway_surfaces()
     _add_aerodrome_status()
-    _add_flight_status()
     _add_vfr_waypoints()
     _add_aerodromes()
     _add_runways()

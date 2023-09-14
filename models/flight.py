@@ -54,15 +54,6 @@ class Flight(BaseModel):
             onupdate="CASCADE"
         )
     )
-    status_id = Column(
-        Integer,
-        ForeignKey(
-            "flight_status.id",
-            ondelete="RESTRICT",
-            onupdate="CASCADE"
-        ),
-        nullable=False
-    )
     pilot_id = Column(
         Integer,
         ForeignKey(
@@ -74,7 +65,6 @@ class Flight(BaseModel):
     )
 
     aircraft = Relationship("Aircraft", back_populates="flights")
-    status = Relationship("FlightStatus", back_populates="flights")
     departure = Relationship(
         "Departure",
         back_populates="flight",
@@ -209,24 +199,6 @@ class Leg(BaseModel):
         "FlightWaypoint",
         back_populates="leg",
         uselist=False,
-        passive_deletes=True,
-        passive_updates=True
-    )
-
-
-class FlightStatus(BaseModel):
-    """
-    This class defines the database flight_status table.
-    """
-
-    __tablename__ = "flight_status"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    status = Column(String(50), nullable=False, unique=True)
-
-    flights = Relationship(
-        "Flight",
-        back_populates="status",
         passive_deletes=True,
         passive_updates=True
     )

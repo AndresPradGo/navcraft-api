@@ -195,11 +195,3 @@ class NewFlightReturn(NewFlightData):
     departure_aerodrome_is_private: bool
     arrival_aerodrome_is_private: bool
     legs: List[NewLegReturn]
-
-
-class FlightStatusReturn(BaseModel):
-    """
-    This class defines the flight-status data returned to the client.
-    """
-    id: int
-    status: str
