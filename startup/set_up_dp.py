@@ -368,8 +368,8 @@ def _add_performance_profile_models():
 
                         takeoff_data = [schemas.TakeoffLandingPerformanceDataEntry(
                             weight_lb=float(row["weight_lb"]),
-                            temperature_c=float(row["temperature_c"]),
                             pressure_alt_ft=float(row["pressure_alt_ft"]),
+                            temperature_c=float(row["temperature_c"]),
                             groundroll_ft=float(row["groundroll_ft"]),
                             obstacle_clearance_ft=float(
                                 row["obstacle_clearance_ft"])

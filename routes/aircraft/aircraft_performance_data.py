@@ -68,16 +68,16 @@ async def get_takeoff_landing_performance_csv_file(
             models.TakeoffPerformance.performance_profile_id == profile_id
         ).order_by(
             models.TakeoffPerformance.weight_lb.desc(),
-            models.TakeoffPerformance.temperature_c,
-            models.TakeoffPerformance.pressure_alt_ft
+            models.TakeoffPerformance.pressure_alt_ft,
+            models.TakeoffPerformance.temperature_c
         ).all()
     else:
         table_data_models = db_session.query(models.LandingPerformance).filter(
             models.LandingPerformance.performance_profile_id == profile_id
         ).order_by(
             models.LandingPerformance.weight_lb.desc(),
-            models.LandingPerformance.temperature_c,
-            models.LandingPerformance.pressure_alt_ft
+            models.LandingPerformance.pressure_alt_ft,
+            models.LandingPerformance.temperature_c
         ).all()
 
     # Prepare csv-file
@@ -86,15 +86,15 @@ async def get_takeoff_landing_performance_csv_file(
 
     table_data = [{
         headers["weight_lb"]: row.weight_lb,
-        headers["temperature_c"]: row.temperature_c,
         headers["pressure_alt_ft"]: row.pressure_alt_ft,
+        headers["temperature_c"]: row.temperature_c,
         headers["groundroll_ft"]: row.groundroll_ft,
         headers["obstacle_clearance_ft"]: row.obstacle_clearance_ft
     } for row in table_data_models] if len(table_data_models) else [
         {
             headers["weight_lb"]: "",
-            headers["temperature_c"]: "",
             headers["pressure_alt_ft"]: "",
+            headers["temperature_c"]: "",
             headers["groundroll_ft"]: "",
             headers["obstacle_clearance_ft"]: ""
         }
@@ -226,8 +226,9 @@ async def get_cruise_performance_csv_file(
         models.CruisePerformance.performance_profile_id == profile_id
     ).order_by(
         models.CruisePerformance.weight_lb.desc(),
+        models.CruisePerformance.pressure_alt_ft,
         models.CruisePerformance.temperature_c,
-        models.CruisePerformance.pressure_alt_ft
+        models.CruisePerformance.rpm.desc()
     ).all()
 
     # Prepare csv-file
@@ -236,8 +237,8 @@ async def get_cruise_performance_csv_file(
 
     table_data = [{
         headers["weight_lb"]: row.weight_lb,
-        headers["temperature_c"]: row.temperature_c,
         headers["pressure_alt_ft"]: row.pressure_alt_ft,
+        headers["temperature_c"]: row.temperature_c,
         headers["rpm"]: row.rpm,
         headers["bhp_percent"]: row.bhp_percent,
         headers["ktas"]: row.ktas,
@@ -245,8 +246,8 @@ async def get_cruise_performance_csv_file(
     } for row in table_data_models] if len(table_data_models) else [
         {
             headers["weight_lb"]: "",
-            headers["temperature_c"]: "",
             headers["pressure_alt_ft"]: "",
+            headers["temperature_c"]: "",
             headers["rpm"]: "",
             headers["bhp_percent"]: "",
             headers["ktas"]: "",
@@ -309,16 +310,16 @@ async def get_takeoff_landing_performance_data(
             models.TakeoffPerformance.performance_profile_id == profile_id
         ).order_by(
             models.TakeoffPerformance.weight_lb.desc(),
-            models.TakeoffPerformance.temperature_c,
-            models.TakeoffPerformance.pressure_alt_ft
+            models.TakeoffPerformance.pressure_alt_ft,
+            models.TakeoffPerformance.temperature_c
         ).all()
     else:
         performance_data_models = db_session.query(models.LandingPerformance).filter(
             models.LandingPerformance.performance_profile_id == profile_id
         ).order_by(
             models.LandingPerformance.weight_lb.desc(),
-            models.LandingPerformance.temperature_c,
-            models.LandingPerformance.pressure_alt_ft
+            models.LandingPerformance.pressure_alt_ft,
+            models.LandingPerformance.temperature_c
         ).all()
 
     # Get Runway-Distance-Adjustment-Percetages data
@@ -342,15 +343,15 @@ async def get_takeoff_landing_performance_data(
         } for percentage in surface_percentage_models],
         "performance_data": [{
             "weight_lb": row.weight_lb,
-            "temperature_c": row.temperature_c,
             "pressure_alt_ft": row.pressure_alt_ft,
+            "temperature_c": row.temperature_c,
             "groundroll_ft": row.groundroll_ft,
             "obstacle_clearance_ft": row.obstacle_clearance_ft
         } for row in performance_data_models] if len(performance_data_models) else [
             {
                 "weight_lb": 0,
-                "temperature_c": 0,
                 "pressure_alt_ft": 0,
+                "temperature_c": 0,
                 "groundroll_ft": 0,
                 "obstacle_clearance_ft": 0
             }
@@ -413,8 +414,8 @@ async def get_climb_performance_data(
         "percent_increase_climb_temperature_c": percent_increase_climb_temperature_c,
         "performance_data": [{
             "weight_lb": row.weight_lb,
-            "temperature_c": row.temperature_c,
             "pressure_alt_ft": row.pressure_alt_ft,
+            "temperature_c": row.temperature_c,
             "time_min": row.time_min,
             "fuel_gal": row.fuel_gal,
             "distance_nm": row.distance_nm,
@@ -423,8 +424,8 @@ async def get_climb_performance_data(
         } for row in performance_data_models] if len(performance_data_models) else [
             {
                 "weight_lb": 0,
-                "temperature_c": 0,
                 "pressure_alt_ft": 0,
+                "temperature_c": 0,
                 "time_min": 0,
                 "fuel_gal": 0,
                 "distance_nm": 0,
@@ -477,16 +478,17 @@ async def get_cruise_performance_data(
         models.CruisePerformance.performance_profile_id == profile_id
     ).order_by(
         models.CruisePerformance.weight_lb.desc(),
+        models.CruisePerformance.pressure_alt_ft,
         models.CruisePerformance.temperature_c,
-        models.CruisePerformance.pressure_alt_ft
+        models.CruisePerformance.rpm.desc()
     ).all()
 
     # Return cruise performance data
     perfromance_data = {
         "performance_data": [{
             "weight_lb": row.weight_lb,
-            "temperature_c": row.temperature_c,
             "pressure_alt_ft": row.pressure_alt_ft,
+            "temperature_c": row.temperature_c,
             "rpm": row.rpm,
             "bhp_percent": row.bhp_percent,
             "ktas": row.ktas,
@@ -494,8 +496,8 @@ async def get_cruise_performance_data(
         } for row in performance_data_models] if len(performance_data_models) else [
             {
                 "weight_lb": 0,
-                "temperature_c": 0,
                 "pressure_alt_ft": 0,
+                "temperature_c": 0,
                 "rpm": 0,
                 "bhp_percent": 0,
                 "ktas": 0,
