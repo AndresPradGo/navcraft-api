@@ -156,7 +156,7 @@ async def post_new_fuel_type(
 
 
 @router.post(
-    "/performance-profile/{aircraft_id}",
+    "/performance-profile",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.PerformanceProfileReturn
 )
