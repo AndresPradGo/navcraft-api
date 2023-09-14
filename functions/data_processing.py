@@ -1,5 +1,5 @@
 """
-Useful Reusable Functions
+Useful Reusable Functions for Data Extaction, Checking and Processing.
 
 Usage: 
 - Import the required function and call it.

@@ -12,7 +12,7 @@ from typing import Optional
 
 from pydantic import BaseModel, constr, conint, field_validator
 
-from utils.functions import clean_string
+from functions.data_processing import clean_string
 
 
 class RunwayDataEdit(BaseModel):

@@ -19,7 +19,7 @@ import models
 import schemas
 from utils import common_responses
 from utils.db import get_db
-from utils.functions import get_user_id_from_email
+from functions.data_processing import get_user_id_from_email
 
 
 router = APIRouter(tags=["Users"])

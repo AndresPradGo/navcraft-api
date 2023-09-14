@@ -1,5 +1,5 @@
 """
-Useful Reusable Functions
+Useful Functions for Navigation Calculations
 
 Usage: 
 - Import the required function and call it.
@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 import models
 
 
-def round_to_nearest_hundred(min_altitude: int) -> int:
+def round_altitude_to_nearest_hundred(min_altitude: int) -> int:
     """
     This function rounds a minimum flying altitude to its next hundred, 
     andt returns it.
@@ -25,14 +25,14 @@ def round_to_nearest_hundred(min_altitude: int) -> int:
         return min_altitude + (100 - remainder)
 
 
-def round_to_odd_thousand_plus_500(min_altitude: int) -> int:
+def round_altitude_to_odd_thousand_plus_500(min_altitude: int) -> int:
     """
     This function rounds a minimum flying altitude to its 
     next odd thousand 500 and returns it.
     """
     # Calculate the next odd thousand plus 500
-    if round_to_nearest_hundred(min_altitude) <= 3000:
-        return round_to_nearest_hundred(min_altitude)
+    if round_altitude_to_nearest_hundred(min_altitude) <= 3000:
+        return round_altitude_to_nearest_hundred(min_altitude)
 
     nearest_odd_thousand = (min_altitude // 2000) * 2000 + 1000
     nearest = nearest_odd_thousand + 500
@@ -42,14 +42,14 @@ def round_to_odd_thousand_plus_500(min_altitude: int) -> int:
     return nearest
 
 
-def round_to_even_thousand_plus_500(min_altitude: int) -> int:
+def round_altitude_to_even_thousand_plus_500(min_altitude: int) -> int:
     """
     This function rounds a minimum flying altitude to its 
     next even thousand 500 and returns it.
     """
     # Calculate the next even thousand plus 500
-    if round_to_nearest_hundred(min_altitude) <= 3000:
-        return round_to_nearest_hundred(min_altitude)
+    if round_altitude_to_nearest_hundred(min_altitude) <= 3000:
+        return round_altitude_to_nearest_hundred(min_altitude)
 
     nearest = math.ceil(min_altitude / 2000) * 2000 + 500
     return nearest

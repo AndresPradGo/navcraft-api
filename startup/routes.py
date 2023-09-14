@@ -10,17 +10,18 @@ Usage:
 
 from fastapi import FastAPI
 
-from routes.aircraft import router as aircraft
-from routes.aircraft_models import router as aircraft_models
-from routes.aircraft_performance_data import router as aircraft_performance_data
-from routes.aircraft_weight_balance_data import router as aircraft_weight_balnace_data
+# pylint: disable=no-name-in-module
+from routes.aircraft.aircraft import router as aircraft
+from routes.aircraft.aircraft_models import router as aircraft_models
+from routes.aircraft.aircraft_performance_data import router as aircraft_performance_data
+from routes.aircraft.aircraft_weight_balance_data import router as aircraft_weight_balnace_data
 from routes.auth import router as auth
 from routes.flights import router as flights
-from routes.manage_waypoints import router as manage_waypoints
 from routes.users import router as users
-from routes.waypoints import router as waypoints
-from routes.admin_waypoints import router as admin_waypoints
-from routes.runways import router as runways
+from routes.waypoints.manage_waypoints import router as manage_waypoints
+from routes.waypoints.waypoints import router as waypoints
+from routes.waypoints.admin_waypoints import router as admin_waypoints
+from routes.waypoints.runways import router as runways
 
 
 def link_routes(app: FastAPI) -> None:

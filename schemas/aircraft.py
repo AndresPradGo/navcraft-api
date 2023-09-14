@@ -12,7 +12,7 @@ from typing import Optional, List, Dict, Any
 
 from pydantic import BaseModel, constr, conint, confloat, field_validator, model_validator
 
-from utils.functions import clean_string
+from functions.data_processing import clean_string
 
 
 class FuelTypeData(BaseModel):

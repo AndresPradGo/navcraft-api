@@ -20,7 +20,7 @@ import schemas
 from utils import common_responses, csv_tools as csv
 from utils.config import get_table_header
 from utils.db import get_db
-from utils.functions import (
+from functions.data_processing import (
     get_user_id_from_email,
     check_performance_profile_and_permissions,
     check_completeness_and_make_preferred_if_complete

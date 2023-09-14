@@ -22,8 +22,8 @@ import models
 import schemas
 from utils import common_responses
 from utils.db import get_db
-from utils.functions import clean_string, get_user_id_from_email
-from utils import nav_functions
+from functions.data_processing import clean_string, get_user_id_from_email
+from functions import navigation
 
 router = APIRouter(tags=["Flights"])
 
@@ -233,20 +233,20 @@ async def post_new_flight(
     db_session.add(new_arrival)
 
     # Post Leg
-    magnetic_var = nav_functions.get_magnetic_variation_for_leg(
+    magnetic_var = navigation.get_magnetic_variation_for_leg(
         from_waypoint=departure[3],
         to_waypoint=arrival[3],
         db_session=db_session
     )
     track_magnetic = departure[3].track_to(arrival[3]) + magnetic_var
     easterly = track_magnetic >= 0 and track_magnetic < 180
-    altitude_ft = nav_functions.round_to_odd_thousand_plus_500(
+    altitude_ft = navigation.round_altitude_to_odd_thousand_plus_500(
         min_altitude=max(
             departure[0].elevation_ft,
             arrival[0].elevation_ft
         ) + 2000
     ) if easterly else\
-        nav_functions.round_to_even_thousand_plus_500(
+        navigation.round_altitude_to_even_thousand_plus_500(
             min_altitude=max(
                 departure[0].elevation_ft,
                 arrival[0].elevation_ft
@@ -404,17 +404,17 @@ async def post_new_leg(
     from_waypoint = db_session.query(models.FlightWaypoint, models.Waypoint)\
         .join(models.Waypoint, models.FlightWaypoint.waypoint_id == models.Waypoint.id)\
         .filter(models.FlightWaypoint.leg_id == legs_to_update[0]["id"]).first()
-    magnetic_var = nav_functions.get_magnetic_variation_for_leg(
+    magnetic_var = navigation.get_magnetic_variation_for_leg(
         from_waypoint=from_waypoint[1],
         to_waypoint=new_waypoint,
         db_session=db_session
     )
     track_magnetic = from_waypoint[1].track_to(new_waypoint) + magnetic_var
     easterly = track_magnetic >= 0 and track_magnetic < 180
-    altitude_ft = nav_functions.round_to_odd_thousand_plus_500(
+    altitude_ft = navigation.round_altitude_to_odd_thousand_plus_500(
         min_altitude=legs_to_update[0]["altitude_ft"]
     ) if easterly else\
-        nav_functions.round_to_even_thousand_plus_500(
+        navigation.round_altitude_to_even_thousand_plus_500(
             min_altitude=legs_to_update[0]["altitude_ft"]
     )
     new_leg = models.Leg(

@@ -21,7 +21,7 @@ import models
 import schemas
 from utils import environ_variable_tools as environ, csv_tools as csv
 from utils.db import engine, Session
-from utils.functions import clean_string
+from functions.data_processing import clean_string
 
 _PATH = "static_data/"
 

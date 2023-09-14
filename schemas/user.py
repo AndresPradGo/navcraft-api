@@ -12,7 +12,7 @@ from typing import List
 
 from pydantic import BaseModel, constr, EmailStr, conint, confloat, field_validator
 
-from utils.functions import clean_string
+from functions.data_processing import clean_string
 
 
 class PassengerProfileData(BaseModel):

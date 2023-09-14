@@ -21,7 +21,7 @@ import schemas
 from utils import common_responses, csv_tools as csv
 from utils.config import get_table_header
 from utils.db import get_db
-from utils.functions import get_user_id_from_email, runways_are_unique
+from functions.data_processing import get_user_id_from_email, runways_are_unique
 
 router = APIRouter(tags=["Runways"])
 

@@ -17,7 +17,7 @@ import models
 import schemas
 from utils import common_responses
 from utils.db import get_db
-from utils.functions import (
+from functions.data_processing import (
     check_performance_profile_and_permissions,
     get_user_id_from_email,
     check_completeness_and_make_preferred_if_complete
