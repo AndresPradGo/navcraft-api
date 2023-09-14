@@ -10,6 +10,7 @@ Usage:
 """
 from schemas.aircraft import *
 from schemas.flight import *
+from schemas.flight_weight_balance import *
 from schemas.runway import *
 from schemas.user import *
 from schemas.waypoint import *
