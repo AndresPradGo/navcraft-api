@@ -190,8 +190,10 @@ class Leg(BaseModel):
     temperature_c = Column(Integer, nullable=False, default=13)
     wind_direction = Column(Integer)
     wind_magnitude_knot = Column(Integer, nullable=False, default=0)
-    weather_valid_from = Column(DateTime)
-    weather_valid_to = Column(DateTime)
+    altimeter_inhg = Column(DECIMAL(4, 2), nullable=False, default=29.92)
+    temperature_last_updated = Column(DateTime)
+    wind_last_updated = Column(DateTime)
+    altimeter_last_updated = Column(DateTime)
     flight_id = Column(
         Integer,
         ForeignKey(
