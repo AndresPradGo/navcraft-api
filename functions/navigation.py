@@ -97,3 +97,12 @@ def get_magnetic_variation_for_leg(
             closest_to_destination))
 
     return magnetic_var
+
+
+def pressure_altitude(altitude_ft: int, altimeter_inhg: float) -> int:
+    """
+    This function calculates the pressure altitude in ft, from the actual
+     altitude [ft] and an altimeter setting [inHg].
+    """
+    pressure_alt = round(altitude_ft + 1000 * (29.92 - altimeter_inhg), 0)
+    return int(pressure_alt)
