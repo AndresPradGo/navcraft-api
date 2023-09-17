@@ -13,16 +13,22 @@ from sqlalchemy.orm import Session
 import models
 
 
-def linear_interpolation(x1, y1, x2, y2, x_target):
+def linear_interpolation(
+    x1: Union[int, float],
+    y1: Union[int, float],
+    x2: Union[int, float],
+    y2: Union[int, float],
+    x_target: Union[int, float]
+) -> Union[int, float]:
     """
     This function performs a 1-dimensional linear interpolation
     """
 
     # Calculate the slope
-    m = (y2 - y1) / (x2 - x1)
+    slope = (y2 - y1) / (x2 - x1)
 
     # Use the slope to find the interpolated y-value at x_target
-    y_target = y1 + m * (x_target - x1)
+    y_target = y1 + slope * (x_target - x1)
 
     return y_target
 
@@ -77,7 +83,7 @@ def recursive_data_interpolation(
     targets: List[Union[int, float]]
 ):
     """
-    This is a recursive function that interpolates values in a multidimßensional table.
+    This is a recursive function that interpolates values in a multidimensional table.
     """
     current_input = input_names[index]
     results = []
@@ -129,44 +135,44 @@ def recursive_data_interpolation(
     return results
 
 
-def get_cruise_data(
-        profile_id: int,
-        weight_lb: int,
-        pressure_alt_ft: int,
-        temperature_c: int,
-        bhp_percent: int,
-        db_session: Session) -> Dict[str, Union[int, float]]:
+def get_landing_takeoff_data(
+    profile_id: int,
+    is_takeoff: bool,
+    weight_lb: int,
+    pressure_alt_ft: int,
+    temperature_c: int,
+    runway_surface_id: int,
+    head_wind: float,
+    db_session: Session
+) -> Dict[str, Union[int, float]]:
     """
     This function performs a table lookup operation, and returns 
-    the cruise data.
-
-    Parameters:
-    - profile_id (int): aircraft performance profile id.
-    - weight_lb (int): weight of the aircraft in lbs.
-    - pressure_alt (int): pressure altitude in ft.
-    - temperature (int): temperature in deg C.
-    - bhp (int): break horsepower of the engine in %.
-    - db_session (Session): an sqlalchemy database session, to wuery the database.
-
-    Returns:
-    - (dict): dictionary with 'ktas'(int), 'gph'(float) and 'rpm'(int) data.
+    the takeoff or landing data (ground_roll_ft and obstacle_clearance_ft).
     """
-    # define list of inputs and outputs to loop trhough, and the result dictionary
-    inputs = ["weight_lb", "pressure_alt_ft", "temperature_c", "bhp_percent"]
-    input_targets = [weight_lb, pressure_alt_ft, temperature_c, bhp_percent]
-    outputs = ["gph", "rpm", "ktas"]
-    result = {}
+    # define list of inputs and outputs to loop trhough
+    inputs = ["weight_lb", "pressure_alt_ft", "temperature_c"]
+    input_targets = [weight_lb, pressure_alt_ft, temperature_c]
+    outputs = ["ground_roll", "obstacle_clearance_ft"]
 
     # Get table data
-    table_data = db_session.query(models.CruisePerformance).filter(
-        models.CruisePerformance.performance_profile_id == profile_id
-    ).order_by(
-        models.CruisePerformance.weight_lb,
-        models.CruisePerformance.pressure_alt_ft,
-        models.CruisePerformance.temperature_c,
-        models.CruisePerformance.bhp_percent
-    ).all()
+    if is_takeoff:
+        table_data = db_session.query(models.TakeoffPerformance).filter(
+            models.TakeoffPerformance.performance_profile_id == profile_id
+        ).order_by(
+            models.TakeoffPerformance.weight_lb,
+            models.TakeoffPerformance.pressure_alt_ft,
+            models.TakeoffPerformance.temperature_c
+        ).all()
+    else:
+        table_data = db_session.query(models.LandingPerformance).filter(
+            models.LandingPerformance.performance_profile_id == profile_id
+        ).order_by(
+            models.LandingPerformance.weight_lb,
+            models.LandingPerformance.pressure_alt_ft,
+            models.LandingPerformance.temperature_c
+        ).all()
 
+    # Get table data results
     result = recursive_data_interpolation(
         input_names=inputs,
         index=0,
@@ -175,95 +181,28 @@ def get_cruise_data(
         targets=input_targets
     )[0]
 
-    print(result)
+    # Pre-process table data results
 
     return result
 
 
-# pylint: disable=pointless-string-statement
-# pylint: disable=unreachable
-    '''
-    weight_lb, weight_interp_data_sets =  find_nearest_arrays(
-        data=table_data, 
-        target=weight_lb, 
-        attr_name="weight_lb"
-    )
-    weight_results = []
-    for weight_data_set in weight_interp_data_sets:
-        pressure_alt_ft, press_interp_data_sets =  find_nearest_arrays(
-            data=weight_data_set, 
-            target=pressure_alt_ft, 
-            attr_name="pressure_alt_ft"
-        )
-        pressure_results = []
-        for pressure_data_set in press_interp_data_sets:
-            temperature_c, temp_interp_data_sets =  find_nearest_arrays(
-                data=pressure_data_set, 
-                target=temperature_c, 
-                attr_name="temperature_c"
-            )
-            temperature_results = []
-            for temperature_data_set in temp_interp_data_sets:
-                bhp_percent, bhp_interp_data_sets =  find_nearest_arrays(
-                    data=temperature_data_set, 
-                    target=bhp_percent, 
-                    attr_name="bhp_percent"
-                )
-                if len(bhp_interp_data_sets) == 2:
-                    temperature_results.append(
-                        linear_interpolation(
-                            x1=bhp_interp_data_sets[0].bhp_percent, 
-                            y1=bhp_interp_data_sets[0].ktas,
-                            x2=bhp_interp_data_sets[1].bhp_percent, 
-                            y2=bhp_interp_data_sets[1].ktas, 
-                            x_target=bhp_percent
-                        )
-                    )
-                else: 
-                    temperature_results.append(bhp_interp_data_sets[0].ktas)
-
-            if len(temp_interp_data_sets) == 2:
-                pressure_results.append(
-                    linear_interpolation(
-                        x1=temp_interp_data_sets[0][0].temperature_c, 
-                        y1=temperature_results[0],
-                        x2=temp_interp_data_sets[1][0].temperature_c, 
-                        y2=temperature_results[1], 
-                        x_target=temperature_c
-                    )
-                )
-            else: 
-                pressure_results.append(temperature_results[0])
-    
-    '''
-
-
-# pylint: disable=pointless-string-statement
-# pylint: disable=unreachable
-'''
-
 def get_cruise_data(
-        profile_id: int,
-        weight_lb: int,
-        pressure_alt_ft: int,
-        temperature_c: int,
-        bhp_percent: int,
-        db_session: Session) -> Dict[str, Union[int, float]]:
+    profile_id: int,
+    weight_lb: int,
+    pressure_alt_ft: int,
+    temperature_c: int,
+    bhp_percent: int,
+    db_session: Session
+) -> Dict[str, Union[int, float]]:
     """
     This function performs a table lookup operation, and returns 
-    the cruise data.
-
-    Parameters:
-    - profile_id (int): aircraft performance profile id.
-    - weight_lb (int): weight of the aircraft in lbs.
-    - pressure_alt (int): pressure altitude in ft.
-    - temperature (int): temperature in deg C.
-    - bhp (int): break horsepower of the engine in %.
-    - db_session (Session): an sqlalchemy database session, to wuery the database.
-
-    Returns:
-    - (dict): dictionary with 'ktas'(int), 'gph'(float) and 'rpm'(int) data.
+    the cruise data (ktas, gph, rpm).
     """
+
+    # define list of inputs and outputs to loop trhough
+    inputs = ["weight_lb", "pressure_alt_ft", "temperature_c", "bhp_percent"]
+    input_targets = [weight_lb, pressure_alt_ft, temperature_c, bhp_percent]
+    outputs = ["ktas", "gph", "rpm"]
 
     # Get table data
     table_data = db_session.query(models.CruisePerformance).filter(
@@ -274,58 +213,19 @@ def get_cruise_data(
         models.CruisePerformance.temperature_c,
         models.CruisePerformance.bhp_percent
     ).all()
-    include_weight = len({row.weight_lb for row in table_data}) > 1
 
-    # Check weight is within range
-    if include_weight:
+    # Get table data results
+    result = recursive_data_interpolation(
+        input_names=inputs,
+        index=0,
+        output_names=outputs,
+        interp_data_sets=[table_data],
+        targets=input_targets
+    )[0]
 
-    # Check pressure is within range
+    # Pre-process table data results
+    result["ktas"] = int(round(result["ktas"], 0))
+    result["gph"] = float(round(result["gph"], 2))
+    result["rpm"] = int(round(result["rpm"], 0))
 
-    # Check temperature is within range
-
-    # Check BHP is within range
-
-    # Process output data
-    gph_values = []
-    rpm_values = []
-    ktas_values = []
-    for data_point in table_data:
-        gph_values.append(data_point.gph)
-        rpm_values.append(data_point.rpm)
-        ktas_values.append(data_point.ktas)
-
-    output_data = {
-        'ktas': np.array(ktas_values),
-        'gph': np.array(gph_values),
-        'rpm': np.array(rpm_values)
-    }
-
-    round_digits = {'ktas': 0, 'gph': 2, 'rpm': 0}
-
-    # Process input data
-    if include_weight:
-        input_data = [(
-            row.weight_lb,
-            row.pressure_alt_ft,
-            row.temperature_c,
-            row.bhp_percent
-        ) for row in table_data]
-        target = (weight_lb, pressure_alt_ft, temperature_c, bhp_percent)
-    else:
-        input_data = [(
-            row.pressure_alt_ft,
-            row.temperature_c,
-            row.bhp_percent
-        ) for row in table_data]
-        target = (pressure_alt_ft, temperature_c, bhp_percent)
-
-    # Interpolate
-    result = {}
-    for key, value in output_data.items():
-        interp = LinearNDInterpolator(input_data, value)
-        result[key] = round(interp(*np.meshgrid(*target))[0][0][0],
-                            round_digits[key])
-
-    print(result)
     return result
-'''

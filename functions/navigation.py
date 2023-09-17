@@ -6,7 +6,7 @@ Usage:
 """
 
 import math
-from typing import List
+from typing import List, Dict
 
 from sqlalchemy.orm import Session
 
@@ -106,3 +106,54 @@ def pressure_altitude(altitude_ft: int, altimeter_inhg: float) -> int:
     """
     pressure_alt = round(altitude_ft + 1000 * (29.92 - altimeter_inhg), 0)
     return int(pressure_alt)
+
+
+def runway_wind_direction(
+    wind_magnitude_knot: int,
+    wind_direction_true: int,
+    runway_number: int,
+    magnetic_variation: float
+) -> Dict[str, int]:
+    """
+    This function calculates and returns the runway headwind and cross-wind in knots.
+    """
+
+    runway_direction = runway_number * 10 + magnetic_variation
+    wind_angle = math.radians(wind_direction_true - runway_direction)
+
+    return {
+        "headwind": int(round(wind_magnitude_knot * math.cos(wind_angle), 0)),
+        "crosswind": int(round(wind_magnitude_knot * math.sin(wind_angle), 0))
+    }
+
+
+def wind_calculations(
+    ktas: int,
+    true_track: int,
+    wind_magnitude_knot: int,
+    wind_direction_true: int
+) -> Dict[str, int]:
+    """
+    This function calculates and returns the groundspeed in knots and the true headding.
+    """
+    # Angles in radians
+    wind_angle = math.radians(wind_direction_true)
+    track_angle = math.radians(true_track)
+
+    # Calculate groundspeed and wind correction angle
+    ground_speed = ktas - wind_magnitude_knot * \
+        math.cos(wind_angle - track_angle)
+    wind_correction_angle_rad = math.atan(
+        wind_magnitude_knot * math.sin(wind_angle - track_angle) / ktas
+    )
+
+    # Calculate and correct true heading
+    true_heading = true_track + math.degrees(wind_correction_angle_rad)
+    true_heading = true_heading - 360 if true_heading > 360 else 360 + \
+        true_heading if true_heading < 0 else true_heading
+
+    # Retrurn Results
+    return {
+        "ground_speed": int(round(ground_speed, 0)),
+        "true_heading": int(round(true_heading, 0))
+    }
