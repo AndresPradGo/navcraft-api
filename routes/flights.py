@@ -121,7 +121,7 @@ async def post_new_flight(
             models.Aircraft.id == flight_data.aircraft_id,
             models.Aircraft.owner_id == user_id,
             models.PerformanceProfile.is_preferred.is_(True),
-            models.PerformanceProfile.is_complete(True)
+            models.PerformanceProfile.is_complete.is_(True)
         )).first()
     if aircraft is None:
         raise HTTPException(
@@ -135,44 +135,51 @@ async def post_new_flight(
     v = models.VfrWaypoint
     w = models.Waypoint
 
-    departure = db_session.query(a, u, v, w)\
-        .outerjoin(u, a.user_waypoint_id == u.waypoint_id)\
-        .outerjoin(v, a.vfr_waypoint_id == v.waypoint_id)\
-        .outerjoin(w, u.waypoint_id == w.id)\
-        .outerjoin(w, v.waypoint_id == w.id)\
+    departure = db_session.query(a, v, w)\
+        .join(v, a.vfr_waypoint_id == v.waypoint_id)\
+        .join(w, v.waypoint_id == w.id)\
         .filter(and_(
             a.id == flight_data.departure_aerodrome_id,
-            or_(
-                and_(
-                    a.vfr_waypoint_id.isnot(None),
-                    not_(v.hidden)
-                ),
-                u.creator_id == user_id
-            )
+            a.vfr_waypoint_id.isnot(None),
+            not_(v.hidden)
         )).first()
     if departure is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Departure aerodrome not found."
-        )
+        departure = db_session.query(a, u, w)\
+            .join(u, a.user_waypoint_id == u.waypoint_id)\
+            .join(w, u.waypoint_id == w.id)\
+            .filter(and_(
+                a.id == flight_data.departure_aerodrome_id,
+                a.user_waypoint_id.isnot(None),
+                u.creator_id == user_id
+            )).first()
+        if departure is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Departure aerodrome not found."
+            )
 
-    arrival = db_session.query(a, u, v, w)\
-        .outerjoin(u, a.user_waypoint_id == u.waypoint_id)\
-        .outerjoin(v, a.vfr_waypoint_id == v.waypoint_id)\
-        .outerjoin(w, u.waypoint_id == w.id)\
-        .outerjoin(w, v.waypoint_id == w.id)\
+    arrival = db_session.query(a, v, w)\
+        .join(v, a.vfr_waypoint_id == v.waypoint_id)\
+        .join(w, v.waypoint_id == w.id)\
         .filter(and_(
             a.id == flight_data.arrival_aerodrome_id,
-            or_(
-                a.vfr_waypoint_id.isnot(None),
-                u.creator_id == user_id
-            )
+            a.vfr_waypoint_id.isnot(None),
+            not_(v.hidden)
         )).first()
     if arrival is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Arrival aerodrome not found."
-        )
+        arrival = db_session.query(a, u, w)\
+            .join(u, a.user_waypoint_id == u.waypoint_id)\
+            .join(w, u.waypoint_id == w.id)\
+            .filter(and_(
+                a.id == flight_data.arrival_aerodrome_id,
+                a.user_waypoint_id.isnot(None),
+                u.creator_id == user_id
+            )).first()
+        if arrival is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Arrival aerodrome not found."
+            )
 
     # Check departure time is in the future
     if flight_data.departure_time <= pytz.timezone('UTC').localize(datetime.utcnow()):
@@ -185,8 +192,7 @@ async def post_new_flight(
     new_flight = models.Flight(
         pilot_id=user_id,
         departure_time=flight_data.departure_time,
-        aircraft_id=aircraft[0].id,
-        status_id=1
+        aircraft_id=aircraft[0].id
     )
     db_session.add(new_flight)
     db_session.commit()
@@ -208,11 +214,12 @@ async def post_new_flight(
 
     # Post Leg
     magnetic_var = navigation.get_magnetic_variation_for_leg(
-        from_waypoint=departure[3],
-        to_waypoint=arrival[3],
+        from_waypoint=departure[2],
+        to_waypoint=arrival[2],
         db_session=db_session
     )
-    track_magnetic = departure[3].track_to(arrival[3]) + magnetic_var
+    track_magnetic = departure[2].true_track_to_waypoint(
+        arrival[2]) + magnetic_var
     easterly = track_magnetic >= 0 and track_magnetic < 180
     altitude_ft = navigation.round_altitude_to_odd_thousand_plus_500(
         min_altitude=max(
@@ -383,7 +390,8 @@ async def post_new_leg(
         to_waypoint=new_waypoint,
         db_session=db_session
     )
-    track_magnetic = from_waypoint[1].track_to(new_waypoint) + magnetic_var
+    track_magnetic = from_waypoint[1].true_track_to_waypoint(
+        new_waypoint) + magnetic_var
     easterly = track_magnetic >= 0 and track_magnetic < 180
     altitude_ft = navigation.round_altitude_to_odd_thousand_plus_500(
         min_altitude=legs_to_update[0]["altitude_ft"]
@@ -414,6 +422,102 @@ async def post_new_leg(
         db_session=db_session,
         user_id=user_id
     )
+
+
+@router.post(
+    "/person-on-board/{flight_id}",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.PersonOnBoardReturn
+)
+async def add_person_on_board(
+    flight_id: int,
+    data: schemas.PersonOnBoardData,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Add Person On Board Endpoint.
+
+    Parameters: 
+    - flight_id (int): flight id.
+    - data (dict): name and weight of personand seat row.
+
+    Returns: 
+    - dict: person on board data and id.
+
+    Raise:
+    - HTTPException (400): if flight doesn't exist.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check flight exist
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    flight = db_session.query(models.Flight, models.Aircraft, models.PerformanceProfile)\
+        .join(models.Aircraft, models.Flight.aircraft_id == models.Aircraft.id)\
+        .join(models.PerformanceProfile, models.Aircraft.id == models.PerformanceProfile.aircraft_id)\
+        .filter(and_(
+            models.Flight.pilot_id == user_id,
+            models.Flight.id == flight_id,
+            models.PerformanceProfile.is_preferred.is_(True)
+        )).first()
+
+    if flight is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Flight not found."
+        )
+
+    # Check seat-row exists
+    seat_row = db_session.query(models.SeatRow).filter(and_(
+        models.SeatRow.id == data.seat_row_id,
+        models.SeatRow.performance_profile_id == flight[2].id
+    )).first()
+
+    if seat_row is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Seat row not found."
+        )
+    # Process data
+    if data.name is not None:
+        new_person_on_board = models.PersonOnBoard(
+            flight_id=flight_id,
+            seat_row_id=data.seat_row_id,
+            name=data.name,
+            weight_lb=data.weight_lb
+        )
+    elif data.is_me is not None:
+        user = db_session.query(models.User).filter_by(id=user_id).first()
+        new_person_on_board = models.PersonOnBoard(
+            flight_id=flight_id,
+            seat_row_id=data.seat_row_id,
+            name=user.name,
+            weight_lb=user.weight_lb
+        )
+    else:
+        passenger = db_session.query(models.PassengerProfile).filter(and_(
+            models.PassengerProfile.creator_id == user_id,
+            models.PassengerProfile.id == data.passenger_profile_id
+        )).first()
+        if passenger is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Passenger profile not found."
+            )
+        new_person_on_board = models.PersonOnBoard(
+            flight_id=flight_id,
+            seat_row_id=data.seat_row_id,
+            name=passenger.name,
+            weight_lb=passenger.weight_lb
+        )
+
+    # Post and return data
+    db_session.add(new_person_on_board)
+    db_session.commit()
+    db_session.refresh(new_person_on_board)
+
+    return new_person_on_board.__dict__
 
 
 @router.delete("/{flight_id}", status_code=status.HTTP_204_NO_CONTENT)

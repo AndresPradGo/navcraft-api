@@ -222,7 +222,7 @@ class PersonOnBoard(BaseModel):
             onupdate="CASCADE"
         )
     )
-    seat_id = Column(
+    seat_row_id = Column(
         Integer,
         ForeignKey(
             "seat_rows.id",
