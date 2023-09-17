@@ -255,7 +255,7 @@ class Baggage(BaseModel):
         ),
         nullable=False
     )
-    compartment_id = Column(
+    baggage_compartment_id = Column(
         Integer,
         ForeignKey(
             "baggage_compartments.id",
