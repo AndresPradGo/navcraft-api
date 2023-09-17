@@ -592,6 +592,108 @@ async def add_flight_baggage(
     return new_baggage.__dict__
 
 
+@router.put(
+    "/person-on-board/{pob_id}",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.PersonOnBoardReturn
+)
+async def edit_person_on_board(
+    pob_id: int,
+    data: schemas.PersonOnBoardData,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Edit Person On Board Endpoint.
+
+    Parameters: 
+    - pob_id (int): person on board id.
+    - data (dict): name and weight of personand seat row.
+
+    Returns: 
+    - dict: person on board data and id.
+
+    Raise:
+    - HTTPException (400): if flight doesn't exist.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+    # Get person on board
+    person_on_board_query = db_session.query(
+        models.PersonOnBoard).filter_by(id=pob_id)
+
+    if person_on_board_query.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Person not found."
+        )
+
+    # Check flight exist
+    flight_id = person_on_board_query.first().flight_id
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    flight = db_session.query(models.Flight, models.Aircraft, models.PerformanceProfile)\
+        .join(models.Aircraft, models.Flight.aircraft_id == models.Aircraft.id)\
+        .join(models.PerformanceProfile, models.Aircraft.id == models.PerformanceProfile.aircraft_id)\
+        .filter(and_(
+            models.Flight.pilot_id == user_id,
+            models.Flight.id == flight_id,
+            models.PerformanceProfile.is_preferred.is_(True)
+        )).first()
+
+    if flight is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Flight not found."
+        )
+
+    # Check seat-row exists
+    seat_row = db_session.query(models.SeatRow).filter(and_(
+        models.SeatRow.id == data.seat_row_id,
+        models.SeatRow.performance_profile_id == flight[2].id
+    )).first()
+
+    if seat_row is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Seat row not found."
+        )
+    # Process data
+    if data.name is not None:
+        person_on_board_data = {
+            "seat_row_id": data.seat_row_id,
+            "name": data.name,
+            "weight_lb": data.weight_lb
+        }
+    elif data.is_me is not None:
+        user = db_session.query(models.User).filter_by(id=user_id).first()
+        person_on_board_data = {
+            "seat_row_id": data.seat_row_id,
+            "name": user.name,
+            "weight_lb": user.weight_lb
+        }
+    else:
+        passenger = db_session.query(models.PassengerProfile).filter(and_(
+            models.PassengerProfile.creator_id == user_id,
+            models.PassengerProfile.id == data.passenger_profile_id
+        )).first()
+        if passenger is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Passenger profile not found."
+            )
+        person_on_board_data = {
+            "seat_row_id": data.seat_row_id,
+            "name": passenger.name,
+            "weight_lb": passenger.weight_lb
+        }
+
+    # Edit data
+    person_on_board_query.update(person_on_board_data)
+    db_session.commit()
+
+    return person_on_board_query.first().__dict__
+
+
 @router.delete("/{flight_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_flight(
     flight_id: int,
