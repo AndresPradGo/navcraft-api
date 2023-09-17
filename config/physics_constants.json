@@ -1,4 +1,6 @@
 {
     "earth_radius_ft": 2.093e+7,
-    "ft_to_nm": 1.64579e-4
+    "ft_to_nm": 1.64579e-4,
+    "air_constant_j_kg_k": 287.05,
+    "standard_density_kg_m3": 1.225
 }

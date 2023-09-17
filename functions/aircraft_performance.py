@@ -28,19 +28,18 @@ def linear_interpolation(
     slope = (y2 - y1) / (x2 - x1)
 
     # Use the slope to find the interpolated y-value at x_target
-    y_target = y1 + slope * (x_target - x1)
+    y_value = y1 + slope * (x_target - x1)
 
-    return y_target
+    return y_value
 
 
 def find_nearest_arrays(data: List[Any], target: Union[int, float], attr_name: str):
     """
-    This function estracts 2 arrays from the data array and a new target. One array where 
+    This function extracts 2 arrays from the data array. One array where 
     all the values of the attribute 'attr_name', are immediately less than 'target', and one 
     where they are greater than or equal to 'target'. If 'target' is smaller or higher than 
-    all elements in data, the fucntion will return None, in  place of the array with the smaller 
-    or higher values, and it will truncate the 'target' to the smallest or highest value, and 
-    return it.
+    all elements in data, the fucntion will return only one array, and it will truncate the 
+    'target' to the smallest or highest value.
     """
     # Perform binary search
     low = 0
@@ -81,7 +80,7 @@ def recursive_data_interpolation(
     output_names: List[str],
     interp_data_sets: List[List[Any]],
     targets: List[Union[int, float]]
-):
+) -> List[Dict[str, Union[int, float]]]:
     """
     This is a recursive function that interpolates values in a multidimensional table.
     """
@@ -101,7 +100,6 @@ def recursive_data_interpolation(
                 interp_data_sets=next_interp_data_sets,
                 targets=targets
             )
-
             deeper_layer_results_dict = {
                 key: [
                     deeper_layer_result[key] for deeper_layer_result in deeper_layer_results_list
@@ -109,7 +107,6 @@ def recursive_data_interpolation(
             }
 
         else:
-
             deeper_layer_results_dict = {
                 key: [
                     getattr(data_set[0], key) for data_set in next_interp_data_sets
@@ -224,6 +221,75 @@ def get_landing_takeoff_data(
     result["groundroll_ft"] = int(round(result["groundroll_ft"], 0))
     result["obstacle_clearance_ft"] = int(
         round(result["obstacle_clearance_ft"], 0))
+
+    return result
+
+
+def get_climb_data(
+    profile_id: int,
+    weight_lb: int,
+    pressure_alt_from_ft: int,
+    pressure_alt_to_ft: int,
+    temperature_c: int,
+    db_session: Session
+) -> Dict[str, int]:
+    """
+    This function performs a table lookup operation, and returns 
+    the climb data (time, fuel and distance to climb).
+    """
+
+    # define list of inputs and outputs to loop trhough
+    inputs = ["weight_lb", "pressure_alt_ft"]
+    input_targets_list = [[weight_lb, pressure_alt_from_ft],
+                          [weight_lb, pressure_alt_to_ft]]
+    outputs = ["temperature_c", "time_min",
+               "fuel_gal", "distance_nm"]
+    table_results = []
+
+    for input_targets in input_targets_list:
+        # Get table data
+        table_data = db_session.query(models.ClimbPerformance).filter(
+            models.ClimbPerformance.performance_profile_id == profile_id
+        ).order_by(
+            models.ClimbPerformance.weight_lb,
+            models.ClimbPerformance.pressure_alt_ft
+        ).all()
+
+        # Get table data results
+        table_results.append(recursive_data_interpolation(
+            input_names=inputs,
+            index=0,
+            output_names=outputs,
+            interp_data_sets=[table_data],
+            targets=input_targets
+        )[0])
+
+    # Find difference
+    result = {}
+    result["time_min"] = table_results[1]["time_min"] - \
+        table_results[0]["time_min"]
+    result["fuel_gal"] = table_results[1]["fuel_gal"] - \
+        table_results[0]["fuel_gal"]
+    result["distance_nm"] = table_results[1]["distance_nm"] - \
+        table_results[0]["distance_nm"]
+
+    # Apply temperature correction
+    performance_profile = db_session.query(models.PerformanceProfile).filter(
+        models.PerformanceProfile.id == profile_id
+    ).first()
+
+    temperature_correction_percent = float(
+        performance_profile.percent_increase_climb_temperature_c) / 100
+    standard_temperature = table_results[1]["temperature_c"]
+    correction = temperature_correction_percent * \
+        max(temperature_c - standard_temperature, 0) + 1
+    for key, value in result.items():
+        result[key] = float(value) * correction
+
+    # Pre-process results and return
+    result["time_min"] = int(round(result["time_min"], 0))
+    result["fuel_gal"] = float(round(result["fuel_gal"], 2))
+    result["distance_nm"] = int(round(result["distance_nm"], 0))
 
     return result
 

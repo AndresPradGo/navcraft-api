@@ -11,6 +11,7 @@ from typing import List, Dict
 from sqlalchemy.orm import Session
 
 import models
+from utils.config import get_constant
 
 
 def round_altitude_to_nearest_hundred(min_altitude: int) -> int:
@@ -157,3 +158,25 @@ def wind_calculations(
         "ground_speed": int(round(ground_speed, 0)),
         "true_heading": int(round(true_heading, 0))
     }
+
+
+def calculate_cas_from_tas(
+    ktas: int,
+    pressure_alt_ft: int,
+    temperature_c: int,
+) -> Dict[str, int]:
+    """
+    This function calculates CAS from TAS.
+    """
+
+    # Define constants
+    air_constant = get_constant("air_constant_j_kg_k")
+    standard_density = get_constant("standard_density_kg_m3")
+    temperature_k = temperature_c + 273.15
+    pressure_pa = (1013.25 - pressure_alt_ft / 30) * 100
+
+    # Calculate and return CAS
+    kcas = ktas / math.sqrt(air_constant * temperature_k *
+                            standard_density / pressure_pa)
+
+    return kcas
