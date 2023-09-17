@@ -7,7 +7,7 @@ Usage:
 
 from typing import Dict, Union, Any, List
 
-
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 import models
@@ -144,17 +144,21 @@ def get_landing_takeoff_data(
     runway_surface_id: int,
     head_wind: float,
     db_session: Session
-) -> Dict[str, Union[int, float]]:
+) -> Dict[str, int]:
     """
     This function performs a table lookup operation, and returns 
-    the takeoff or landing data (ground_roll_ft and obstacle_clearance_ft).
+    the takeoff or landing data (groundroll_ft and obstacle_clearance_ft).
     """
     # define list of inputs and outputs to loop trhough
     inputs = ["weight_lb", "pressure_alt_ft", "temperature_c"]
     input_targets = [weight_lb, pressure_alt_ft, temperature_c]
-    outputs = ["ground_roll", "obstacle_clearance_ft"]
+    outputs = ["groundroll_ft", "obstacle_clearance_ft"]
 
     # Get table data
+    is_tailwind = head_wind < 0
+    performance_profile = db_session.query(models.PerformanceProfile).filter(
+        models.PerformanceProfile.id == profile_id
+    ).first()
     if is_takeoff:
         table_data = db_session.query(models.TakeoffPerformance).filter(
             models.TakeoffPerformance.performance_profile_id == profile_id
@@ -163,6 +167,16 @@ def get_landing_takeoff_data(
             models.TakeoffPerformance.pressure_alt_ft,
             models.TakeoffPerformance.temperature_c
         ).all()
+
+        wind_correction = float(performance_profile.percent_increase_takeoff_tailwind_knot)\
+            if is_tailwind else float(performance_profile.percent_decrease_takeoff_headwind_knot)
+
+        surface_correction_data = db_session.query(models.SurfacePerformanceDecrease).filter(and_(
+            models.SurfacePerformanceDecrease.performance_profile_id == profile_id,
+            models.SurfacePerformanceDecrease.surface_id == runway_surface_id,
+            models.SurfacePerformanceDecrease.is_takeoff.is_(True)
+        )).first()
+
     else:
         table_data = db_session.query(models.LandingPerformance).filter(
             models.LandingPerformance.performance_profile_id == profile_id
@@ -171,6 +185,18 @@ def get_landing_takeoff_data(
             models.LandingPerformance.pressure_alt_ft,
             models.LandingPerformance.temperature_c
         ).all()
+
+        wind_correction = float(performance_profile.percent_increase_landing_tailwind_knot)\
+            if is_tailwind else float(performance_profile.percent_decrease_landing_headwind_knot)
+
+        surface_correction_data = db_session.query(models.SurfacePerformanceDecrease).filter(and_(
+            models.SurfacePerformanceDecrease.performance_profile_id == profile_id,
+            models.SurfacePerformanceDecrease.surface_id == runway_surface_id,
+            models.SurfacePerformanceDecrease.is_takeoff.is_(False)
+        )).first()
+
+    surface_correction = float(
+        surface_correction_data.percent) if surface_correction_data is not None else 0
 
     # Get table data results
     result = recursive_data_interpolation(
@@ -181,7 +207,23 @@ def get_landing_takeoff_data(
         targets=input_targets
     )[0]
 
-    # Pre-process table data results
+    # Apply wind corrections
+    result["groundroll_ft"] = result["groundroll_ft"] - \
+        head_wind * wind_correction * result["groundroll_ft"] / 100
+    result["obstacle_clearance_ft"] = result["obstacle_clearance_ft"] - \
+        head_wind * wind_correction * \
+        result["obstacle_clearance_ft"] / 100
+
+    # Apply runway surface corrections
+    result["obstacle_clearance_ft"] = result["obstacle_clearance_ft"] + \
+        surface_correction * result["groundroll_ft"] / 100
+    result["groundroll_ft"] = result["groundroll_ft"] + \
+        surface_correction * result["groundroll_ft"] / 100
+
+    # Pre-process results and return
+    result["groundroll_ft"] = int(round(result["groundroll_ft"], 0))
+    result["obstacle_clearance_ft"] = int(
+        round(result["obstacle_clearance_ft"], 0))
 
     return result
 
