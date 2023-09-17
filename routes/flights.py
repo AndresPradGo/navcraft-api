@@ -584,7 +584,6 @@ async def add_flight_baggage(
         weight_lb=data.weight_lb
     )
 
-    #
     db_session.add(new_baggage)
     db_session.commit()
     db_session.refresh(new_baggage)
@@ -692,6 +691,84 @@ async def edit_person_on_board(
     db_session.commit()
 
     return person_on_board_query.first().__dict__
+
+
+@router.put(
+    "/baggage/{baggage_id}",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.FlightBaggageReturn
+)
+async def edit_flight_baggage(
+    baggage_id: int,
+    data: schemas.FlightBaggageData,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Edit Flig Baggage Endpoint.
+
+    Parameters: 
+    - baggage_id (int): flight id.
+    - data (dict): baggage data
+
+    Returns: 
+    - dict: baggage data and id.
+
+    Raise:
+    - HTTPException (400): if flight doesn't exist.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+    # Get baggage
+    baggage_query = db_session.query(
+        models.Baggage).filter_by(id=baggage_id)
+
+    if baggage_query.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Baggage not found."
+        )
+
+    # Check flight exist
+    flight_id = baggage_query.first().flight_id
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    flight = db_session.query(models.Flight, models.Aircraft, models.PerformanceProfile)\
+        .join(models.Aircraft, models.Flight.aircraft_id == models.Aircraft.id)\
+        .join(models.PerformanceProfile, models.Aircraft.id == models.PerformanceProfile.aircraft_id)\
+        .filter(and_(
+            models.Flight.pilot_id == user_id,
+            models.Flight.id == flight_id,
+            models.PerformanceProfile.is_preferred.is_(True)
+        )).first()
+
+    if flight is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Flight not found."
+        )
+
+    # Check baggage compartment exists
+    compartment = db_session.query(models.BaggageCompartment).filter(and_(
+        models.BaggageCompartment.id == data.baggage_compartment_id,
+        models.BaggageCompartment.performance_profile_id == flight[2].id
+    )).first()
+
+    if compartment is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Baggage compartment not found."
+        )
+
+    # Edit and return data
+    baggage_query.update({
+        "baggage_compartment_id": data.baggage_compartment_id,
+        "name": data.name,
+        "weight_lb": data.weight_lb
+    })
+
+    db_session.commit()
+
+    return baggage_query.first().__dict__
 
 
 @router.delete("/{flight_id}", status_code=status.HTTP_204_NO_CONTENT)
