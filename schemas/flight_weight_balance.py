@@ -15,7 +15,6 @@ from pydantic import (
     conint,
     constr,
     confloat,
-    field_validator,
     model_validator
 )
 
@@ -77,12 +76,21 @@ class PersonOnBoardData(BaseModel):
         return values
 
 
-class PersonOnBoardReturn(PersonOnBoardData):
+class PersonOnBoardReturn(BaseModel):
     """"
     This class defines the data structure required to return 
     person on board data to the client.
     """
     id: conint(gt=0)
+    seat_row_id: conint(gt=0)
+    name: constr(
+        strip_whitespace=True,
+        strict=True,
+        min_length=2,
+        max_length=255,
+        pattern="^[-a-zA-Z0-9' ]+$",
+    )
+    weight_lb: confloat(allow_inf_nan=False, ge=0, le=999.99)
 
 
 class FlightBaggageData(BaseModel):
@@ -123,32 +131,6 @@ class FlightBaggageReturn(FlightBaggageData):
     This class defines the data structure required to return baggage data to the client.
     """
     id: conint(gt=0)
-
-
-class FlightWeightAndBalanceData(BaseModel):
-    """
-    This class defines the data required from the 
-    client to update the W&B data for a flight.
-    """
-
-    persons_on_board: Optional[List[PersonOnBoardData]] = []
-    baggages: Optional[List[FlightBaggageData]] = []
-    fuel_on_board_gallons: confloat(allow_inf_nan=False, ge=0, le=999.99)
-
-    @field_validator('fuel_on_board_gallons')
-    @classmethod
-    def round_fuel(cls, value):
-        '''
-        Classmethod to round the fuel gallons.
-
-        Parameters:
-        - value (float): fuel gallons.
-
-        Returns:
-        (float): rounded fuel gallons.
-        '''
-
-        return round(value, 2)
 
 
 class WeightAndBalanceFuelReturn(BaseModel):

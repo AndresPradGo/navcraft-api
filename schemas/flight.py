@@ -81,15 +81,8 @@ class NewFlightWaypointData(BaseModel):
         89 59 59 S and 90 0 0 N, and the longitude is between 
         179 59 59 W and 180 0 0 E; as part of the data validation.
 
-        Parameters:
-        - values (Any): The object with the values to be validated.
-
-        Returns:
-        (Any) : The object of validated values.
-
         Raises:
         ValueError: Whenever the lattitude or longitud values are not within the desired range.
-
         '''
 
         err_message = {
@@ -140,16 +133,6 @@ class NewLegData(BaseModel):
     def validate_waypoint_schema(cls, values):
         '''
         Classmethod to check that only new_waypoint or existing_waypoint_id are provided.
-
-        Parameters:
-        - values (Any): The object with the values to be validated.
-
-        Returns:
-        (Any) : The object of validated values.
-
-        Raises:
-        ValueError: if both new_waypoint and existing_waypoint_id are None.
-
         '''
 
         if values.existing_waypoint_id is None and values.new_waypoint is None:
@@ -195,3 +178,27 @@ class NewFlightReturn(NewFlightData):
     departure_aerodrome_is_private: bool
     arrival_aerodrome_is_private: bool
     legs: List[NewLegReturn]
+
+
+class UpdateFlightData(BaseModel):
+    """
+    This class defines the data required from the 
+    client to update the W&B data for a flight.
+    """
+    departure_time: AwareDatetime
+    bhp_percent: conint(ge=45, le=75)
+    reserve_fuel_hours: confloat(allow_inf_nan=False, ge=0, le=99.99)
+    contingency_fuel_hours: confloat(allow_inf_nan=False, ge=0, le=99.99)
+    fuel_on_board_gallons: confloat(allow_inf_nan=False, ge=0, le=999.99)
+
+    @model_validator(mode='after')
+    @classmethod
+    def round_fuel(cls, values):
+        '''
+        Classmethod to round the fuel values.
+        '''
+        values.reserve_fuel_hours = round(values.reserve_fuel_hours, 2)
+        values.contingency_fuel_hours = round(values.contingency_fuel_hours, 2)
+        values.fuel_on_board_gallons = round(values.fuel_on_board_gallons, 2)
+
+        return values
