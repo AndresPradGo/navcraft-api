@@ -195,10 +195,10 @@ async def post_new_leg(
 
     # Return flight data
     return get_basic_flight_data_for_return(
-        flight_id=flight_id,
+        flight_ids=[flight_id],
         db_session=db_session,
         user_id=user_id
-    )
+    )[0]
 
 
 @router.put(
@@ -343,10 +343,10 @@ async def edit_flight_leg(
 
     # Return flight data
     return get_basic_flight_data_for_return(
-        flight_id=flight_id,
+        flight_ids=[flight_id],
         db_session=db_session,
         user_id=user_id
-    )
+    )[0]
 
 
 @router.delete(
@@ -432,7 +432,7 @@ async def delete_flight_leg(
 
     # Return new flight data
     return get_basic_flight_data_for_return(
-        flight_id=flight_id,
+        flight_ids=[flight_id],
         db_session=db_session,
         user_id=user_id
-    )
+    )[0]

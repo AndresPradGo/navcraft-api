@@ -9,10 +9,11 @@ Usage:
 """
 
 from datetime import datetime
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException
 import pytz
-from sqlalchemy import and_, not_
+from sqlalchemy import and_, not_, or_
 from sqlalchemy.orm import Session
 
 import auth
@@ -27,6 +28,46 @@ from functions.data_processing import (
 from functions import navigation
 
 router = APIRouter(tags=["Flights"])
+
+
+@router.get(
+    "/",
+    status_code=status.HTTP_200_OK,
+    response_model=List[schemas.NewFlightReturn]
+)
+async def get_all_flights(
+    flight_id: Optional[int] = 0,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Get All Flights Endpoint.
+
+    Parameters: 
+    - flight_id (int): flight id.
+
+    Returns: 
+    - List: List of flights.
+
+    Raise:
+    - HTTPException (500): if there is a server error. 
+    """
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_flights = db_session.query(models.Flight).filter(and_(
+        models.Flight.pilot_id == user_id,
+        or_(
+            not_(flight_id),
+            models.Flight.id == flight_id
+        )
+    )).all()
+
+    flight_ids = [flight.id for flight in user_flights]
+
+    return get_basic_flight_data_for_return(
+        flight_ids=flight_ids,
+        db_session=db_session,
+        user_id=user_id
+    )
 
 
 @router.post(
@@ -49,9 +90,8 @@ async def post_new_flight(
     - Dic: dictionary with the flight data and id.
 
     Raise:
-    - HTTPException (400): if flight status already exists, or it
-      contains characters other than letters, hyphen and white space.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (400): if data is wrong.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
     # Get user ID
@@ -190,10 +230,10 @@ async def post_new_flight(
 
     # Return flight data
     return get_basic_flight_data_for_return(
-        flight_id=new_flight_data["id"],
+        flight_ids=[new_flight_data["id"]],
         db_session=db_session,
         user_id=user_id
-    )
+    )[0]
 
 
 @router.post(
@@ -422,10 +462,10 @@ async def edit_flight(
     flight_query.update(data.model_dump())
 
     return get_basic_flight_data_for_return(
-        flight_id=flight_id,
+        flight_ids=[flight_id],
         user_id=user_id,
         db_session=db_session
-    )
+    )[0]
 
 
 @router.put(
