@@ -910,3 +910,115 @@ async def delete_flight_leg(
         db_session=db_session,
         user_id=user_id
     )
+
+
+@router.delete(
+    "/person-on-board/{pob_id}",
+    status_code=status.HTTP_204_NO_CONTENT
+)
+async def delete_person_on_board(
+    pob_id: int,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Delete Person On Board Endpoint.
+
+    Parameters: 
+    - pob_id (int): person on board id.
+
+    Raise:
+    - HTTPException (400): if flight doesn't exist.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+    # Get person on board
+    person_on_board_query = db_session.query(
+        models.PersonOnBoard).filter_by(id=pob_id)
+
+    if person_on_board_query.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Person not found."
+        )
+
+    # Check flight exist
+    flight_id = person_on_board_query.first().flight_id
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    flight = db_session.query(models.Flight, models.Aircraft, models.PerformanceProfile)\
+        .join(models.Aircraft, models.Flight.aircraft_id == models.Aircraft.id)\
+        .join(models.PerformanceProfile, models.Aircraft.id == models.PerformanceProfile.aircraft_id)\
+        .filter(and_(
+            models.Flight.pilot_id == user_id,
+            models.Flight.id == flight_id,
+            models.PerformanceProfile.is_preferred.is_(True)
+        )).first()
+
+    if flight is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Flight not found."
+        )
+
+    # Delete data
+    deleted = person_on_board_query.delete(synchronize_session=False)
+    if not deleted:
+        raise common_responses.internal_server_error()
+
+    db_session.commit()
+
+
+@router.delete(
+    "/baggage/{baggage_id}",
+    status_code=status.HTTP_204_NO_CONTENT
+)
+async def delete_flight_baggage(
+    baggage_id: int,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Delete Person On Board Endpoint.
+
+    Parameters: 
+    - baggage_id (int): baggage id.
+
+    Raise:
+    - HTTPException (400): if flight doesn't exist.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+    # Get person on board
+    baggage_query = db_session.query(
+        models.Baggage).filter_by(id=baggage_id)
+
+    if baggage_query.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Baggage not found."
+        )
+
+    # Check flight exist
+    flight_id = baggage_query.first().flight_id
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    flight = db_session.query(models.Flight, models.Aircraft, models.PerformanceProfile)\
+        .join(models.Aircraft, models.Flight.aircraft_id == models.Aircraft.id)\
+        .join(models.PerformanceProfile, models.Aircraft.id == models.PerformanceProfile.aircraft_id)\
+        .filter(and_(
+            models.Flight.pilot_id == user_id,
+            models.Flight.id == flight_id,
+            models.PerformanceProfile.is_preferred.is_(True)
+        )).first()
+
+    if flight is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Flight not found."
+        )
+
+    # Delete data
+    deleted = baggage_query.delete(synchronize_session=False)
+    if not deleted:
+        raise common_responses.internal_server_error()
+
+    db_session.commit()
