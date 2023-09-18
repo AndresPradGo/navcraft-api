@@ -349,6 +349,7 @@ class FlightWaypoint(BaseModel):
         unique=True
     )
     code = Column(String(50), nullable=False)
+    name = Column(String(255), nullable=False)
     leg_id = Column(
         Integer,
         ForeignKey(

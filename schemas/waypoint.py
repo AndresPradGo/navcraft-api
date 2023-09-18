@@ -41,7 +41,7 @@ class WaypointBase(BaseModel):
         max_length=50,
         pattern='^[-a-zA-Z0-9]+$',
     )
-    name: constr(min_length=2, max_length=50)
+    name: constr(min_length=2, max_length=255)
     lat_degrees: conint(ge=0, le=90)
     lat_minutes: conint(ge=0, le=59)
     lat_seconds: Optional[conint(ge=0, le=59)] = None

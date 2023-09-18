@@ -259,6 +259,7 @@ def get_basic_flight_data_for_return(flight_id: int, db_session: Session, user_i
             "waypoint": {
                 "id": wp.id,
                 "code": flight_wp.code,
+                "name": flight_wp.name,
                 "lat_degrees": wp.lat_degrees,
                 "lat_minutes": wp.lat_minutes,
                 "lat_seconds": wp.lat_seconds,
