@@ -5,7 +5,7 @@ Usage:
 - Import the required function and call it.
 """
 
-from typing import Dict, Union, Any, List
+from typing import Union, Any, List
 
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
@@ -61,7 +61,7 @@ def find_nearest_arrays(data: List[Any], target: Union[int, float], attr_name: s
                 row, attr_name) == getattr(data[low], attr_name)]
         ])
     if low == len(data):  # target is greater than or equal to all elements in the list
-        return (getattr(data[0], attr_name), [
+        return (getattr(data[-1], attr_name), [
             [row for row in data if getattr(
                 row, attr_name) == getattr(data[high], attr_name)]
         ])
@@ -80,7 +80,7 @@ def recursive_data_interpolation(
     output_names: List[str],
     interp_data_sets: List[List[Any]],
     targets: List[Union[int, float]]
-) -> List[Dict[str, Union[int, float]]]:
+):
     """
     This is a recursive function that interpolates values in a multidimensional table.
     """
@@ -93,7 +93,7 @@ def recursive_data_interpolation(
             attr_name=current_input
         )
         if not current_input == input_names[-1]:
-            deeper_layer_results_list = recursive_data_interpolation(
+            deeper_layer_results_list, _ = recursive_data_interpolation(
                 input_names=input_names,
                 index=index + 1,
                 output_names=output_names,
@@ -129,7 +129,7 @@ def recursive_data_interpolation(
 
         results.append(result)
 
-    return results
+    return results, targets
 
 
 def get_landing_takeoff_data(
@@ -141,7 +141,7 @@ def get_landing_takeoff_data(
     runway_surface_id: int,
     head_wind: float,
     db_session: Session
-) -> Dict[str, int]:
+):
     """
     This function performs a table lookup operation, and returns 
     the takeoff or landing data (groundroll_ft and obstacle_clearance_ft).
@@ -196,13 +196,14 @@ def get_landing_takeoff_data(
         surface_correction_data.percent) if surface_correction_data is not None else 0
 
     # Get table data results
-    result = recursive_data_interpolation(
+    result, adjusted_targets = recursive_data_interpolation(
         input_names=inputs,
         index=0,
         output_names=outputs,
         interp_data_sets=[table_data],
         targets=input_targets
-    )[0]
+    )
+    result = result[0]
 
     # Apply wind corrections
     result["groundroll_ft"] = result["groundroll_ft"] - \
@@ -222,7 +223,10 @@ def get_landing_takeoff_data(
     result["obstacle_clearance_ft"] = int(
         round(result["obstacle_clearance_ft"], 0))
 
-    return result
+    new_input_targets = {
+        value: adjusted_targets[i] for i, value in enumerate(inputs)}
+
+    return result, new_input_targets
 
 
 def get_climb_data(
@@ -232,7 +236,7 @@ def get_climb_data(
     pressure_alt_to_ft: int,
     temperature_c: int,
     db_session: Session
-) -> Dict[str, int]:
+):
     """
     This function performs a table lookup operation, and returns 
     the climb data (time, fuel and distance to climb).
@@ -262,7 +266,7 @@ def get_climb_data(
             output_names=outputs,
             interp_data_sets=[table_data],
             targets=input_targets
-        )[0])
+        )[0][0])
 
     # Find difference
     result = {}
@@ -301,7 +305,7 @@ def get_cruise_data(
     temperature_c: int,
     bhp_percent: int,
     db_session: Session
-) -> Dict[str, Union[int, float]]:
+):
     """
     This function performs a table lookup operation, and returns 
     the cruise data (ktas, gph, rpm).
@@ -323,17 +327,21 @@ def get_cruise_data(
     ).all()
 
     # Get table data results
-    result = recursive_data_interpolation(
+    result, adjusted_targets = recursive_data_interpolation(
         input_names=inputs,
         index=0,
         output_names=outputs,
         interp_data_sets=[table_data],
         targets=input_targets
-    )[0]
+    )
+    result = result[0]
 
     # Pre-process table data results
     result["ktas"] = int(round(result["ktas"], 0))
     result["gph"] = float(round(result["gph"], 2))
     result["rpm"] = int(round(result["rpm"], 0))
 
-    return result
+    new_input_targets = {
+        value: adjusted_targets[i] for i, value in enumerate(inputs)}
+
+    return result, new_input_targets
