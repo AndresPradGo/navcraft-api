@@ -249,6 +249,10 @@ def get_basic_flight_data_for_return(flight_id: int, db_session: Session, user_i
         "departure_aerodrome_is_private": departure[1].user_waypoint is not None,
         "arrival_aerodrome_id": arrival[1].id,
         "arrival_aerodrome_is_private": arrival[1].user_waypoint is not None,
+        "bhp_percent": flight.bhp_percent,
+        "reserve_fuel_hours": flight.reserve_fuel_hours,
+        "contingency_fuel_hours": flight.contingency_fuel_hours,
+        "fuel_on_board_gallons": flight.fuel_on_board_gallons,
         "legs": [{
             "id": leg.id,
             "sequence": leg.sequence,

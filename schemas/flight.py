@@ -69,7 +69,7 @@ class NewFlightWaypointData(BaseModel):
 
         '''
         if value is not None:
-            return round(value, 1)
+            return round(value, 2)
 
         return None
 
@@ -170,20 +170,10 @@ class NewFlightData(BaseModel):
     arrival_aerodrome_id: conint(gt=0)
 
 
-class NewFlightReturn(NewFlightData):
-    """
-    This class defines the flight data returned to the client after posting a new flight.
-    """
-    id: conint(gt=0)
-    departure_aerodrome_is_private: bool
-    arrival_aerodrome_is_private: bool
-    legs: List[NewLegReturn]
-
-
 class UpdateFlightData(BaseModel):
     """
     This class defines the data required from the 
-    client to update the W&B data for a flight.
+    client to update the general flight data.
     """
     departure_time: AwareDatetime
     bhp_percent: conint(ge=45, le=75)
@@ -202,3 +192,44 @@ class UpdateFlightData(BaseModel):
         values.fuel_on_board_gallons = round(values.fuel_on_board_gallons, 2)
 
         return values
+
+
+class NewFlightReturn(NewFlightData, UpdateFlightData):
+    """
+    This class defines the flight data returned to the client after posting a new flight.
+    """
+    id: conint(gt=0)
+    departure_aerodrome_is_private: bool
+    arrival_aerodrome_is_private: bool
+    legs: List[NewLegReturn]
+
+
+class UpdateDepartureArrivalData(BaseModel):
+    """
+    This class defines the data required from the 
+    client to update the departure and arrival flight data.
+    """
+    aerodrome_id: conint(gt=0)
+    wind_direction: Optional[conint(gt=0, le=360)]
+    wind_magnitude_knot: conint(ge=0)
+    temperature_c: int
+    altimeter_inhg: float
+    temperature_last_updated: Optional[AwareDatetime] = None
+    wind_last_updated: Optional[AwareDatetime] = None
+    altimeter_last_updated: Optional[AwareDatetime] = None
+
+    @field_validator('altimeter_inhg')
+    @classmethod
+    def round_altimeter_inhg(cls, value: float) -> float | None:
+        '''
+        Classmethod to round altimeter_inhg input value to 1 decimal place.
+        '''
+        return round(value, 2)
+
+
+class UpdateDepartureArrivalReturn(UpdateDepartureArrivalData):
+    """
+    This class defines the departure/arrival data returned 
+    to the client after an update.
+    """
+    flight_id: conint(gt=0)

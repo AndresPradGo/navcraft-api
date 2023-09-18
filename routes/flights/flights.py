@@ -378,8 +378,147 @@ async def add_flight_baggage(
 
 
 @router.put(
+    "/{flight_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=schemas.NewFlightReturn
+)
+async def edit_flight(
+    flight_id: int,
+    data: schemas.UpdateFlightData,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Edit Flight Endpoint.
+
+    Parameters: 
+    - flight_id (int): flight id.
+    - data (dict): flight data.
+
+    Returns: 
+    - dict: flight data and id.
+
+    Raise:
+    - HTTPException (400): if flight doesn't exist.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Create flight query and check if flight exists
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    flight_query = db_session.query(models.Flight).filter(and_(
+        models.Flight.pilot_id == user_id,
+        models.Flight.id == flight_id
+    ))
+
+    if flight_query.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The flight you're trying to delete is not in the database."
+        )
+
+    # Edit flight
+
+    flight_query.update(data.model_dump())
+
+    return get_basic_flight_data_for_return(
+        flight_id=flight_id,
+        user_id=user_id,
+        db_session=db_session
+    )
+
+
+@router.put(
+    "/departure-arrival/{flight_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=schemas.UpdateDepartureArrivalReturn
+)
+async def edit_departure_arrival(
+    flight_id: int,
+    is_departure: bool,
+    data: schemas.UpdateDepartureArrivalData,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Edit Departure And Arrival Endpoint.
+
+    Parameters: 
+    - flight_id (int): flight id.
+    - is_departure (bool): true is updating the departure, flase if the arrival.
+    - data (dict): flight data.
+
+    Returns: 
+    - dict: flight data and id.
+
+    Raise:
+    - HTTPException (400): if flight or aerodrome doesn't exist.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check if flight exists
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    flight = db_session.query(models.Flight).filter(and_(
+        models.Flight.pilot_id == user_id,
+        models.Flight.id == flight_id
+    )).first()
+
+    if flight is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The flight you're trying to update."
+        )
+
+    # Check aerodrome exists
+    a = models.Aerodrome
+    u = models.UserWaypoint
+    v = models.VfrWaypoint
+
+    aerodrome = db_session.query(a, v)\
+        .join(v, a.vfr_waypoint_id == v.waypoint_id)\
+        .filter(and_(
+            a.id == data.aerodrome_id,
+            a.vfr_waypoint_id.isnot(None),
+            not_(v.hidden)
+        )).first()
+    if aerodrome is None:
+        aerodrome = db_session.query(a, u)\
+            .join(u, a.user_waypoint_id == u.waypoint_id)\
+            .filter(and_(
+                a.id == data.aerodrome_id,
+                a.user_waypoint_id.isnot(None),
+                u.creator_id == user_id
+            )).first()
+        if aerodrome is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Departure aerodrome not found."
+            )
+
+    # Edit and return departure/arrival
+    model = models.Departure if is_departure else models.Arrival
+    db_session.query(model).filter_by(
+        flight_id=flight_id).update(data.model_dump())
+
+    db_session.commit()
+
+    updated_row = db_session.query(model).filter_by(
+        flight_id=flight_id).first().__dict__
+
+    updated_row["temperature_last_updated"] = pytz.timezone(
+        'UTC').localize(updated_row["temperature_last_updated"])
+    updated_row["wind_last_updated"] = pytz.timezone(
+        'UTC').localize(updated_row["wind_last_updated"])
+    updated_row["altimeter_last_updated"] = pytz.timezone(
+        'UTC').localize(updated_row["altimeter_last_updated"])
+
+    return updated_row
+
+
+@router.put(
     "/person-on-board/{pob_id}",
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
     response_model=schemas.PersonOnBoardReturn
 )
 async def edit_person_on_board(
@@ -488,7 +627,7 @@ async def edit_person_on_board(
 
 @router.put(
     "/baggage/{baggage_id}",
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
     response_model=schemas.FlightBaggageReturn
 )
 async def edit_flight_baggage(
@@ -598,7 +737,7 @@ async def delete_flight(
         models.Flight.id == flight_id
     ))
 
-    if not flight_query.first():
+    if flight_query.first() is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="The flight you're trying to delete is not in the database."
