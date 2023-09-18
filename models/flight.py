@@ -119,22 +119,13 @@ class DepartureAndArrival(BaseModel):
         nullable=False,
         unique=True
     )
-    wind_direction = Column(Integer, nullable=False, default=0)
-    wind_magnitude_knot = Column(Integer, nullable=False, default=0)
     temperature_c = Column(Integer, nullable=False, default=15)
+    wind_direction = Column(Integer)
+    wind_magnitude_knot = Column(Integer, nullable=False, default=0)
     altimeter_inhg = Column(DECIMAL(4, 2), nullable=False, default=29.92)
-    weather_valid_from = Column(
-        DateTime,
-        nullable=False,
-        default=datetime.utcnow(),
-        onupdate=datetime.utcnow()
-    )
-    weather_valid_to = Column(
-        DateTime,
-        nullable=False,
-        default=datetime.utcnow(),
-        onupdate=datetime.utcnow()
-    )
+    temperature_last_updated = Column(DateTime)
+    wind_last_updated = Column(DateTime)
+    altimeter_last_updated = Column(DateTime)
     aerodrome_id = Column(
         Integer,
         ForeignKey(
