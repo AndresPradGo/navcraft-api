@@ -239,11 +239,11 @@ class Waypoint(BaseModel):
 
         if self.magnetic_variation is not None\
                 and other_waypoint.magnetic_variation is not None:
-            return (self.magnetic_variation + other_waypoint.magnetic_variation) / 2
+            return (float(self.magnetic_variation) + float(other_waypoint.magnetic_variation)) / 2
         if self.magnetic_variation is not None:
-            return self.magnetic_variation
+            return float(self.magnetic_variation)
         if other_waypoint.magnetic_variation is not None:
-            return other_waypoint.magnetic_variation
+            return float(other_waypoint.magnetic_variation)
         return 0.0
 
 

@@ -8,6 +8,7 @@ Usage:
 from typing import List, Any
 
 from fastapi import HTTPException, status
+import pytz
 from sqlalchemy import and_, not_
 from sqlalchemy.orm import Session, Query
 
@@ -216,3 +217,64 @@ def check_completeness_and_make_preferred_if_complete(profile_id: int, db_sessio
         })
 
         db_session.commit()
+
+
+def get_basic_flight_data_for_return(flight_id: int, db_session: Session, user_id: int):
+    """
+    This functions organizes basic flight data for returning to user.
+    """
+    flight = db_session.query(models.Flight).filter(and_(
+        models.Flight.id == flight_id,
+        models.Flight.pilot_id == user_id
+    )).first()
+
+    departure = db_session.query(models.Departure, models.Aerodrome)\
+        .join(models.Aerodrome, models.Departure.aerodrome_id == models.Aerodrome.id)\
+        .filter(models.Departure.flight_id == flight_id).first()
+
+    arrival = db_session.query(models.Arrival, models.Aerodrome)\
+        .join(models.Aerodrome, models.Arrival.aerodrome_id == models.Aerodrome.id)\
+        .filter(models.Arrival.flight_id == flight_id).first()
+
+    legs = db_session.query(models.Leg, models.FlightWaypoint, models.Waypoint)\
+        .outerjoin(models.FlightWaypoint, models.Leg.id == models.FlightWaypoint.leg_id)\
+        .outerjoin(models.Waypoint, models.FlightWaypoint.waypoint_id == models.Waypoint.id)\
+        .filter(models.Leg.flight_id == flight_id).order_by(models.Leg.sequence).all()
+
+    return {
+        "id": flight.id,
+        "departure_time": pytz.timezone('UTC').localize((flight.departure_time)),
+        "aircraft_id": flight.aircraft_id,
+        "departure_aerodrome_id": departure[1].id,
+        "departure_aerodrome_is_private": departure[1].user_waypoint is not None,
+        "arrival_aerodrome_id": arrival[1].id,
+        "arrival_aerodrome_is_private": arrival[1].user_waypoint is not None,
+        "legs": [{
+            "id": leg.id,
+            "sequence": leg.sequence,
+            "waypoint": {
+                "id": wp.id,
+                "code": flight_wp.code,
+                "lat_degrees": wp.lat_degrees,
+                "lat_minutes": wp.lat_minutes,
+                "lat_seconds": wp.lat_seconds,
+                "lat_direction": wp.lat_direction,
+                "lon_degrees": wp.lon_degrees,
+                "lon_minutes": wp.lon_minutes,
+                "lon_seconds": wp.lon_seconds,
+                "lon_direction": wp.lon_direction,
+                "magnetic_variation": wp.magnetic_variation
+            } if flight_wp is not None else None,
+            "altitude_ft": leg.altitude_ft,
+            "altimeter_inhg": leg.altimeter_inhg,
+            "temperature_c": leg.temperature_c,
+            "wind_magnitude_knot": leg.wind_magnitude_knot,
+            "wind_direction": leg.wind_direction,
+            "temperature_last_updated": pytz.timezone('UTC').localize((leg.temperature_last_updated))
+            if leg.temperature_last_updated is not None else None,
+            "wind_last_updated": pytz.timezone('UTC').localize((leg.wind_last_updated))
+            if leg.wind_last_updated is not None else None,
+            "altimeter_last_updated": pytz.timezone('UTC').localize((leg.altimeter_last_updated))
+            if leg.altimeter_last_updated is not None else None
+        } for leg, flight_wp, wp in legs]
+    }
