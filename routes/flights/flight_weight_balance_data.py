@@ -1,5 +1,5 @@
 """
-FastAPI flights router
+FastAPI flight weight and balance data router
 
 This module defines the FastAPI flights endpoints.
 
@@ -7,6 +7,8 @@ Usage:
 - Import the router to add it to the FastAPI app.
 
 """
+
+from typing import List
 
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy import and_, or_, not_
@@ -20,6 +22,141 @@ from utils.db import get_db
 from functions.data_processing import get_user_id_from_email
 
 router = APIRouter(tags=["Flight Weight and Balance Data"])
+
+
+@router.get(
+    "/person-on-board/{flight_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=List[schemas.PersonOnBoardReturn]
+)
+async def get_all_persons_on_board(
+    flight_id: int,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Get All Persons On Board Of Flight Endpoint.
+
+    Parameters:
+    - Flight_id (int): flight id.
+
+    Returns: 
+    - list: list of person on board dictionaries.
+
+    Raise:
+    - HTTPException (400): if flight doesn't exist.
+    - HTTPException (401): if user is authenticated.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check flight exist
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    flight = db_session.query(models.Flight).filter(and_(
+        models.Flight.pilot_id == user_id,
+        models.Flight.id == flight_id
+    )).first()
+
+    if flight is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Flight not found."
+        )
+
+    # Get POBs
+    persons_on_board = db_session.query(models.PersonOnBoard).filter(
+        models.PersonOnBoard.flight_id == flight_id
+    ).all()
+
+    pob_list = []
+    for person_on_board in persons_on_board:
+        if person_on_board.user_id is not None:
+            user = db_session.query(models.User).filter_by(
+                id=person_on_board.user_id).first()
+            pob_list.append({
+                "id": person_on_board.id,
+                "seat_row_id": person_on_board.seat_row_id,
+                "name": user.name,
+                "weight_lb": user.weight_lb,
+                "user_id": person_on_board.user_id,
+            })
+        elif person_on_board.passenger_profile_id is not None:
+            passenger = db_session.query(models.PassengerProfile).filter(and_(
+                models.PassengerProfile.creator_id == user_id,
+                models.PassengerProfile.id == person_on_board.passenger_profile_id
+            )).first()
+            user = db_session.query(models.User).filter_by(
+                id=person_on_board.user_id).first()
+            pob_list.append({
+                "id": person_on_board.id,
+                "seat_row_id": person_on_board.seat_row_id,
+                "name": passenger.name,
+                "weight_lb": passenger.weight_lb,
+                "passenger_profile_id": passenger.id,
+            })
+        else:
+            pob_list.append({
+                "id": person_on_board.id,
+                "seat_row_id": person_on_board.seat_row_id,
+                "name": person_on_board.name,
+                "weight_lb": person_on_board.weight_lb,
+            })
+
+    return pob_list
+
+
+@router.get(
+    "/baggage/{flight_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=List[schemas.FlightBaggageReturn]
+)
+async def get_all_flight_baggage(
+    flight_id: int,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Get Flight Baggage Endpoint.
+
+    Parameters:
+    - Flight_id (int): flight id.
+
+    Returns: 
+    - list: list of baggage dictionaries.
+
+    Raise:
+    - HTTPException (400): if flight doesn't exist.
+    - HTTPException (401): if user is authenticated.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check flight exist
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    flight = db_session.query(models.Flight).filter(and_(
+        models.Flight.pilot_id == user_id,
+        models.Flight.id == flight_id
+    )).first()
+
+    if flight is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Flight not found."
+        )
+
+    # Get baggage
+    baggages = db_session.query(models.Baggage).filter(
+        models.Baggage.flight_id == flight_id
+    ).all()
+
+    baggage_list = []
+    for baggage in baggages:
+        baggage_list.append({
+            "id": baggage.id,
+            "baggage_compartment_id": baggage.baggage_compartment_id,
+            "name": baggage.name,
+            "weight_lb": baggage.weight_lb,
+        })
+
+    return baggage_list
 
 
 @router.post(
@@ -45,7 +182,7 @@ async def add_person_on_board(
 
     Raise:
     - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
