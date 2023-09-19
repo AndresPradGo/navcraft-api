@@ -275,3 +275,29 @@ class UpdateDepartureArrivalReturn(UpdateDepartureArrivalData):
     to the client after an update.
     """
     flight_id: conint(gt=0)
+
+
+class WaypointsNotUpdatedReturn(BaseModel):
+    """
+    This class defined the basic data returned to the client, 
+    to show a list of flight waypoints that could not be updated.
+    """
+    waypoint_id: conint(gt=0)
+    code: constr(
+        strip_whitespace=True,
+        to_upper=True,
+        min_length=2,
+        max_length=50,
+        pattern='^[-a-zA-Z0-9]+$',
+    )
+
+
+class UpdateWaypointsReturn(BaseModel):
+    """
+    This class defines the data returned to the user, after updating a flight's
+    waypoints.
+    """
+
+    flight_data: NewFlightReturn
+    user_waypoints_not_found: List[WaypointsNotUpdatedReturn]
+    vfr_waypoints_not_found: List[WaypointsNotUpdatedReturn]

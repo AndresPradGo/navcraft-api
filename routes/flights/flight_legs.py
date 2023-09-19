@@ -45,7 +45,7 @@ async def post_new_leg(
     - flight_data (dict): the flight data to be added.
 
     Returns: 
-    - List: new list of legs.
+    - Dict: flight data.
 
     Raise:
     - HTTPException (400): if flight doesn't exist.
@@ -119,10 +119,14 @@ async def post_new_leg(
             lon_direction=waypoint[0].lon_direction,
             magnetic_variation=waypoint[0].magnetic_variation
         )
-        new_flight_waypoint = {"code": waypoint_code, "name": waypoint_name}
+        new_flight_waypoint = {
+            "code": waypoint_code,
+            "name": waypoint_name,
+            "from_user_waypoint": is_user_waypoint,
+            "from_vfr_waypoint": not is_user_waypoint
+        }
 
     else:
-
         new_waypoint = models.Waypoint(
             lat_degrees=leg_data.new_waypoint.lat_degrees,
             lat_minutes=leg_data.new_waypoint.lat_minutes,
@@ -135,7 +139,9 @@ async def post_new_leg(
             magnetic_variation=leg_data.new_waypoint.magnetic_variation
         )
         new_flight_waypoint = {
-            "code": leg_data.new_waypoint.code, "name": leg_data.new_waypoint.name}
+            "code": leg_data.new_waypoint.code,
+            "name": leg_data.new_waypoint.name
+        }
 
     # Update sequence of legs that go after the new leg
     legs_to_update = [
@@ -220,7 +226,7 @@ async def edit_flight_leg(
     - leg_data (dict): the flight leg data to be added.
 
     Returns: 
-    - List: new list of legs.
+    - Dict: flight data.
 
     Raise:
     - HTTPException (400): if flight leg doesn't exist, or data is wrong.
@@ -302,7 +308,9 @@ async def edit_flight_leg(
             })
             flight_waypoint_query.update({
                 "code": waypoint_code,
-                "name": waypoint_name
+                "name": waypoint_name,
+                "from_user_waypoint": is_user_waypoint,
+                "from_vfr_waypoint": not is_user_waypoint
             })
 
         elif leg_data.new_waypoint is not None:
@@ -324,7 +332,9 @@ async def edit_flight_leg(
             })
             flight_waypoint_query.update({
                 "code": leg_data.new_waypoint.code,
-                "name": leg_data.new_waypoint.name
+                "name": leg_data.new_waypoint.name,
+                "from_user_waypoint": False,
+                "from_vfr_waypoint": False
             })
 
     # Update Leg
@@ -347,6 +357,152 @@ async def edit_flight_leg(
         db_session=db_session,
         user_id=user_id
     )[0]
+
+
+@router.put(
+    "/update-waypoints/{flight_id}",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.UpdateWaypointsReturn
+)
+async def update_flight_waypoints(
+    flight_id: int,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Update Flight Waypoints Endpoint.
+
+    Parameters: 
+    - flight_id (int): flight id.
+
+    Returns: 
+    - Dict: flight data.
+
+    Raise:
+    - HTTPException (400): if flight doesn't exist, or data is wrong.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+    # Check flight exists and user has permission to update flight
+    user_id = await get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
+    flight = db_session.query(models.Flight).filter(and_(
+        models.Flight.id == flight_id,
+        models.Flight.pilot_id == user_id
+    )).first()
+
+    if flight is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User is not Authorized to update this flight."
+        )
+
+    leg_ids = [leg.id for leg in db_session.query(
+        models.Leg).filter_by(flight_id=flight_id).all()]
+
+    # Get all flight-waypoints
+    flight_waypoints = db_session.query(models.FlightWaypoint).filter(
+        models.FlightWaypoint.leg_id.in_(leg_ids)
+    ).all()
+    flight_waypoints_from_user = [
+        waypoint for waypoint in flight_waypoints if waypoint.from_user_waypoint
+    ]
+    flight_waypoints_from_vfr = [
+        waypoint for waypoint in flight_waypoints if waypoint.from_vfr_waypoint
+    ]
+
+    # Updata user-waypoints
+    user_waypoints_not_found = []
+    for flight_waypoint_from_user in flight_waypoints_from_user:
+        user_waypoint = db_session.query(
+            models.UserWaypoint,
+            models.Waypoint
+        ).join(
+            models.Waypoint,
+            models.UserWaypoint.waypoint_id == models.Waypoint.id
+        ).filter(and_(
+            models.UserWaypoint.code == flight_waypoint_from_user.code,
+            models.UserWaypoint.creator_id == user_id
+        )).first()
+
+        if user_waypoint is None:
+            user_waypoints_not_found.append({
+                "waypoint_id": flight_waypoint_from_user.waypoint_id,
+                "code": flight_waypoint_from_user.code
+            })
+        else:
+            db_session.query(models.FlightWaypoint).filter_by(
+                waypoint_id=flight_waypoint_from_user.waypoint_id
+            ).update({
+                "name": user_waypoint[0].name
+            })
+
+            db_session.query(models.Waypoint).filter_by(
+                id=flight_waypoint_from_user.waypoint_id
+            ).update({
+                "lat_degrees": user_waypoint[1].lat_degrees,
+                "lat_minutes": user_waypoint[1].lat_minutes,
+                "lat_seconds": user_waypoint[1].lat_seconds,
+                "lat_direction": user_waypoint[1].lat_direction,
+                "lon_degrees": user_waypoint[1].lon_degrees,
+                "lon_minutes": user_waypoint[1].lon_minutes,
+                "lon_seconds": user_waypoint[1].lon_seconds,
+                "lon_direction": user_waypoint[1].lon_direction,
+                "magnetic_variation": user_waypoint[1].magnetic_variation
+            })
+
+    # Updata vfr-waypoints
+    vfr_waypoints_not_found = []
+    for flight_waypoint_from_vfr in flight_waypoints_from_vfr:
+        vfr_waypoint = db_session.query(
+            models.VfrWaypoint,
+            models.Waypoint
+        ).join(
+            models.Waypoint,
+            models.VfrWaypoint.waypoint_id == models.Waypoint.id
+        ).filter(and_(
+            models.VfrWaypoint.code == flight_waypoint_from_vfr.code,
+            models.VfrWaypoint.hidden.is_(False)
+        )).first()
+
+        if vfr_waypoint is None:
+            vfr_waypoints_not_found.append({
+                "waypoint_id": flight_waypoint_from_vfr.waypoint_id,
+                "code": flight_waypoint_from_vfr.code
+            })
+        else:
+            db_session.query(models.FlightWaypoint).filter_by(
+                waypoint_id=flight_waypoint_from_vfr.waypoint_id
+            ).update({
+                "name": vfr_waypoint[0].name
+            })
+
+            db_session.query(models.Waypoint).filter_by(
+                id=flight_waypoint_from_vfr.waypoint_id
+            ).update({
+                "lat_degrees": vfr_waypoint[1].lat_degrees,
+                "lat_minutes": vfr_waypoint[1].lat_minutes,
+                "lat_seconds": vfr_waypoint[1].lat_seconds,
+                "lat_direction": vfr_waypoint[1].lat_direction,
+                "lon_degrees": vfr_waypoint[1].lon_degrees,
+                "lon_minutes": vfr_waypoint[1].lon_minutes,
+                "lon_seconds": vfr_waypoint[1].lon_seconds,
+                "lon_direction": vfr_waypoint[1].lon_direction,
+                "magnetic_variation": vfr_waypoint[1].magnetic_variation
+            })
+
+    db_session.commit()
+
+    # Return
+    return {
+        "flight_data": get_basic_flight_data_for_return(
+            flight_ids=[flight_id],
+            db_session=db_session,
+            user_id=user_id
+        )[0],
+        "user_waypoints_not_found": user_waypoints_not_found,
+        "vfr_waypoints_not_found": vfr_waypoints_not_found
+    }
 
 
 @router.delete(

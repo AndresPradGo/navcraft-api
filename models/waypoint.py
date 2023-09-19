@@ -350,6 +350,8 @@ class FlightWaypoint(BaseModel):
     )
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
+    from_user_waypoint = Column(Boolean, nullable=False, default=False)
+    from_vfr_waypoint = Column(Boolean, nullable=False, default=False)
     leg_id = Column(
         Integer,
         ForeignKey(
