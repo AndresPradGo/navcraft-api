@@ -91,6 +91,8 @@ class PersonOnBoardReturn(BaseModel):
         pattern="^[-a-zA-Z0-9' ]+$",
     )
     weight_lb: confloat(allow_inf_nan=False, ge=0, le=999.99)
+    user_id: Optional[conint(gt=0)] = None
+    passenger_profile_id: Optional[conint(gt=0)] = None
 
 
 class FlightBaggageData(BaseModel):

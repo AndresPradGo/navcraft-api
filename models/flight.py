@@ -203,7 +203,7 @@ class PersonOnBoard(BaseModel):
     __tablename__ = "persons_on_board"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(255), nullable=False)
+    name = Column(String(255))
     weight_lb = Column(DECIMAL(5, 2))
     flight_id = Column(
         Integer,
@@ -222,9 +222,28 @@ class PersonOnBoard(BaseModel):
         ),
         nullable=False
     )
+    user_id = Column(
+        Integer,
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE"
+        )
+    )
+    passenger_profile_id = Column(
+        Integer,
+        ForeignKey(
+            "passenger_profiles.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE"
+        )
+    )
 
     flight = Relationship("Flight", back_populates="persons_on_board")
     seat_row = Relationship("SeatRow", back_populates="persons_on_board")
+    user = Relationship("User", back_populates="persons_on_board")
+    passenger_profile = Relationship(
+        "PassengerProfile", back_populates="persons_on_board")
 
 
 class Baggage(BaseModel):

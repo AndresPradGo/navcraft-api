@@ -64,6 +64,12 @@ class User(BaseModel):
         passive_deletes=True,
         passive_updates=True
     )
+    persons_on_board = Relationship(
+        "PersonOnBoard",
+        back_populates="user",
+        passive_deletes=True,
+        passive_updates=True
+    )
 
     def generate_auth_token(self, expires_delta: timedelta | None = None):
         """
@@ -115,3 +121,9 @@ class PassengerProfile(BaseModel):
     )
 
     creator = Relationship("User", back_populates="passenger_profiles")
+    persons_on_board = Relationship(
+        "PersonOnBoard",
+        back_populates="passenger_profile",
+        passive_deletes=True,
+        passive_updates=True
+    )
