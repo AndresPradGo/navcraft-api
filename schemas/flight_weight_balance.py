@@ -135,48 +135,82 @@ class FlightBaggageReturn(FlightBaggageData):
     id: conint(gt=0)
 
 
-class WeightAndBalanceFuelReturn(BaseModel):
+class BaseWeightAndBalanceReportReturn(BaseModel):
+    """
+    This class defines the base weight and balance data 
+    returned to the client in the  W&B report.
+    """
+
+    weight_lb: float
+    arm_in: float
+    moment_lb_in: float
+
+
+class WeightAndBalanceFuelReturn(BaseWeightAndBalanceReportReturn):
     """
     This class defines the data structure to return fuel 
-    weight and balance data to the client.
+    weight and balance data to the client, as pasrt of the W&B report.
     """
 
     gallons: confloat(allow_inf_nan=False, ge=0, le=999.99)
-    density_lb_gal: confloat(gt=0, allow_inf_nan=False, le=99.99)
-    fuel_burned_gallons: confloat(allow_inf_nan=False, ge=0, le=999.99)
-    take_off_taxi_fuel_gallons: confloat(allow_inf_nan=False, ge=0, le=99.99)
-
-    @model_validator(mode='after')
-    @classmethod
-    def round_values(cls, values):
-        '''
-        Classmethod to check to round float values.
-
-        Parameters:
-        - values (Any): The object with float values.
-
-        Returns:
-        (Any) : The object of rounded values.
-        '''
-        values.gallons = round(values.gallons, 2)
-        values.density_lb_gal = round(values.density_lb_gal, 2)
-        values.fuel_burned_gallons = round(values.fuel_burned_gallons, 2)
-        values.take_off_taxi_fuel_gallons = round(
-            values.take_off_taxi_fuel_gallons, 2)
-
-        return values
 
 
-class FlightWeightAndBalanceReturn(BaseModel):
+class WeightAndBalanceFuelTankReturn(WeightAndBalanceFuelReturn):
     """
-    This class defines the flight W&B data returned to the user.
+    This class defines the data structure to return fuel 
+    weight and balance data to the client, as pasrt of the W&B report.
+    """
+
+    fuel_tank_id: conint(gt=0)
+    fuel_tank_name: constr(
+        min_length=2,
+        max_length=50,
+        pattern="^[\-a-zA-Z0-9 ]+$"  # pylint: disable=anomalous-backslash-in-string
+    )
+
+
+class WeightAndBalanceSeatRowReturn(BaseWeightAndBalanceReportReturn):
+    """
+    This class defines the seat_rows data returned to the client, 
+    as part of the  W&B report.
+    """
+
+    seat_row_id: conint(gt=0)
+    seat_row_name: constr(
+        min_length=2,
+        max_length=50,
+        pattern="^[\-a-zA-Z0-9 ]+$"  # pylint: disable=anomalous-backslash-in-string
+    )
+
+
+class WeightAndBalanceBaggageCompartmentReturn(BaseWeightAndBalanceReportReturn):
+    """
+    This class defines the baggage_compartment data returned to the client, 
+    as part of the  W&B report.
+    """
+    baggage_compartment_id: conint(gt=0)
+    baggage_compartment_name: constr(
+        min_length=2,
+        max_length=50,
+        pattern="^[\-a-zA-Z0-9 ]+$"  # pylint: disable=anomalous-backslash-in-string
+    )
+
+
+class WeightAndBalanceReport(BaseModel):
+    """
+    This class defines the  W&B report data returned to the user.
     """
 
     warnings: List[constr(
         strip_whitespace=True,
-        max_length=255,
-        pattern='^[.,--a-zA-Z0-9 ]+$',
+        max_length=255
     )]
-    persons_on_board: List[PersonOnBoardReturn]
-    baggages: List[FlightBaggageReturn]
-    fuel_on_board: WeightAndBalanceFuelReturn
+    seats: List[WeightAndBalanceSeatRowReturn]
+    compartments: List[WeightAndBalanceBaggageCompartmentReturn]
+    fuel_on_board: List[WeightAndBalanceFuelTankReturn]
+    fuel_burned_pre_takeoff: WeightAndBalanceFuelReturn
+    fuel_burned: List[WeightAndBalanceFuelTankReturn]
+    zero_fuel_weight: BaseWeightAndBalanceReportReturn
+    ramp_weight: BaseWeightAndBalanceReportReturn
+    takeoff_weight: BaseWeightAndBalanceReportReturn
+    landing_weight: BaseWeightAndBalanceReportReturn

@@ -182,7 +182,7 @@ async def add_person_on_board(
 
     Raise:
     - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is authenticated.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
