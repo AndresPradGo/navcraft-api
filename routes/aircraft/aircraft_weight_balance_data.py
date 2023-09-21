@@ -376,6 +376,17 @@ async def post_new_weight_and_balance_profile(
         profile_id=profile_id
     )
 
+    # Check maximum number of W&B profiles is 4
+    wb_profiles = db_session.query(models.WeightBalanceProfile).filter(
+        models.WeightBalanceProfile.performance_profile_id == profile_id
+    ).all()
+
+    if len(wb_profiles) >= 4:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Maximum number of W&B profiles per performance profile is 4."
+        )
+
     # Check weight and balance profile doesn't already exist
     wb_profile_exists = db_session.query(
         models.WeightBalanceProfile).filter(and_(
