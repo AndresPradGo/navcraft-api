@@ -300,6 +300,96 @@ async def edit_flight(
 
 
 @router.put(
+    "/change-aircraft/{flight_id}/{aircraft_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=schemas.NewFlightReturn
+)
+async def change_aircraft(
+    flight_id: int,
+    aircraft_id: int,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Change Aircraft Endpoint.
+
+    Parameters: 
+    - flight_id (int): flight id.
+    - aircraft_id (int): aircraft id.
+
+    Returns: 
+    - dict: flight data and id.
+
+    Raise:
+    - HTTPException (400): if flight or aircraft doesn't exist.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+    # Get user ID
+    user_id = await get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
+
+    # Check if flight exists
+    flight_query = db_session.query(models.Flight).filter(and_(
+        models.Flight.pilot_id == user_id,
+        models.Flight.id == flight_id
+    ))
+
+    if flight_query.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The flight you're trying to update."
+        )
+
+    # Check aircraft exists and is owned by user
+    aircraft = db_session.query(models.PerformanceProfile, models.Aircraft).join(
+        models.Aircraft,
+        models.PerformanceProfile.aircraft_id == models.Aircraft.id
+    ).filter(and_(
+        models.Aircraft.id == aircraft_id,
+        models.Aircraft.owner_id == user_id,
+        models.PerformanceProfile.is_preferred.is_(True),
+        models.PerformanceProfile.is_complete.is_(True)
+    )).first()
+    if aircraft is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Provide a valid aircraft ID, or complete the preferred performance profile."
+        )
+
+    # Unload old aircraft
+    old_aircraft_id = flight_query.first().aircraft_id
+    if old_aircraft_id is not None:
+
+        _ = db_session.query(models.PersonOnBoard).filter(
+            models.PersonOnBoard.flight_id == flight_id).delete()
+        _ = db_session.query(models.Baggage).filter(
+            models.Baggage.flight_id == flight_id).delete()
+        _ = db_session.query(models.Fuel).filter(
+            models.Fuel.flight_id == flight_id).delete()
+
+    # Change aircraft
+    flight_query.update({"aircraft_id": aircraft_id})
+
+    tank_ids = [tank.id for tank in db_session.query(models.FuelTank).filter_by(
+        performance_profile_id=aircraft[0].id).all()]
+
+    for tank_id in tank_ids:
+        db_session.add(models.Fuel(
+            flight_id=flight_id,
+            fuel_tank_id=tank_id
+        ))
+
+    db_session.commit()
+
+    return get_basic_flight_data_for_return(
+        flight_ids=[flight_id],
+        db_session=db_session,
+        user_id=user_id
+    )[0]
+
+
+@router.put(
     "/departure-arrival/{flight_id}",
     status_code=status.HTTP_200_OK,
     response_model=schemas.UpdateDepartureArrivalReturn
