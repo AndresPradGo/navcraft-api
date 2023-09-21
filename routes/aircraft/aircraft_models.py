@@ -340,11 +340,21 @@ async def edit_performance_profile(
     })
     db_session.commit()
 
+    # Return profile
     new_performance_profile = db_session.query(
         models.PerformanceProfile).filter_by(id=performance_profile_id).first()
+
+    fuel_tanks = db_session.query(models.FuelTank).filter_by(
+        performance_profile_id=performance_profile_id).all()
+
+    fuel_capacity = sum([tank.fuel_capacity_gallons for tank in fuel_tanks])
+    unusable_fuel = sum([tank.unusable_fuel_gallons for tank in fuel_tanks])
+
     return {
         **new_performance_profile.__dict__,
-        "performance_profile_name": new_performance_profile.name
+        "performance_profile_name": new_performance_profile.name,
+        "fuel_capacity_gallons": fuel_capacity,
+        "unusable_fuel_gallons": unusable_fuel
     }
 
 

@@ -148,16 +148,17 @@ def performance_profile_is_complete(profile_id: int, db_session: Session) -> boo
     the minimum requirements to be complete, and if so, it returns True.
     """
     # Check table data
-    table_data_modes_and_min_requireemnts = [
+    table_data_models_and_min_requireemnts = [
         {"model": models.TakeoffPerformance, "min_quantity": 2},
         {"model": models.LandingPerformance, "min_quantity": 2},
         {"model": models.ClimbPerformance, "min_quantity": 2},
         {"model": models.CruisePerformance, "min_quantity": 2},
         {"model": models.SeatRow, "min_quantity": 1},
+        {"model": models.FuelTank, "min_quantity": 1},
         {"model": models.WeightBalanceProfile, "min_quantity": 1}
     ]
 
-    for item in table_data_modes_and_min_requireemnts:
+    for item in table_data_models_and_min_requireemnts:
         data = db_session.query(item["model"]).filter(
             item["model"].performance_profile_id == profile_id
         ).all()
@@ -173,9 +174,7 @@ def performance_profile_is_complete(profile_id: int, db_session: Session) -> boo
         profile_data.center_of_gravity_in,
         profile_data.empty_weight_lb,
         profile_data.max_ramp_weight_lb,
-        profile_data.max_landing_weight_lb,
-        profile_data.fuel_arm_in,
-        profile_data.fuel_capacity_gallons
+        profile_data.max_landing_weight_lb
     ]
     there_are_null_values = sum(
         [1 for value in values if value is not None]) < len(values)
@@ -183,6 +182,59 @@ def performance_profile_is_complete(profile_id: int, db_session: Session) -> boo
         return False
 
     return True
+
+
+def unload_aircraft(profile_id: int, db_session: Session):
+    """
+    This function deletes all persons on board baggages and fuel for 
+    all flights using the performance profile passed as an argument.
+    """
+    # Get all flights
+    profile = db_session.query(models.PerformanceProfile).filter(and_(
+        models.PerformanceProfile.id == profile_id
+    )).first()
+
+    flights = db_session.query(models.Flight).filter_by(
+        aircraft_id=profile.aircraft_id).all()
+
+    # Unload all flights
+    for flight in flights:
+        _ = db_session.query(models.PersonOnBoard).filter(
+            models.PersonOnBoard.flight_id == flight.id).delete()
+        _ = db_session.query(models.Baggage).filter(
+            models.Baggage.flight_id == flight.id).delete()
+        _ = db_session.query(models.Fuel).filter(
+            models.Fuel.flight_id == flight.id).delete()
+
+    db_session.commit()
+
+
+def create_empty_tanks(profile_id: int, db_session: Session):
+    """
+    This function created empty tanks for all flights 
+    using the performance profile passed as an argument.
+    """
+    # Get all flights
+    profile = db_session.query(models.PerformanceProfile).filter(and_(
+        models.PerformanceProfile.id == profile_id
+    )).first()
+
+    flights = db_session.query(models.Flight).filter_by(
+        aircraft_id=profile.aircraft_id).all()
+
+    # Get tank ids
+    tank_ids = [tank.id for tank in db_session.query(models.FuelTank).filter_by(
+        performance_profile_id=profile_id).all()]
+
+    # Create empty tanks
+    for flight in flights:
+        for tank_id in tank_ids:
+            db_session.add(models.Fuel(
+                flight_id=flight.id,
+                fuel_tank_id=tank_id
+            ))
+
+    db_session.commit()
 
 
 def check_completeness_and_make_preferred_if_complete(profile_id: int, db_session: Session) -> None:
@@ -193,6 +245,7 @@ def check_completeness_and_make_preferred_if_complete(profile_id: int, db_sessio
         models.PerformanceProfile.id == profile_id
     ).first()
     if performance_profile.aircraft_id is not None:
+        profiles_was_preferred = performance_profile.is_preferred
         profile_is_complete = performance_profile_is_complete(
             profile_id=profile_id,
             db_session=db_session
@@ -208,6 +261,11 @@ def check_completeness_and_make_preferred_if_complete(profile_id: int, db_sessio
             make_preferred = aircraft_preferred_profile is None
         else:
             make_preferred = False
+
+        if profiles_was_preferred and not make_preferred:
+            unload_aircraft(profile_id=profile_id, db_session=db_session)
+        elif not profiles_was_preferred and make_preferred:
+            create_empty_tanks(profile_id=profile_id, db_session=db_session)
 
         db_session.query(models.PerformanceProfile).filter(
             models.PerformanceProfile.id == profile_id
@@ -243,6 +301,9 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
             .outerjoin(models.Waypoint, models.FlightWaypoint.waypoint_id == models.Waypoint.id)\
             .filter(models.Leg.flight_id == flight_id).order_by(models.Leg.sequence).all()
 
+        fuel_tanks = db_session.query(models.Fuel).filter_by(
+            flight_id=flight_id).all()
+
         flight_list.append({
             "id": flight.id,
             "departure_time": pytz.timezone('UTC').localize((flight.departure_time)),
@@ -254,7 +315,7 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
             "bhp_percent": flight.bhp_percent,
             "reserve_fuel_hours": flight.reserve_fuel_hours,
             "contingency_fuel_hours": flight.contingency_fuel_hours,
-            "fuel_on_board_gallons": flight.fuel_on_board_gallons,
+            "fuel_on_board_gallons": sum([tank.gallons for tank in fuel_tanks]),
             "legs": [{
                 "id": leg.id,
                 "sequence": leg.sequence,

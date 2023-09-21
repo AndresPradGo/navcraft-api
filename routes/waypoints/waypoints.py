@@ -392,9 +392,9 @@ async def post_private_aerodrome(
     new_aerodrome = models.Aerodrome(
         id=new_waypoint.id,
         user_waypoint_id=new_waypoint.id,
-        has_taf=aerodrome.has_taf,
-        has_metar=aerodrome.has_metar,
-        has_fds=aerodrome.has_fds,
+        has_taf=False,
+        has_metar=False,
+        has_fds=False,
         elevation_ft=aerodrome.elevation_ft,
         status_id=aerodrome.status
     )
@@ -597,9 +597,6 @@ async def edit_private_aerodrome(
         })
 
     aerodrome_data = {
-        "has_taf": aerodrome.has_taf,
-        "has_metar": aerodrome.has_metar,
-        "has_fds": aerodrome.has_fds,
         "elevation_ft": aerodrome.elevation_ft
     }
 

@@ -28,9 +28,6 @@ class PerformanceProfile(BaseModel):
     empty_weight_lb = Column(DECIMAL(7, 2))
     max_ramp_weight_lb = Column(DECIMAL(7, 2))
     max_landing_weight_lb = Column(DECIMAL(7, 2))
-    fuel_arm_in = Column(DECIMAL(5, 2))
-    fuel_capacity_gallons = Column(DECIMAL(5, 2))
-    unusable_fuel_gallons = Column(DECIMAL(5, 2), nullable=False, default=0.0)
     baggage_allowance_lb = Column(DECIMAL(6, 2))
     take_off_taxi_fuel_gallons = Column(
         DECIMAL(4, 2), nullable=False, default=0.0)
@@ -73,6 +70,12 @@ class PerformanceProfile(BaseModel):
     )
     seat_rows = Relationship(
         "SeatRow",
+        back_populates="performance_profile",
+        passive_deletes=True,
+        passive_updates=True
+    )
+    fuel_tanks = Relationship(
+        "FuelTank",
         back_populates="performance_profile",
         passive_deletes=True,
         passive_updates=True
@@ -311,6 +314,42 @@ class SeatRow(BaseModel):
     persons_on_board = Relationship(
         "PersonOnBoard",
         back_populates="seat_row",
+        passive_deletes=True,
+        passive_updates=True
+    )
+
+
+class FuelTank(BaseModel):
+    """
+    This class defines the database fuel_tanks table.
+    """
+
+    __tablename__ = "fuel_tanks"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(50), nullable=False)
+    arm_in = Column(DECIMAL(5, 2), nullable=False)
+    fuel_capacity_gallons = Column(DECIMAL(5, 2), nullable=False)
+    unusable_fuel_gallons = Column(DECIMAL(5, 2), nullable=False, default=0.0)
+    burn_sequence = Column(Integer, nullable=False, default=1)
+
+    performance_profile_id = Column(
+        Integer,
+        ForeignKey(
+            "performance_profiles.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE"
+        ),
+        nullable=False
+    )
+
+    performance_profile = Relationship(
+        "PerformanceProfile",
+        back_populates="fuel_tanks"
+    )
+    flights = Relationship(
+        "Fuel",
+        back_populates="fuel_tank",
         passive_deletes=True,
         passive_updates=True
     )

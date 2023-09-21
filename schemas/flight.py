@@ -252,7 +252,7 @@ class UpdateDepartureArrivalData(BaseModel):
     client to update the departure and arrival flight data.
     """
     aerodrome_id: conint(gt=0)
-    wind_direction: Optional[conint(gt=0, le=360)]
+    wind_direction: Optional[conint(gt=0, le=360)] = None
     wind_magnitude_knot: conint(ge=0)
     temperature_c: int
     altimeter_inhg: float

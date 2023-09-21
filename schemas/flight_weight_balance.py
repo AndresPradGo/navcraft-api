@@ -135,6 +135,15 @@ class FlightBaggageReturn(FlightBaggageData):
     id: conint(gt=0)
 
 
+class FlightFuelReturn(BaseModel):
+    """"
+    This class defines the data structure required to return fuel data to the client.
+    """
+    id: conint(gt=0)
+    fuel_tank_id: conint(gt=0)
+    gallons: confloat(allow_inf_nan=False, ge=0, le=999.99)
+
+
 class BaseWeightAndBalanceReportReturn(BaseModel):
     """
     This class defines the base weight and balance data 

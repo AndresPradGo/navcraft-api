@@ -362,6 +362,9 @@ def _add_performance_profile_models():
                         seat_rows = [schemas.SeatRowData(
                             **row) for row in profile_satic_data["seat_rows"]]
 
+                        fuel_tanks = [schemas.FuelTankData(
+                            **row) for row in profile_satic_data["fuel_tanks"]]
+
                         weight_balance_profiles = [schemas.WeightBalanceData(
                             **wb_profile
                         ) for wb_profile in profile_satic_data["weight_balance_profiles"]]
@@ -393,9 +396,6 @@ def _add_performance_profile_models():
                             empty_weight_lb=profile_data["weight_balance"].empty_weight_lb,
                             max_ramp_weight_lb=profile_data["weight_balance"].max_ramp_weight_lb,
                             max_landing_weight_lb=profile_data["weight_balance"].max_landing_weight_lb,
-                            fuel_arm_in=profile_data["weight_balance"].fuel_arm_in,
-                            fuel_capacity_gallons=profile_data["weight_balance"].fuel_capacity_gallons,
-                            unusable_fuel_gallons=profile_data["weight_balance"].unusable_fuel_gallons,
                             baggage_allowance_lb=profile_data["weight_balance"].baggage_allowance_lb,
                             take_off_taxi_fuel_gallons=profile_data["climb"].take_off_taxi_fuel_gallons,
                             percent_increase_climb_temperature_c=profile_data[
@@ -450,6 +450,13 @@ def _add_performance_profile_models():
                             performance_profile_id=performance_profile_id
                         ) for row in seat_rows]
                         db_session.add_all(new_seat_rows)
+
+                        # Add fuel tanks
+                        new_fuel_tanks = [models.FuelTank(
+                            **row.model_dump(),
+                            performance_profile_id=performance_profile_id
+                        ) for row in fuel_tanks]
+                        db_session.add_all(new_fuel_tanks)
 
                         # Add runway surface adjustment values
                         new_takeoff_surface_adjustments = [models.SurfacePerformanceDecrease(

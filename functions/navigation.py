@@ -65,7 +65,7 @@ def find_closest_waypoint(
     from a list of waypoints.
     """
     # pylint: disable=unnecessary-lambda
-    other_waypoints.sort(key=lambda w: waypoint.great_arc_to(w))
+    other_waypoints.sort(key=lambda w: waypoint.great_arc_to_waypoint(w))
     return other_waypoints[0]
 
 

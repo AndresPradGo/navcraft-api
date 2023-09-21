@@ -19,7 +19,11 @@ import models
 import schemas
 from utils import common_responses
 from utils.db import get_db
-from functions.data_processing import get_user_id_from_email
+from functions.data_processing import (
+    get_user_id_from_email,
+    unload_aircraft,
+    create_empty_tanks
+)
 
 router = APIRouter(tags=["Aircraft"])
 
@@ -313,12 +317,12 @@ async def post_new_aircraft_performance_profile_from_model(
 
     profile_exists = len([
         profile.name for profile in aircraft_profiles
-        if profile.name == model_profile.performance_profile_name
+        if profile.name == model_profile.name
     ]) > 0
     if profile_exists:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"'{model_profile.performance_profile_name}' Profile already exists."
+            detail=f"'{model_profile.name}' Profile already exists."
         )
 
     completed_aircraft_profiles = [
@@ -393,6 +397,7 @@ async def post_new_aircraft_performance_profile_from_model(
     add_performance_models([
         models.BaggageCompartment,
         models.SeatRow,
+        models.FuelTank,
         models.SurfacePerformanceDecrease,
         models.TakeoffPerformance,
         models.LandingPerformance,
@@ -401,7 +406,20 @@ async def post_new_aircraft_performance_profile_from_model(
     ])
 
     db_session.commit()
-    return {**new_profile_dict, "performance_profile_name": new_profile_dict["name"]}
+
+    # Return profile data
+    fuel_tanks = db_session.query(models.FuelTank).filter_by(
+        performance_profile_id=new_profile_id).all()
+
+    fuel_capacity = sum([tank.fuel_capacity_gallons for tank in fuel_tanks])
+    unusable_fuel = sum([tank.unusable_fuel_gallons for tank in fuel_tanks])
+
+    return {
+        **new_profile_dict,
+        "performance_profile_name": new_profile_dict["name"],
+        "fuel_capacity_gallons": fuel_capacity,
+        "unusable_fuel_gallons": unusable_fuel
+    }
 
 
 @router.put(
@@ -543,11 +561,21 @@ async def edit_aircraft_performance_profile(
     })
     db_session.commit()
 
+    # Return profile
     new_performance_profile = db_session.query(
         models.PerformanceProfile).filter_by(id=performance_profile_id).first()
+
+    fuel_tanks = db_session.query(models.FuelTank).filter_by(
+        performance_profile_id=performance_profile_id).all()
+
+    fuel_capacity = sum([tank.fuel_capacity_gallons for tank in fuel_tanks])
+    unusable_fuel = sum([tank.unusable_fuel_gallons for tank in fuel_tanks])
+
     return {
         **new_performance_profile.__dict__,
-        "performance_profile_name": new_performance_profile.name
+        "performance_profile_name": new_performance_profile.name,
+        "fuel_capacity_gallons": fuel_capacity,
+        "unusable_fuel_gallons": unusable_fuel
     }
 
 
@@ -588,10 +616,11 @@ async def make_aircraft_performance_profile_preferred_profile(
         )
 
     # Check if user has permission to edit this profile
+    aircraft_id = performance_profile_query.first().aircraft_id
     user_id = await get_user_id_from_email(
         email=current_user.email, db_session=db_session)
     user_is_aircraft_owner = db_session.query(models.Aircraft).filter(and_(
-        models.Aircraft.id == performance_profile_query.first().aircraft_id,
+        models.Aircraft.id == aircraft_id,
         models.Aircraft.owner_id == user_id
     )).first()
     if user_is_aircraft_owner is None:
@@ -607,19 +636,38 @@ async def make_aircraft_performance_profile_preferred_profile(
             detail="Complete the profile before making it preferred."
         )
     # Make all aircraft profiles not preferred
+    preferred_profile = db_session.query(models.PerformanceProfile).filter(and_(
+        models.PerformanceProfile.aircraft_id == aircraft_id,
+        models.PerformanceProfile.is_preferred.is_(True)
+    )).first()
+    if preferred_profile is not None:
+        unload_aircraft(profile_id=preferred_profile.id, db_session=db_session)
+
     db_session.query(models.PerformanceProfile).filter(
-        performance_profile_query.first().aircraft_id
+        models.PerformanceProfile.aircraft_id == aircraft_id
     ).update({"is_preferred": False})
 
     # Update profile
     performance_profile_query.update({"is_preferred": True})
     db_session.commit()
+    create_empty_tanks(
+        profile_id=performance_profile_id,
+        db_session=db_session
+    )
 
     new_performance_profile = db_session.query(
         models.PerformanceProfile).filter_by(id=performance_profile_id).first()
+
+    fuel_tanks = db_session.query(models.FuelTank).filter_by(
+        performance_profile_id=performance_profile_id).all()
+
+    fuel_capacity = sum([tank.fuel_capacity_gallons for tank in fuel_tanks])
+    unusable_fuel = sum([tank.unusable_fuel_gallons for tank in fuel_tanks])
     return {
         **new_performance_profile.__dict__,
-        "performance_profile_name": new_performance_profile.name
+        "performance_profile_name": new_performance_profile.name,
+        "fuel_capacity_gallons": fuel_capacity,
+        "unusable_fuel_gallons": unusable_fuel
     }
 
 

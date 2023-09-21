@@ -184,10 +184,6 @@ class AerodromeBase(BaseModel):
     """
     This class defines the basic aerodrome data-structure
     """
-
-    has_taf: bool
-    has_metar: bool
-    has_fds: bool
     elevation_ft: int
 
 
@@ -196,6 +192,9 @@ class RegisteredAerodromeData(VfrWaypointData, AerodromeBase):
     This class defines the data required from client to post a new registered aerodrome.
     """
     status: int
+    has_taf: bool
+    has_metar: bool
+    has_fds: bool
 
 
 class PrivateAerodromeData(UserWaypointData, AerodromeBase):

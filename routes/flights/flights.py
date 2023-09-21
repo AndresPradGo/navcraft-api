@@ -99,15 +99,15 @@ async def post_new_flight(
         email=current_user.email, db_session=db_session)
 
     # Check aircraft exists and is owned by user
-    aircraft = db_session.query(models.Aircraft, models.PerformanceProfile)\
-        .join(models.PerformanceProfile,
-              models.Aircraft.id == models.PerformanceProfile.aircraft_id)\
-        .filter(and_(
-            models.Aircraft.id == flight_data.aircraft_id,
-            models.Aircraft.owner_id == user_id,
-            models.PerformanceProfile.is_preferred.is_(True),
-            models.PerformanceProfile.is_complete.is_(True)
-        )).first()
+    aircraft = db_session.query(models.PerformanceProfile, models.Aircraft).join(
+        models.Aircraft,
+        models.PerformanceProfile.aircraft_id == models.Aircraft.id
+    ).filter(and_(
+        models.Aircraft.id == flight_data.aircraft_id,
+        models.Aircraft.owner_id == user_id,
+        models.PerformanceProfile.is_preferred.is_(True),
+        models.PerformanceProfile.is_complete.is_(True)
+    )).first()
     if aircraft is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -177,12 +177,23 @@ async def post_new_flight(
     new_flight = models.Flight(
         pilot_id=user_id,
         departure_time=flight_data.departure_time,
-        aircraft_id=aircraft[0].id
+        aircraft_id=aircraft[1].id
     )
     db_session.add(new_flight)
     db_session.commit()
     db_session.refresh(new_flight)
     new_flight_data = {**new_flight.__dict__}
+
+    # Post fuel tanks
+    print(aircraft[0].id)
+    tank_ids = [tank.id for tank in db_session.query(models.FuelTank).filter_by(
+        performance_profile_id=aircraft[0].id).all()]
+    print(tank_ids)
+    for tank_id in tank_ids:
+        db_session.add(models.Fuel(
+            flight_id=new_flight_data["id"],
+            fuel_tank_id=tank_id
+        ))
 
     # Post departure and arrival
     new_departure = models.Departure(
@@ -196,6 +207,7 @@ async def post_new_flight(
         aerodrome_id=arrival[0].id
     )
     db_session.add(new_arrival)
+    db_session.commit()
 
     # Post Leg
     magnetic_var = navigation.get_magnetic_variation_for_leg(
@@ -418,10 +430,10 @@ async def delete_flight(
 
     # Delete flight and waypoints
     deleted_flight = flight_query.delete(synchronize_session=False)
-    deleterd_waypoints = db_session.query(models.Waypoint)\
+    deleted_waypoints = db_session.query(models.Waypoint)\
         .filter(models.Waypoint.id.in_(waypoint_ids))\
         .delete(synchronize_session=False)
-    if not deleted_flight or not deleterd_waypoints:
+    if not deleted_flight or deleted_waypoints < len(waypoint_ids):
         raise common_responses.internal_server_error()
 
     db_session.commit()

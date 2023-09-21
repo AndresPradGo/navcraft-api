@@ -41,11 +41,7 @@ class Flight(BaseModel):
         nullable=False,
         default=0.0
     )
-    fuel_on_board_gallons = Column(
-        DECIMAL(5, 2),
-        nullable=False,
-        default=0.0
-    )
+
     aircraft_id = Column(
         Integer,
         ForeignKey(
@@ -93,6 +89,12 @@ class Flight(BaseModel):
     )
     baggages = Relationship(
         "Baggage",
+        back_populates="flight",
+        passive_deletes=True,
+        passive_updates=True
+    )
+    fuel_tanks = Relationship(
+        "Fuel",
         back_populates="flight",
         passive_deletes=True,
         passive_updates=True
@@ -279,4 +281,40 @@ class Baggage(BaseModel):
     baggage_compartment = Relationship(
         "BaggageCompartment",
         back_populates="baggages"
+    )
+
+
+class Fuel(BaseModel):
+    """
+    This class defines the database fuel table.
+    """
+
+    __tablename__ = "fuel"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    gallons = Column(DECIMAL(5, 2), nullable=False, default=0.0)
+
+    flight_id = Column(
+        Integer,
+        ForeignKey(
+            "flights.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE"
+        ),
+        nullable=False
+    )
+    fuel_tank_id = Column(
+        Integer,
+        ForeignKey(
+            "fuel_tanks.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE"
+        ),
+        nullable=False
+    )
+
+    flight = Relationship("Flight", back_populates="fuel_tanks")
+    fuel_tank = Relationship(
+        "FuelTank",
+        back_populates="flights"
     )

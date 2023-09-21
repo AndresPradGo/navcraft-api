@@ -159,6 +159,66 @@ async def get_all_flight_baggage(
     return baggage_list
 
 
+@router.get(
+    "/fuel/{flight_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=List[schemas.FlightFuelReturn]
+)
+async def get_all_flight_fuel(
+    flight_id: int,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Get Flight Fuel Endpoint.
+
+    Parameters:
+    - Flight_id (int): flight id.
+
+    Returns: 
+    - list: list of dictionaries with fuel tank.
+
+    Raise:
+    - HTTPException (400): if flight doesn't exist.
+    - HTTPException (401): if user is authenticated.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check flight exist
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    flight = db_session.query(models.Flight).filter(and_(
+        models.Flight.pilot_id == user_id,
+        models.Flight.id == flight_id
+    )).first()
+
+    if flight is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Flight not found."
+        )
+
+    # Get fuel
+    fuel_tanks = db_session.query(models.Fuel).filter(
+        models.Fuel.flight_id == flight_id
+    ).all()
+
+    if len(fuel_tanks) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No fuel tanks found. This may be because aircraft doesn't have a preferred profile."
+        )
+
+    fuel_list = []
+    for fuel in fuel_tanks:
+        fuel_list.append({
+            "id": fuel.id,
+            "fuel_tank_id": fuel.fuel_tank_id,
+            "gallons": fuel.gallons,
+        })
+
+    return fuel_list
+
+
 @router.post(
     "/person-on-board/{flight_id}",
     status_code=status.HTTP_201_CREATED,
@@ -603,10 +663,10 @@ async def edit_flight_baggage(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit Flig Baggage Endpoint.
+    Edit Flight Baggage Endpoint.
 
     Parameters: 
-    - baggage_id (int): flight id.
+    - baggage_id (int): baggage id.
     - data (dict): baggage data
 
     Returns: 
@@ -687,6 +747,85 @@ async def edit_flight_baggage(
     db_session.commit()
 
     return baggage_query.first().__dict__
+
+
+@router.put(
+    "/fuel/{fuel_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=schemas.FlightFuelReturn
+)
+async def edit_flight_fuel(
+    fuel_id: int,
+    gallons: float,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Edit Flight Fuel Endpoint.
+
+    Parameters: 
+    - fuel_id (int): fuel id.
+    - gallons (float): gallons of fuel in tank
+
+    Returns: 
+    - dict: fuel data and id.
+
+    Raise:
+    - HTTPException (400): if flight doesn't exist.
+    - HTTPException (401): if user is not admin user.
+    - HTTPException (500): if there is a server error. 
+    """
+    # Get fuel
+    fuel_query = db_session.query(
+        models.Fuel).filter_by(id=fuel_id)
+
+    if fuel_query.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Fuel not found."
+        )
+
+    # Check flight exist
+    flight_id = fuel_query.first().flight_id
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    flight = db_session.query(
+        models.Flight,
+        models.Aircraft,
+        models.PerformanceProfile
+    ).join(
+        models.Aircraft,
+        models.Flight.aircraft_id == models.Aircraft.id
+    ).join(
+        models.PerformanceProfile,
+        models.Aircraft.id == models.PerformanceProfile.aircraft_id
+    ).filter(and_(
+        models.Flight.pilot_id == user_id,
+        models.Flight.id == flight_id,
+        models.PerformanceProfile.is_preferred.is_(True)
+    )).first()
+
+    if flight is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Flight not found."
+        )
+
+   # Check fuel quantity is less than or equal to tank's capacity
+    fuel_tank_id = fuel_query.first().fuel_tank_id
+    fuel_tank = db_session.query(
+        models.FuelTank).filter_by(id=fuel_tank_id).first()
+    total_capacity = fuel_tank.fuel_capacity_gallons + fuel_tank.unusable_fuel_gallons
+    if total_capacity < gallons:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Total capacity of {fuel_tank.name} is {total_capacity} gallons."
+        )
+    # Edit and return data
+    fuel_query.update({"gallons": gallons})
+
+    db_session.commit()
+
+    return fuel_query.first().__dict__
 
 
 @router.delete(

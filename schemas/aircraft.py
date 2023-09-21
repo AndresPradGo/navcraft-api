@@ -113,7 +113,6 @@ class PerformanceProfileReturn(OfficialPerformanceProfileData):
     empty_weight_lb: Optional[confloat(ge=0)] = None
     max_ramp_weight_lb: Optional[confloat(ge=0)] = None
     max_landing_weight_lb: Optional[confloat(ge=0)] = None
-    fuel_arm_in: Optional[confloat(ge=0)] = None
     fuel_capacity_gallons: Optional[confloat(ge=0)] = None
     unusable_fuel_gallons: Optional[confloat(ge=0)] = None
     baggage_allowance_lb: Optional[confloat(ge=0)] = None
@@ -162,6 +161,51 @@ class BaggageCompartmentReturn(BaggageCompartmentData):
     id: conint(gt=0)
 
 
+class FuelTankData(BaseModel):
+    '''
+    This class defines the fuel tank data required to post a new fuel tank.
+    '''
+
+    name: constr(
+        min_length=2,
+        max_length=50,
+        pattern="^[\-a-zA-Z0-9 ]+$"  # pylint: disable=anomalous-backslash-in-string
+    )
+    arm_in: confloat(ge=0)
+    fuel_capacity_gallons: confloat(ge=0)
+    unusable_fuel_gallons: Optional[confloat(ge=0)] = None
+    burn_sequence: Optional[conint(ge=1)] = None
+
+    @model_validator(mode='after')
+    @classmethod
+    def round_values_clean_name(cls, values: Dict[str, Any]) -> Dict:
+        '''
+        Classmethod to round float data and clean name.
+
+        Parameters:
+        - values (Dict): dictionary with the input values.
+
+        Returns:
+        (Dict): dictionary with the input values corrected.
+
+        '''
+
+        values.arm_in = round(values.arm_in, 2)
+        values.fuel_capacity_gallons = round(values.fuel_capacity_gallons, 2)
+        values.unusable_fuel_gallons = round(values.unusable_fuel_gallons, 2)\
+            if values.unusable_fuel_gallons is not None else None
+        values.name = clean_string(values.name)
+
+        return values
+
+
+class FuelTankReturn(FuelTankData):
+    '''
+    This class defines the fuel tank data structure to be returned to the client.
+    '''
+    id: conint(gt=0)
+
+
 class SeatRowData(BaggageCompartmentData):
     '''
     This class defines the seat row data structure.
@@ -186,9 +230,6 @@ class PerformanceProfileWeightBalanceData(BaseModel):
     empty_weight_lb: confloat(ge=0)
     max_ramp_weight_lb: confloat(ge=0)
     max_landing_weight_lb: confloat(ge=0)
-    fuel_arm_in: confloat(ge=0)
-    fuel_capacity_gallons: confloat(ge=0)
-    unusable_fuel_gallons: confloat(ge=0)
     baggage_allowance_lb: confloat(ge=0)
 
     @model_validator(mode='after')
@@ -209,9 +250,6 @@ class PerformanceProfileWeightBalanceData(BaseModel):
         values.empty_weight_lb = round(values.empty_weight_lb, 2)
         values.max_ramp_weight_lb = round(values.max_ramp_weight_lb, 2)
         values.max_landing_weight_lb = round(values.max_landing_weight_lb, 2)
-        values.fuel_arm_in = round(values.fuel_arm_in, 2)
-        values.fuel_capacity_gallons = round(values.fuel_capacity_gallons, 2)
-        values.unusable_fuel_gallons = round(values.unusable_fuel_gallons, 2)
         values.baggage_allowance_lb = round(values.baggage_allowance_lb, 2)
         return values
 
@@ -365,6 +403,7 @@ class GetWeightBalanceData(PerformanceProfileWeightBalanceData):
     """
     baggage_compartments: Optional[List[BaggageCompartmentReturn]] = []
     seat_rows: Optional[List[SeatRowReturn]] = []
+    fuel_tanks: Optional[List[FuelTankReturn]] = []
     weight_balance_profiles: Optional[List[WeightBalanceReturn]] = []
 
 
