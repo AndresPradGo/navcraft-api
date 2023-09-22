@@ -162,6 +162,12 @@ async def post_new_leg(
         departure_aerodrome_id = db_session.query(models.Departure).filter(
             models.Departure.flight_id == flight_id
         ).first().aerodrome_id
+
+        if departure_aerodrome_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Unable to add new leg. Please add a departure aerodrome to this flight before making any other changes."
+            )
         from_waypoint = db_session.query(models.Waypoint).filter_by(
             id=departure_aerodrome_id
         ).first()

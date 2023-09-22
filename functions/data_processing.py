@@ -290,11 +290,17 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
 
         departure = db_session.query(models.Departure, models.Aerodrome)\
             .join(models.Aerodrome, models.Departure.aerodrome_id == models.Aerodrome.id)\
-            .filter(models.Departure.flight_id == flight_id).first()
+            .filter(and_(
+                models.Departure.flight_id == flight_id,
+                models.Departure.aerodrome_id.isnot(None)
+            )).first()
 
         arrival = db_session.query(models.Arrival, models.Aerodrome)\
             .join(models.Aerodrome, models.Arrival.aerodrome_id == models.Aerodrome.id)\
-            .filter(models.Arrival.flight_id == flight_id).first()
+            .filter(and_(
+                models.Arrival.flight_id == flight_id,
+                models.Arrival.aerodrome_id.isnot(None)
+            )).first()
 
         legs = db_session.query(models.Leg, models.FlightWaypoint, models.Waypoint)\
             .outerjoin(models.FlightWaypoint, models.Leg.id == models.FlightWaypoint.leg_id)\
@@ -308,10 +314,12 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
             "id": flight.id,
             "departure_time": pytz.timezone('UTC').localize((flight.departure_time)),
             "aircraft_id": flight.aircraft_id,
-            "departure_aerodrome_id": departure[1].id,
-            "departure_aerodrome_is_private": departure[1].user_waypoint is not None,
-            "arrival_aerodrome_id": arrival[1].id,
-            "arrival_aerodrome_is_private": arrival[1].user_waypoint is not None,
+            "departure_aerodrome_id": departure[1].id if departure is not None else None,
+            "departure_aerodrome_is_private": departure[1].user_waypoint is not None
+            if departure is not None else None,
+            "arrival_aerodrome_id": arrival[1].id if arrival is not None else None,
+            "arrival_aerodrome_is_private": arrival[1].user_waypoint is not None
+            if arrival is not None else None,
             "bhp_percent": flight.bhp_percent,
             "reserve_fuel_hours": flight.reserve_fuel_hours,
             "contingency_fuel_hours": flight.contingency_fuel_hours,
@@ -348,3 +356,31 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
         })
 
     return flight_list
+
+
+def flight_has_origin_and_destination(flight_id: int, db_session: Session) -> bool:
+    """
+    This function checks that a particular flight 
+    has departure and arrival aerodromes.
+    """
+
+    departure_arrival_models = [
+        models.Departure,
+        models.Arrival
+    ]
+    for model in departure_arrival_models:
+        departure_arrival = db_session.query(
+            model,
+            models.Aerodrome
+        ).join(
+            models.Aerodrome,
+            model.aerodrome_id == models.Aerodrome.id
+        ).filter(and_(
+            model.flight_id == flight_id,
+            model.aerodrome_id.isnot(None)
+        )).first()
+
+        if departure_arrival is None:
+            return False
+
+    return True
