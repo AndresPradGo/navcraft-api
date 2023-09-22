@@ -235,12 +235,38 @@ def get_climb_data(
     pressure_alt_from_ft: int,
     pressure_alt_to_ft: int,
     temperature_c: int,
+    available_distance_nm: int,
     db_session: Session
 ):
     """
     This function performs a table lookup operation, and returns 
     the climb data (time, fuel and distance to climb).
+
+    Returns:
+    - Dict: Truncated weight and pressure altitude. If the values 
+      provided are higher than the max values in the table, it returns 
+      the max values in the table.
+    - Dict: 'time_min', 'fuel_gal' and 'distance_nm' values from the table.
+    - int: if the available distance to climb to the desired pressure altitude, 
+      is not enough, this values will be the approximate pressure altitude, the 
+      aircraft can climb to, in the available distance
+
     """
+
+    # Check it's actually a 1000ft climb
+    if pressure_alt_to_ft - pressure_alt_from_ft < 1000:
+        return (
+            {
+                "weight_lb": weight_lb,
+                "pressure_alt_ft": pressure_alt_to_ft
+            },
+            {
+                "time_min": 0,
+                "fuel_gal": 0,
+                "distance_nm": 0
+            },
+            pressure_alt_to_ft
+        )
 
     # define list of inputs and outputs to loop trhough
     inputs = ["weight_lb", "pressure_alt_ft"]
@@ -249,8 +275,9 @@ def get_climb_data(
     outputs = ["temperature_c", "time_min",
                "fuel_gal", "distance_nm"]
     table_results = []
+    new_input_targets = []
 
-    for input_targets in input_targets_list:
+    for index, input_targets in enumerate(input_targets_list):
         # Get table data
         table_data = db_session.query(models.ClimbPerformance).filter(
             models.ClimbPerformance.performance_profile_id == profile_id
@@ -260,13 +287,34 @@ def get_climb_data(
         ).all()
 
         # Get table data results
-        table_results.append(recursive_data_interpolation(
+        table_result, adjusted_targets = recursive_data_interpolation(
             input_names=inputs,
             index=0,
             output_names=outputs,
             interp_data_sets=[table_data],
             targets=input_targets
-        )[0][0])
+        )
+
+        table_results.append(table_result[0])
+
+        new_input_targets.append({
+            value: adjusted_targets[i] for i, value in enumerate(inputs)})
+
+    # Apply temperature correction
+    performance_profile = db_session.query(models.PerformanceProfile).filter(
+        models.PerformanceProfile.id == profile_id
+    ).first()
+
+    temperature_correction_percent = float(
+        performance_profile.percent_increase_climb_temperature_c) / 100
+    standard_temperature = table_results[1]["temperature_c"]
+
+    correction_value = temperature_correction_percent * \
+        max(temperature_c - standard_temperature, 0) + 1
+
+    for index, table_result in enumerate(table_results):
+        for key, value in table_result.items():
+            table_results[index][key] = float(value) * correction_value
 
     # Find difference
     result = {}
@@ -277,25 +325,26 @@ def get_climb_data(
     result["distance_nm"] = table_results[1]["distance_nm"] - \
         table_results[0]["distance_nm"]
 
-    # Apply temperature correction
-    performance_profile = db_session.query(models.PerformanceProfile).filter(
-        models.PerformanceProfile.id == profile_id
-    ).first()
-
-    temperature_correction_percent = float(
-        performance_profile.percent_increase_climb_temperature_c) / 100
-    standard_temperature = table_results[1]["temperature_c"]
-    correction = temperature_correction_percent * \
-        max(temperature_c - standard_temperature, 0) + 1
-    for key, value in result.items():
-        result[key] = float(value) * correction
-
-    # Pre-process results and return
+    # Pre-process results
     result["time_min"] = int(round(result["time_min"], 0))
     result["fuel_gal"] = float(round(result["fuel_gal"], 2))
     result["distance_nm"] = int(round(result["distance_nm"], 0))
 
-    return result
+    # Check distance
+    enough_distance = available_distance_nm >= result["distance_nm"]
+    if enough_distance:
+        actual_pressure_altitude = pressure_alt_to_ft
+    else:
+        # If not enough distance, need to approximate actual altitude
+        avrg_speed = result["distance_nm"] / result["time_min"]
+        avrg_fpm = (new_input_targets[1]["pressure_alt_ft"] -
+                    new_input_targets[0]["pressure_alt_ft"]) / result["time_min"]
+        avrg_distance = available_distance_nm / correction_value
+        actual_pressure_altitude = int(
+            round(pressure_alt_from_ft + avrg_fpm * avrg_distance / avrg_speed, 0))
+
+    # Return result
+    return new_input_targets[1], result, actual_pressure_altitude
 
 
 def get_cruise_data(
