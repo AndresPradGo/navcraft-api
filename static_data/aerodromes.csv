@@ -1,3 +1,5 @@
 code,name,lat_degrees,lat_minutes,lat_seconds,lat_direction,lon_degrees,lon_minutes,lon_seconds,lon_direction,elevation_ft,magnetic_variation,has_taf,has_metar,has_fds,hidden,status_id
-CZBB,Boundary Bay Airport,49,4,24,N,123,0,30,W,6,-17,FALSE,FALSE,FALSE,FALSE,1
+CZBB,Vancouver/Boundary Bay,49,4,24,N,123,0,30,W,6,-17,FALSE,FALSE,FALSE,FALSE,1
 CYXX,Abbotsford,49,1,31,N,122,21,36,W,194,-17,TRUE,TRUE,FALSE,FALSE,1
+CYNJ,Langley Regional,49,6,3,N,122,37,51,W,34,-17,FALSE,FALSE,FALSE,FALSE,1
+CYPK,Pitt Meadows,49,12,58,N,122,42,48,W,12,-17,FALSE,FALSE,FALSE,FALSE,1
