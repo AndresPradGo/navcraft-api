@@ -6,10 +6,13 @@ Usage:
 """
 
 import math
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
+from fastapi import HTTPException, status
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
+from functions import aircraft_performance
 import models
 from utils.config import get_constant
 
@@ -100,13 +103,19 @@ def get_magnetic_variation_for_leg(
     return magnetic_var
 
 
-def pressure_altitude(altitude_ft: int, altimeter_inhg: float) -> int:
+def pressure_altitude_converter(
+    altimeter_inhg: float,
+    altitude_ft: int,
+    reverse: bool = False
+) -> int:
     """
-    This function calculates the pressure altitude in ft, from the actual
-     altitude [ft] and an altimeter setting [inHg].
+    This function calculates the pressure altitude in ft, from the true
+     altitude [ft] and an altimeter setting [inHg]. If revere is set to True, 
+     the function calculated the true altitude from pressure altitude.
     """
-    pressure_alt = round(altitude_ft + 1000 * (29.92 - altimeter_inhg), 0)
-    return int(pressure_alt)
+    if reverse:
+        return int(round(altitude_ft - 1000 * (29.92 - altimeter_inhg), 0))
+    return int(round(altitude_ft + 1000 * (29.92 - altimeter_inhg), 0))
 
 
 def runway_wind_direction(
@@ -164,9 +173,9 @@ def calculate_cas_from_tas(
     ktas: int,
     pressure_alt_ft: int,
     temperature_c: int,
-) -> Dict[str, int]:
+) -> int:
     """
-    This function calculates CAS from TAS.
+    This function calculates KCAS from KTAS.
     """
 
     # Define constants
@@ -176,7 +185,283 @@ def calculate_cas_from_tas(
     pressure_pa = (1013.25 - pressure_alt_ft / 30) * 100
 
     # Calculate and return CAS
-    kcas = ktas / math.sqrt(air_constant * temperature_k *
-                            standard_density / pressure_pa)
+    kcas = int(ktas / math.sqrt(air_constant * temperature_k *
+                                standard_density / pressure_pa))
 
     return kcas
+
+
+def get_takeoff_weight(flight_id: int, db_session: Session):
+    """
+    This function calculates and returns the takeoff weight for a given flight.
+    """
+
+    # Get Persons on board
+    persons = db_session.query(
+        models.PersonOnBoard,
+        models.User.weight_lb,
+        models.PassengerProfile.weight_lb
+    ).outerjoin(
+        models.User,
+        models.PersonOnBoard.user_id == models.User.id
+    ).outerjoin(
+        models.PassengerProfile,
+        models.PersonOnBoard.passenger_profile_id == models.PassengerProfile.id
+    ).filter(
+        models.PersonOnBoard.flight_id == flight_id
+    ).all()
+
+    pobs_weight = float(sum([
+        pob.weight_lb if pob.weight_lb is not None
+        else user_weight if user_weight is not None
+        else passenger_weight
+        for pob, user_weight, passenger_weight in persons
+    ]))
+
+    # Get baggages
+    baggages = db_session.query(models.Baggage).filter(
+        models.Baggage.flight_id == flight_id
+    ).all()
+
+    baggages_weight = float(sum([baggage.weight_lb for baggage in baggages]))
+
+    # Get total fuel gallons
+    fuel_tanks = db_session.query(models.Fuel).filter(
+        models.Fuel.flight_id == flight_id
+    ).all()
+
+    fuel_gallons = float(sum([fuel_tank.gallons for fuel_tank in fuel_tanks]))
+
+    # Get aircraft data
+    flight = db_session.query(models.Flight).filter_by(id=flight_id).first()
+    aircraft_id = flight.aircraft_id
+    if aircraft_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Flight doesn't have an aircraft."
+        )
+
+    performance_profile = db_session.query(
+        models.PerformanceProfile,
+        models.Aircraft
+    ).join(
+        models.Aircraft,
+        models.PerformanceProfile.aircraft_id == models.Aircraft.id
+    ).filter(and_(
+        models.Aircraft.id == aircraft_id,
+        models.PerformanceProfile.is_preferred.is_(True),
+        models.PerformanceProfile.is_complete.is_(True)
+    )).first()
+
+    if performance_profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The flight's aircraft doesn't have preferred performance profile."
+        )
+
+    density = float(db_session.query(models.FuelType).filter_by(
+        id=performance_profile[0].fuel_type_id
+    ).first().density_lb_gal)
+
+    pre_takeoff_fuel_burn_weight = float(
+        -performance_profile[0].take_off_taxi_fuel_gallons) * density
+    empty_weight = float(performance_profile[0].empty_weight_lb)
+
+    # Calculate and return weight
+    takeoff_weight = round(sum([
+        empty_weight,
+        pobs_weight,
+        baggages_weight,
+        fuel_gallons * density,
+        pre_takeoff_fuel_burn_weight
+    ]), 2)
+
+    return takeoff_weight
+
+
+def calculate_leg_nav_log(
+    profile_id: int,
+    leg: models.Leg,
+    from_to_names_codes: Tuple[Dict[str, str]],
+    origin_waypoint: models.Waypoint,
+    destination_waypoint: models.Waypoint,
+    initial_pressure_alt: int,
+    weight_lb: int,
+    bhp_percent: int,
+    db_session: Session
+):
+    """
+    This function returns all the navigation log values for one flight leg.
+    """
+
+    # Get basic leg values
+    total_distance = origin_waypoint.great_arc_to_waypoint(
+        destination_waypoint)
+    true_track = origin_waypoint.true_track_to_waypoint(destination_waypoint)
+    magnetic_var = get_magnetic_variation_for_leg(
+        from_waypoint=origin_waypoint,
+        to_waypoint=destination_waypoint,
+        db_session=db_session
+    )
+    pressure_alt_ft = pressure_altitude_converter(
+        altimeter_inhg=float(leg.altimeter_inhg),
+        altitude_ft=leg.altitude_ft
+    )
+    # Get climb values
+    climb_results, pressure_alt_achived = aircraft_performance.get_climb_data(
+        profile_id=profile_id,
+        weight_lb=weight_lb,
+        pressure_alt_from_ft=initial_pressure_alt,
+        pressure_alt_to_ft=pressure_alt_ft,
+        temperature_c=leg.temperature_c,
+        available_distance_nm=total_distance,
+        db_session=db_session
+    )
+
+    actual_altitude_ft = pressure_altitude_converter(
+        altimeter_inhg=float(leg.altimeter_inhg),
+        altitude_ft=pressure_alt_achived,
+        reverse=True
+    )
+
+    distance_to_climb = min(climb_results["distance_nm"], total_distance)
+
+    # Get cruise values
+    cruise_results, cruise_truncated_values = aircraft_performance.get_cruise_data(
+        profile_id=profile_id,
+        weight_lb=weight_lb,
+        pressure_alt_ft=pressure_alt_ft,
+        temperature_c=leg.temperature_c,
+        bhp_percent=bhp_percent,
+        db_session=db_session
+    )
+
+    truncated_altitude = pressure_altitude_converter(
+        altimeter_inhg=float(leg.altimeter_inhg),
+        altitude_ft=cruise_truncated_values["pressure_alt_ft"],
+        reverse=True
+    )
+    truncated_temperature = cruise_truncated_values["temperature_c"]
+
+    # Get heading, groundspeed and calibrated airspeed
+    wind_direction = leg.wind_direction if leg.wind_direction is not None else 0
+    wind_calculation_results = wind_calculations(
+        ktas=cruise_results["ktas"],
+        true_track=true_track,
+        wind_magnitude_knot=leg.wind_magnitude_knot,
+        wind_direction_true=wind_direction
+    )
+    kcas = calculate_cas_from_tas(
+        ktas=cruise_results["ktas"],
+        pressure_alt_ft=pressure_alt_ft,
+        temperature_c=leg.temperature_c,
+    )
+    magnetic_heading = int(
+        round(wind_calculation_results["true_heading"] + magnetic_var, 0))
+    time_enroute_min = round(max(
+        total_distance - climb_results["distance_nm"],
+        0
+    ) * 60 / wind_calculation_results["ground_speed"], 0)
+
+    # Return nav-log data
+    return {
+        "from_waypoint": {
+            "code": from_to_names_codes[0]["code"],
+            "name": from_to_names_codes[0]["name"],
+            "latitude_degrees": math.degrees(origin_waypoint.lat()),
+            "longitude_degrees": math.degrees(origin_waypoint.lon()),
+        },
+        "to_waypoint": {
+            "code": from_to_names_codes[1]["code"],
+            "name": from_to_names_codes[1]["name"],
+            "latitude_degrees": math.degrees(destination_waypoint.lat()),
+            "longitude_degrees": math.degrees(destination_waypoint.lon()),
+        },
+        "desired_altitude_ft": leg.altitude_ft,
+        "actual_altitud_ft": actual_altitude_ft,
+        "truncated_altitude": truncated_altitude,
+        "rpm": cruise_results["rpm"],
+        "temperature_c": leg.temperature_c,
+        "truncated_temperature_c": truncated_temperature,
+        "ktas": cruise_results["ktas"],
+        "kcas": kcas,
+        "true_track": true_track,
+        "wind_magnitude_knot": leg.wind_magnitude_knot,
+        "wind_direction": leg.wind_direction,
+        "true_heading": wind_calculation_results["true_heading"],
+        "magnetic_variation": magnetic_var,
+        "magnetic_heading": magnetic_heading,
+        "ground_speed": wind_calculation_results["ground_speed"],
+        "distance_to_climb": distance_to_climb,
+        "distance_enroute": int(round(total_distance - climb_results["distance_nm"], 0)),
+        "total_distance": int(round(total_distance, 0)),
+        "time_to_climb_min": climb_results["time_min"],
+        "time_enroute_min": time_enroute_min,
+        "fuel_to_climb_gallons": climb_results["fuel_gal"],
+        "cruise_gph": cruise_results["gph"],
+    }
+
+
+def calculate_nav_log(
+    profile_id: int,
+    legs: List[models.Leg],
+    waypoints: List[models.Waypoint],
+    waypoint_names_codes: List[Dict[str, str]],
+    pressure_altitude_at_departure_aerodrome: float,
+    takeoff_weight: int,
+    bhp_percent: int,
+    fuel_density: float,
+    fuel_gallons: float,
+    db_session: Session
+):
+    """
+    This function calculates all the navigation log values for the whole flight,
+    and returns it as a list of values per leg.
+    """
+    nav_log_data = []
+    total_fuel_to_climb = 0
+    hours_enroute = 0
+    total_gallons_enroute = 0
+
+    weight = takeoff_weight
+    initial_pressure_alt = pressure_altitude_at_departure_aerodrome
+    for idx, leg in enumerate(legs):
+        leg_nav_log_data = calculate_leg_nav_log(
+            profile_id=profile_id,
+            leg=leg,
+            from_to_names_codes=(
+                waypoint_names_codes[idx],
+                waypoint_names_codes[idx + 1]
+            ),
+            origin_waypoint=waypoints[idx],
+            destination_waypoint=waypoints[idx + 1],
+            initial_pressure_alt=initial_pressure_alt,
+            weight_lb=weight,
+            bhp_percent=bhp_percent,
+            db_session=db_session
+        )
+        nav_log_data.append(leg_nav_log_data)
+
+        initial_pressure_alt = pressure_altitude_converter(
+            altitude_ft=leg.altitude_ft,
+            altimeter_inhg=float(leg.altimeter_inhg)
+        )
+        gallons_to_climb = leg_nav_log_data["fuel_to_climb_gallons"]
+        gallons_enroute = leg_nav_log_data["cruise_gph"] * \
+            leg_nav_log_data["time_enroute_min"] / 60
+        gallons_burned = gallons_to_climb + gallons_enroute
+        if fuel_gallons >= gallons_burned:
+            fuel_gallons -= gallons_burned
+        else:
+            fuel_gallons = 0
+            gallons_burned = fuel_gallons
+        weight_fuel_burned = gallons_burned * fuel_density
+        weight -= weight_fuel_burned
+
+    fuel_data = {
+        "total_fuel_to_climb": total_fuel_to_climb,
+        "hours_enroute": hours_enroute,
+        "total_gallons_enroute": total_gallons_enroute
+    }
+
+    return nav_log_data, fuel_data

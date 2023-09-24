@@ -71,7 +71,7 @@ class Waypoint(BaseModel):
         direction = {"N": 1, "S": -1}
 
         lat_degrees = direction[self.lat_direction] * \
-            (self.lat_degrees + self.lat_minutes / 60 + self.lat_seconds / 120)
+            (self.lat_degrees + self.lat_minutes / 60 + self.lat_seconds / 3600)
 
         return math.radians(lat_degrees)
 
@@ -87,7 +87,7 @@ class Waypoint(BaseModel):
         direction = {"E": 1, "W": -1}
 
         lon_degrees = direction[self.lon_direction] * \
-            (self.lon_degrees + self.lon_minutes / 60 + self.lon_seconds / 120)
+            (self.lon_degrees + self.lon_minutes / 60 + self.lon_seconds / 3600)
 
         return math.radians(lon_degrees)
 
@@ -104,7 +104,7 @@ class Waypoint(BaseModel):
         - float: great arc distance in nautical miles.
         """
         earth_radius = get_constant("earth_radius_ft")\
-            * get_constant("ft_to_nm")
+            * get_constant("ft_to_nautical")
 
         # Cartesian coordinates
         cartesian_from = np.array([
@@ -120,11 +120,13 @@ class Waypoint(BaseModel):
             earth_radius * math.sin(to_lat)
         ])
 
-        return round(
+        distance = round(
             earth_radius *
             math.acos(np.dot(cartesian_from, cartesian_to) / earth_radius**2),
-            2
+            0
         )
+
+        return distance
 
     def great_arc_to_waypoint(self, to_waypoint: 'Waypoint') -> float:
         """
@@ -154,7 +156,7 @@ class Waypoint(BaseModel):
         """
 
         earth_radius = get_constant(
-            "earth_radius_ft") * get_constant("ft_to_nm")
+            "earth_radius_ft") * get_constant("ft_to_nautical")
 
         # Calculate differences in latitude and longitude
         from_waypoint = np.array([

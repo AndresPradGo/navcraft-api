@@ -243,23 +243,16 @@ def get_climb_data(
     the climb data (time, fuel and distance to climb).
 
     Returns:
-    - Dict: Truncated weight and pressure altitude. If the values 
-      provided are higher than the max values in the table, it returns 
-      the max values in the table.
     - Dict: 'time_min', 'fuel_gal' and 'distance_nm' values from the table.
     - int: if the available distance to climb to the desired pressure altitude, 
       is not enough, this values will be the approximate pressure altitude, the 
-      aircraft can climb to, in the available distance
+      aircraft can climb to, in the available distance.
 
     """
 
     # Check it's actually a 1000ft climb
     if pressure_alt_to_ft - pressure_alt_from_ft < 1000:
         return (
-            {
-                "weight_lb": weight_lb,
-                "pressure_alt_ft": pressure_alt_to_ft
-            },
             {
                 "time_min": 0,
                 "fuel_gal": 0,
@@ -344,7 +337,7 @@ def get_climb_data(
             round(pressure_alt_from_ft + avrg_fpm * avrg_distance / avrg_speed, 0))
 
     # Return result
-    return new_input_targets[1], result, actual_pressure_altitude
+    return result, actual_pressure_altitude
 
 
 def get_cruise_data(

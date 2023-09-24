@@ -5,7 +5,6 @@ This module defines the flight related pydantic schemas for data validation.
 
 Usage: 
 - Import the required schema class to validate data at the API endpoints.
-
 """
 
 from typing import Optional, List
@@ -31,7 +30,7 @@ class NewFlightWaypointData(BaseModel):
         to_upper=True,
         min_length=2,
         max_length=50,
-        pattern='^[-a-zA-Z0-9]+$',
+        pattern="^['-a-zA-Z0-9]+$",
     )
     name: constr(min_length=2, max_length=255)
     lat_degrees: conint(ge=0, le=90)
@@ -171,6 +170,22 @@ class LegWeatherData(BaseModel):
         '''
         return round(value, 2)
 
+    @model_validator(mode='after')
+    @classmethod
+    def validate_wind_data(cls, values):
+        '''
+        Classmethod to check that wind direction is provided, if wind magnitud is not zero.
+        '''
+
+        if values.wind_magnitude_knot > 0 and values.wind_direction is None:
+            raise ValueError(
+                "Please provide wind direction."
+            )
+        elif values.wind_magnitude_knot == 0 and values.wind_direction is not None:
+            values.wind_direction = None
+
+        return values
+
 
 class NewLegReturn(LegWeatherData):
     """
@@ -208,8 +223,8 @@ class NewFlightData(BaseModel):
     """
     departure_time: AwareDatetime
     aircraft_id: conint(gt=0)
-    departure_aerodrome_id: conint(gt=0)
-    arrival_aerodrome_id: conint(gt=0)
+    departure_aerodrome_id: Optional[conint(gt=0)] = None
+    arrival_aerodrome_id: Optional[conint(gt=0)] = None
 
 
 class UpdateFlightData(BaseModel):
@@ -241,8 +256,8 @@ class NewFlightReturn(NewFlightData, UpdateFlightData):
     This class defines the flight data returned to the client after posting a new flight.
     """
     id: conint(gt=0)
-    departure_aerodrome_is_private: bool
-    arrival_aerodrome_is_private: bool
+    departure_aerodrome_is_private: Optional[bool] = None
+    arrival_aerodrome_is_private: Optional[bool] = None
     legs: List[NewLegReturn]
 
 
@@ -259,6 +274,22 @@ class UpdateDepartureArrivalData(BaseModel):
     temperature_last_updated: Optional[AwareDatetime] = None
     wind_last_updated: Optional[AwareDatetime] = None
     altimeter_last_updated: Optional[AwareDatetime] = None
+
+    @model_validator(mode='after')
+    @classmethod
+    def validate_wind_data(cls, values):
+        '''
+        Classmethod to check that wind direction is provided, if wind magnitud is not zero.
+        '''
+
+        if values.wind_magnitude_knot > 0 and values.wind_direction is None:
+            raise ValueError(
+                "Please provide wind direction."
+            )
+        elif values.wind_magnitude_knot == 0 and values.wind_direction is not None:
+            values.wind_direction = None
+
+        return values
 
     @field_validator('altimeter_inhg')
     @classmethod
@@ -288,7 +319,7 @@ class WaypointsNotUpdatedReturn(BaseModel):
         to_upper=True,
         min_length=2,
         max_length=50,
-        pattern='^[-a-zA-Z0-9]+$',
+        pattern="^['-a-zA-Z0-9]+$",
     )
 
 
