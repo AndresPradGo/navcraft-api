@@ -240,12 +240,24 @@ def _add_runways():
         "aerodrome_id": r["aerodrome_id"],
         "number": r["number"],
         "length_ft": r["length_ft"],
+        "landing_length_ft": None if not r["landing_length_ft"]
+        or r["landing_length_ft"].isspace()
+        else int(float(r["landing_length_ft"])),
+        "interception_departure_length_ft": None if not r["interception_departure_length_ft"]
+        or r["interception_departure_length_ft"].isspace()
+        else int(float(r["interception_departure_length_ft"])),
         "surface_id": r["surface_id"]
     }) if r["position"] == "" else schemas.RunwayData(**{
         "aerodrome_id": r["aerodrome_id"],
         "number": r["number"],
         "position": r["position"],
         "length_ft": r["length_ft"],
+        "landing_length_ft": None if not r["landing_length_ft"]
+        or r["landing_length_ft"].isspace()
+        else int(float(r["landing_length_ft"])),
+        "interception_departure_length_ft": None if not r["interception_departure_length_ft"]
+        or r["interception_departure_length_ft"].isspace()
+        else int(float(r["interception_departure_length_ft"])),
         "surface_id": r["surface_id"]
     }) for r in csv.csv_to_list(file_path=f"{_PATH}runways.csv")]
 
@@ -260,6 +272,8 @@ def _add_runways():
                         number=runway.number,
                         position=runway.position,
                         length_ft=runway.length_ft,
+                        landing_length_ft=runway.landing_length_ft,
+                        interception_departure_length_ft=runway.interception_departure_length_ft,
                         surface_id=runway.surface_id
                     )
                     db_session.add(new_runway)

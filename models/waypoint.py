@@ -444,6 +444,8 @@ class Runway(BaseModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     length_ft = Column(Integer, nullable=False)
+    landing_length_ft = Column(Integer, nullable=False)
+    interception_departure_length_ft = Column(Integer)
     number = Column(Integer, nullable=False)
     position = Column(String(1))
     surface_id = Column(

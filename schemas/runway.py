@@ -10,7 +10,7 @@ Usage:
 
 from typing import Optional
 
-from pydantic import BaseModel, constr, conint, field_validator
+from pydantic import BaseModel, constr, conint, field_validator, model_validator
 
 from functions.data_processing import clean_string
 
@@ -21,6 +21,8 @@ class RunwayDataEdit(BaseModel):
     """
 
     length_ft: int
+    landing_length_ft: Optional[int] = None
+    interception_departure_length_ft: Optional[int] = None
     number: conint(
         ge=1,
         le=36
@@ -32,6 +34,28 @@ class RunwayDataEdit(BaseModel):
         pattern="^[rRlLcC]$"
     )] = None
     surface_id: int
+
+    @model_validator(mode='after')
+    @classmethod
+    def validate_runway_lengths(cls, values):
+        """
+        This function checks that landing length and interception departure 
+        length are less than or equal to total length. If landing lenth is 
+        not provided, it will be equal to total length.
+        """
+
+        if values.landing_length_ft is None:
+            values.landing_length_ft = values.length_ft
+        elif values.landing_length_ft > values.length_ft:
+            raise ValueError(
+                "Landing length cannot be longer than total runway length.")
+
+        if values.interception_departure_length_ft is not None:
+            if values.interception_departure_length_ft > values.length_ft:
+                raise ValueError(
+                    "Interception departure length cannot be longer than total runway length.")
+
+        return values
 
 
 class RunwayData(RunwayDataEdit):
