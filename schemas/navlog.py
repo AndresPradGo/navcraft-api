@@ -91,3 +91,27 @@ class NavigationLogLegResults(BaseModel):
         if value < 0:
             value += 360
         return value
+
+
+class FuelEnduranceAndGallons(BaseModel):
+    """
+    This calss defines the data-structure to return 
+    fuel data in endurance-time(hours) and gallons.
+    """
+
+    hours: confloat(ge=0)
+    gallons: confloat(ge=0)
+
+
+class FuelCalculationResults(BaseModel):
+    """
+    This class defines the data-structure to return 
+    fuel calculation results for the flight plan.
+    """
+    pre_takeoff_gallons: confloat(ge=0)
+    climb_gallons: confloat(ge=0)
+    average_gph: confloat(ge=0)
+    enroute_fuel: FuelEnduranceAndGallons
+    reserve_fuel: FuelEnduranceAndGallons
+    contingency_fuel: FuelEnduranceAndGallons
+    gallons_on_board: confloat(ge=0)

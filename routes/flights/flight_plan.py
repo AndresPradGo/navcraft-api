@@ -23,32 +23,16 @@ from functions import navigation
 router = APIRouter(tags=["Flight Plan"])
 
 
-@router.get(
-    "/nav-log/{flight_id}",
-    status_code=status.HTTP_200_OK,
-    response_model=List[schemas.NavigationLogLegResults]
-)
-async def navigation_log(
+async def get_nav_log_and_fuel_calculations(
     flight_id: int,
-    db_session: Session = Depends(get_db),
-    current_user: schemas.TokenData = Depends(auth.validate_user)
+    db_session: Session,
+    user_id: int
 ):
     """
-    Get Navigation Log Endpoint.
-
-    Parameters:
-    - flight_id (int): flight id.
-
-    Returns: 
-    - list: list of dictionaries with the nav-log data per leg.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    This reusable function prepares all the data to get the nav-log and fuel data,
+    and returns the results.
     """
     # Get flight and check permissions
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
     flight = db_session.query(models.Flight).filter(and_(
         models.Flight.id == flight_id,
         models.Flight.pilot_id == user_id
@@ -173,8 +157,8 @@ async def navigation_log(
 
     fuel_gallons = float(sum([fuel_tank.gallons for fuel_tank in fuel_tanks]))
 
-    # Get and return nav log data
-    nav_log_data, _ = navigation.calculate_nav_log(
+    # Get and return nav log and fuel data
+    nav_log_data, fuel_data = navigation.calculate_nav_log(
         profile_id=performance_profile.id,
         legs=legs,
         waypoints=waypoints,
@@ -190,4 +174,100 @@ async def navigation_log(
         db_session=db_session
     )
 
+    fuel_data["pre_takeoff_gallons"] = float(
+        performance_profile.take_off_taxi_fuel_gallons)
+    fuel_data["reserve_fuel_hours"] = float(flight.reserve_fuel_hours)
+    fuel_data["contingency_fuel_hours"] = float(flight.contingency_fuel_hours)
+    fuel_data["gallons_on_board"] = round(fuel_gallons, 2)
+
+    return nav_log_data, fuel_data
+
+
+@router.get(
+    "/nav-log/{flight_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=List[schemas.NavigationLogLegResults]
+)
+async def navigation_log(
+    flight_id: int,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Get Navigation Log Endpoint.
+
+    Parameters:
+    - flight_id (int): flight id.
+
+    Returns: 
+    - list: list of dictionaries with the nav-log data per leg.
+
+    Raise:
+    - HTTPException (400): if flight doesn't exist.
+    - HTTPException (401): if user is not authenticated.
+    - HTTPException (500): if there is a server error. 
+    """
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    nav_log_data, _ = await get_nav_log_and_fuel_calculations(
+        flight_id=flight_id,
+        db_session=db_session,
+        user_id=user_id
+    )
+
     return nav_log_data
+
+
+@router.get(
+    "/fuel-calculations/{flight_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=schemas.FuelCalculationResults
+)
+async def fuel_calculations(
+    flight_id: int,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Get Fuel Calculations Endpoint.
+
+    Parameters:
+    - flight_id (int): flight id.
+
+    Returns: 
+    - dict: dictionary with the fuel calculation results.
+
+    Raise:
+    - HTTPException (400): if flight doesn't exist.
+    - HTTPException (401): if user is not authenticated.
+    - HTTPException (500): if there is a server error. 
+    """
+    # Get fuel data
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    _, fuel_data = await get_nav_log_and_fuel_calculations(
+        flight_id=flight_id,
+        db_session=db_session,
+        user_id=user_id
+    )
+
+    average_gph = round(
+        fuel_data["gallons_enroute"] / fuel_data["hours_enroute"], 1)
+
+    # Return data
+    return {
+        "pre_takeoff_gallons": fuel_data["pre_takeoff_gallons"],
+        "climb_gallons": fuel_data["climb_gallons"],
+        "average_gph": average_gph,
+        "enroute_fuel": {
+            "hours": fuel_data["hours_enroute"],
+            "gallons": round(fuel_data["hours_enroute"] * average_gph, 2)
+        },
+        "reserve_fuel": {
+            "hours": fuel_data["reserve_fuel_hours"],
+            "gallons": round(fuel_data["reserve_fuel_hours"] * average_gph, 2)
+        },
+        "contingency_fuel": {
+            "hours": fuel_data["contingency_fuel_hours"],
+            "gallons": round(fuel_data["contingency_fuel_hours"] * average_gph, 2)
+        },
+        "gallons_on_board": fuel_data["gallons_on_board"],
+    }

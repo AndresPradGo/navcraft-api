@@ -447,8 +447,11 @@ def calculate_nav_log(
             altimeter_inhg=float(leg.altimeter_inhg)
         )
         gallons_to_climb = leg_nav_log_data["fuel_to_climb_gallons"]
+        total_fuel_to_climb += gallons_to_climb
         gallons_enroute = leg_nav_log_data["cruise_gph"] * \
             leg_nav_log_data["time_enroute_min"] / 60
+        hours_enroute += leg_nav_log_data["time_enroute_min"] / 60
+        total_gallons_enroute += gallons_enroute
         gallons_burned = gallons_to_climb + gallons_enroute
         if fuel_gallons >= gallons_burned:
             fuel_gallons -= gallons_burned
@@ -459,9 +462,9 @@ def calculate_nav_log(
         weight -= weight_fuel_burned
 
     fuel_data = {
-        "total_fuel_to_climb": total_fuel_to_climb,
-        "hours_enroute": hours_enroute,
-        "total_gallons_enroute": total_gallons_enroute
+        "climb_gallons": float(round(total_fuel_to_climb, 2)),
+        "hours_enroute": float(round(hours_enroute, 2)),
+        "gallons_enroute": float(round(total_gallons_enroute, 2))
     }
 
     return nav_log_data, fuel_data
