@@ -128,7 +128,7 @@ def runway_wind_direction(
     This function calculates and returns the runway headwind and cross-wind in knots.
     """
 
-    runway_direction = runway_number * 10 + magnetic_variation
+    runway_direction = runway_number * 10 - magnetic_variation
     wind_angle = math.radians(wind_direction_true - runway_direction)
 
     return {

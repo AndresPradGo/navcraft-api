@@ -7,7 +7,7 @@ Usage:
 - Import the required schema class to validate data at the API endpoints.
 """
 
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import (
     BaseModel,
@@ -115,3 +115,39 @@ class FuelCalculationResults(BaseModel):
     reserve_fuel: FuelEnduranceAndGallons
     contingency_fuel: FuelEnduranceAndGallons
     gallons_on_board: confloat(ge=0)
+
+
+class TakeoffLandingDistancesResults(BaseModel):
+    """
+    This class defines the data-structure to return 
+     takeoff and landing distance data per runway.
+    """
+
+    runway_id: conint(gt=0)
+    runway: constr(
+        strip_whitespace=True,
+        to_upper=True,
+        min_length=2,
+        max_length=3,
+        pattern="^[0-3][0-9][RLC]?$"
+    )
+    length_available_ft: conint(gt=0)
+    interception_departure_length: Optional[conint(gt=0)] = None
+    weight_lb: confloat(ge=0)
+    pressure_altitude_ft: int
+    truncated_pressure_altitude_ft: int
+    temperature_c: int
+    truncated_temperature_c: int
+    headwind_knot: int
+    x_wind_knot: int
+    ground_roll_ft: conint(ge=0)
+    obstacle_clearance_ft: conint(ge=0)
+
+
+class TakeoffAndLandingDistances(BaseModel):
+    """
+    This class defines the data-structure to return 
+    takeoff and landing distances for the flight plan.
+    """
+    departure: List[TakeoffLandingDistancesResults]
+    arrival: List[TakeoffLandingDistancesResults]
