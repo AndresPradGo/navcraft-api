@@ -33,6 +33,7 @@ async def get_nav_log_and_fuel_calculations(
     This reusable function prepares all the data to get the nav-log and fuel data,
     and returns the results.
     """
+
     # Get flight and check permissions
     flight = db_session.query(models.Flight).filter(and_(
         models.Flight.id == flight_id,
@@ -102,7 +103,9 @@ async def get_nav_log_and_fuel_calculations(
             ).join(
                 models.Waypoint,
                 models.UserWaypoint.waypoint_id == models.Waypoint.id
-            ).filter(models.UserWaypoint.waypoint_id == departure_arrival[1].user_waypoint_id).first()
+            ).filter(
+                models.UserWaypoint.waypoint_id == departure_arrival[1].user_waypoint_id
+            ).first()
 
         departure_arrival_waypoints.append(departure_arrival_waypoint)
 
@@ -209,6 +212,7 @@ async def navigation_log(
     - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
+
     user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
     nav_log_data, _ = await get_nav_log_and_fuel_calculations(
         flight_id=flight_id,
@@ -450,3 +454,352 @@ async def takeoff_and_landing_distances(
         takeoff_landing_result[key] = results_per_runway
 
     return takeoff_landing_result
+
+
+@router.get(
+    "/weight-balance/{flight_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=schemas.WeightAndBalanceReport
+)
+async def weight_and_balance_report(
+    flight_id: int,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Get Weight and Balance Report Endpoint.
+
+    Parameters:
+    - flight_id (int): flight id.
+
+    Returns: 
+    - Dict: W&B Report data.
+
+    Raise:
+    - HTTPException (400): if flight doesn't exist.
+    - HTTPException (401): if user is not authenticated.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Check flight exists and get flight data
+    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    flight = db_session.query(models.Flight).filter(and_(
+        models.Flight.id == flight_id,
+        models.Flight.pilot_id == user_id
+    )).first()
+
+    if flight is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Flight not found."
+        )
+
+    aircraft_id = flight.aircraft_id
+    warnings = []
+
+    # Get performance profile id
+    if aircraft_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Flight doesn't have an aircraft."
+        )
+    performance_profile = db_session.query(
+        models.PerformanceProfile,
+        models.Aircraft
+    ).join(
+        models.Aircraft,
+        models.PerformanceProfile.aircraft_id == models.Aircraft.id
+    ).filter(and_(
+        models.Aircraft.id == aircraft_id,
+        models.PerformanceProfile.is_preferred.is_(True),
+        models.PerformanceProfile.is_complete.is_(True)
+    )).first()
+
+    if performance_profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The flight's aircraft doesn't have preferred performance profile."
+        )
+
+    # Prepare seat row list
+    seat_rows = db_session.query(models.SeatRow).filter(
+        models.SeatRow.performance_profile_id == performance_profile[0].id
+    ).order_by(models.SeatRow.arm_in).all()
+
+    seats = []
+    for seat_row in seat_rows:
+        persons = db_session.query(
+            models.PersonOnBoard,
+            models.User.weight_lb,
+            models.PassengerProfile.weight_lb
+        ).outerjoin(
+            models.User,
+            models.PersonOnBoard.user_id == models.User.id
+        ).outerjoin(
+            models.PassengerProfile,
+            models.PersonOnBoard.passenger_profile_id == models.PassengerProfile.id
+        ).filter(and_(
+            models.PersonOnBoard.seat_row_id == seat_row.id,
+            models.PersonOnBoard.flight_id == flight_id
+        )).all()
+
+        total_weight = float(sum([
+            pob.weight_lb if pob.weight_lb is not None
+            else user_weight if user_weight is not None
+            else passenger_weight
+            for pob, user_weight, passenger_weight in persons
+        ]))
+
+        seats.append({
+            "weight_lb": total_weight,
+            "arm_in": seat_row.arm_in,
+            "moment_lb_in": float(seat_row.arm_in) * total_weight,
+            "seat_row_id": seat_row.id,
+            "seat_row_name": seat_row.name
+        })
+
+        if seat_row.weight_limit_lb is not None and seat_row.weight_limit_lb < total_weight:
+            warnings.append(
+                f"{seat_row.name} can only hold {seat_row.weight_limit_lb} lbs!!!"
+            )
+
+    # Prepare baggage compartment list
+    baggage_compartments = db_session.query(models.BaggageCompartment).filter(
+        models.BaggageCompartment.performance_profile_id == performance_profile[0].id
+    ).order_by(models.BaggageCompartment.arm_in).all()
+
+    compartments = []
+    for baggage_compartment in baggage_compartments:
+        baggages = db_session.query(models.Baggage).filter(and_(
+            models.Baggage.baggage_compartment_id == baggage_compartment.id,
+            models.Baggage.flight_id == flight_id
+        )).all()
+
+        total_weight = float(sum([baggage.weight_lb for baggage in baggages]))
+
+        compartments.append({
+            "weight_lb": total_weight,
+            "arm_in": baggage_compartment.arm_in,
+            "moment_lb_in": float(baggage_compartment.arm_in) * total_weight,
+            "baggage_compartment_id": baggage_compartment.id,
+            "baggage_compartment_name": baggage_compartment.name
+        })
+
+        if baggage_compartment.weight_limit_lb is not None and\
+                baggage_compartment.weight_limit_lb < total_weight:
+            warnings.append(
+                f"{baggage_compartment.name} can only hold {baggage_compartment.weight_limit_lb} lbs!!!"
+            )
+
+    if performance_profile[0].baggage_allowance_lb is not None:
+        total_baggage_lbs = sum([baggage["weight_lb"]
+                                for baggage in compartments])
+        if performance_profile[0].baggage_allowance_lb < total_baggage_lbs:
+            warnings.append(
+                f"This aircraft can only hold {performance_profile[0].baggage_allowance_lb} lbs of baggage!!!"
+            )
+
+    # Prepare fuel on board
+    fuel_density = float(db_session.query(models.FuelType).filter_by(
+        id=performance_profile[0].fuel_type_id
+    ).first().density_lb_gal)
+    fuel_tanks = db_session.query(models.FuelTank).filter(
+        models.FuelTank.performance_profile_id == performance_profile[0].id
+    ).order_by(models.FuelTank.burn_sequence).all()
+
+    fuel_on_board = []
+    for fuel_tank in fuel_tanks:
+        fuel = db_session.query(models.Fuel).filter(and_(
+            models.Fuel.fuel_tank_id == fuel_tank.id,
+            models.Fuel.flight_id == flight_id
+        )).first()
+
+        total_weight = fuel_density * float(fuel.gallons)
+
+        fuel_on_board.append({
+            "weight_lb": total_weight,
+            "arm_in": float(fuel_tank.arm_in),
+            "moment_lb_in": float(fuel_tank.arm_in) * total_weight,
+            "gallons": float(fuel.gallons),
+            "fuel_tank_id": fuel_tank.id,
+            "fuel_tank_name": fuel_tank.name,
+            "sequence": fuel_tank.burn_sequence
+        })
+
+    # Prepare fuel burned before takeoff
+    _, fuel_data = await get_nav_log_and_fuel_calculations(
+        flight_id=flight_id,
+        db_session=db_session,
+        user_id=user_id
+    )
+
+    pre_takeoff_fuel_gallons = float(fuel_data["pre_takeoff_gallons"])
+    pre_takeoff_fuel_weight = round(pre_takeoff_fuel_gallons * fuel_density, 2)
+    pre_takeoff_fuel_arm = float(fuel_on_board[0]["arm_in"])
+    fuel_burned_pre_takeoff = {
+        "gallons": pre_takeoff_fuel_gallons,
+        "weight_lb": pre_takeoff_fuel_gallons,
+        "arm_in": pre_takeoff_fuel_arm,
+        "moment_lb_in": round(pre_takeoff_fuel_weight * pre_takeoff_fuel_arm, 2),
+    }
+
+    # Get total gallons burned
+    gallons_burned = float(sum([
+        fuel_data["pre_takeoff_gallons"],
+        fuel_data["climb_gallons"],
+        fuel_data["gallons_enroute"]
+    ]))
+
+    fuel_burn_sequences = {tank.burn_sequence for tank in fuel_tanks}
+
+    # Organice fuel burned by burn sequence
+    tanks_grouped_by_sequence = []
+    for seq in fuel_burn_sequences:
+        tanks = [
+            {
+                **fuel_tank
+            } for fuel_tank in fuel_on_board if fuel_tank["sequence"] == seq
+        ]
+        tanks.sort(key=lambda tank: tank["gallons"])
+        tanks_grouped_by_sequence.append(
+            {"sequence": seq, "fuel_tanks": tanks})
+
+    # Remove fuel burned before takeoff (assumes there is enough fuel in tanks for takeoff)
+    num_tanks_with_sequence = len(tanks_grouped_by_sequence[0]["fuel_tanks"])
+    fuel_burned_per_tank = pre_takeoff_fuel_gallons / num_tanks_with_sequence
+    for idx in range(len(tanks_grouped_by_sequence[0]["fuel_tanks"])):
+        tank_gallons = tanks_grouped_by_sequence[0]["fuel_tanks"][idx]["gallons"] - \
+            fuel_burned_per_tank
+        tank_weight = tank_gallons * fuel_density
+        tank_moment = tank_weight * \
+            float(tanks_grouped_by_sequence[0]["fuel_tanks"][idx]["arm_in"])
+        tanks_grouped_by_sequence[0]["fuel_tanks"][idx]["gallons"] = tank_gallons
+        tanks_grouped_by_sequence[0]["fuel_tanks"][idx]["weight_lb"] = tank_weight
+        tanks_grouped_by_sequence[0]["fuel_tanks"][idx]["moment_lb_in"] = tank_moment
+
+    # Calculate fuel-burn per tank
+    fuel_burned = []
+    idx = 0
+    while gallons_burned >= 5e-3 and idx < len(tanks_grouped_by_sequence):
+        tanks_with_sequence = tanks_grouped_by_sequence[idx]
+        total_gallons_in_tanks = sum([
+            tank["gallons"] for tank in tanks_with_sequence["fuel_tanks"]
+        ])
+        enough_fuel_in_tanks = gallons_burned <= total_gallons_in_tanks
+        if not enough_fuel_in_tanks:
+            for tank_with_seq in tanks_with_sequence:
+                fuel_burned.append(tank_with_seq)
+                gallons_burned -= total_gallons_in_tanks
+        else:
+            sub_idx = 0
+            gallons_left_in_tanks_with_seq = [
+                {**tank} for tank in tanks_with_sequence["fuel_tanks"]]
+            while gallons_burned >= 5e-3 and sub_idx < len(tanks_with_sequence):
+                emptiest_tank = gallons_left_in_tanks_with_seq[sub_idx]
+                tanks_left = len(tanks_with_sequence["fuel_tanks"]) - sub_idx
+                gallons_to_burn_per_tank = gallons_burned / tanks_left
+                enough_fuel_in_all_tanks = emptiest_tank["gallons"] >= gallons_to_burn_per_tank
+                if not enough_fuel_in_all_tanks:
+                    gallons_to_burn_per_tank = emptiest_tank["gallons"]
+                sub_sub_idx = sub_idx
+                while sub_sub_idx < len(gallons_left_in_tanks_with_seq):
+                    gallons_left_in_tanks_with_seq[sub_sub_idx]["gallons"] -=\
+                        gallons_to_burn_per_tank
+                    sub_sub_idx += 1
+                sub_idx += 1
+                gallons_burned -= gallons_to_burn_per_tank * tanks_left
+
+            for sub_idx, tank_with_seq in enumerate(tanks_with_sequence["fuel_tanks"]):
+                gallons_burned_in_tank = tank_with_seq["gallons"] -\
+                    gallons_left_in_tanks_with_seq[sub_idx]["gallons"]
+                weight_burned_in_tank = gallons_burned_in_tank * fuel_density
+                moment_of_fuel_burned = weight_burned_in_tank * \
+                    (tank_with_seq["arm_in"])
+                fuel_burned.append(
+                    {
+                        "weight_lb": weight_burned_in_tank,
+                        "arm_in": tank_with_seq["arm_in"],
+                        "moment_lb_in": moment_of_fuel_burned,
+                        "gallons": gallons_burned_in_tank,
+                        "fuel_tank_id": tank_with_seq["fuel_tank_id"],
+                        "fuel_tank_name": tank_with_seq["fuel_tank_name"]
+                    }
+                )
+
+        idx += 1
+
+    # Prepare zero-fuel weight data
+    zero_fuel_weight_lbs = sum([
+        float(performance_profile[0].empty_weight_lb),
+        sum([seat["weight_lb"] for seat in seats]),
+        sum([compartment["weight_lb"] for compartment in compartments])
+    ])
+    zero_fuel_weight_moment = sum([
+        float(performance_profile[0].empty_weight_lb) *
+        float(performance_profile[0].center_of_gravity_in),
+        sum([seat["moment_lb_in"] for seat in seats]),
+        sum([compartment["moment_lb_in"] for compartment in compartments])
+    ])
+    zero_fuel_weight = {
+        "weight_lb": zero_fuel_weight_lbs,
+        "arm_in": zero_fuel_weight_moment / zero_fuel_weight_lbs,
+        "moment_lb_in": zero_fuel_weight_moment,
+    }
+
+    # Prepare ramp weight data
+    ramp_weight_lbs = zero_fuel_weight_lbs + \
+        sum([fuel["weight_lb"] for fuel in fuel_on_board])
+    ramp_weight_moment = zero_fuel_weight_moment + \
+        sum([fuel["moment_lb_in"] for fuel in fuel_on_board])
+    ramp_weight = {
+        "weight_lb": ramp_weight_lbs,
+        "arm_in": ramp_weight_moment / ramp_weight_lbs,
+        "moment_lb_in": ramp_weight_moment,
+    }
+
+    if performance_profile[0].max_ramp_weight_lb is not None and\
+            performance_profile[0].max_ramp_weight_lb < ramp_weight_lbs:
+        warnings.append(
+            f"Maximum ramp weight of {performance_profile[0].max_ramp_weight_lb} lbs exceeded!!!"
+        )
+
+    # Prepare takeoff weight data
+    takeoff_weight_lbs = ramp_weight_lbs - fuel_burned_pre_takeoff["weight_lb"]
+    takeoff_weight_moment = ramp_weight_moment - \
+        fuel_burned_pre_takeoff["moment_lb_in"]
+    takeoff_weight = {
+        "weight_lb": takeoff_weight_lbs,
+        "arm_in": takeoff_weight_moment / takeoff_weight_lbs,
+        "moment_lb_in": takeoff_weight_moment,
+    }
+
+    # Prepare Landing weight data
+    landing_weight_lbs = takeoff_weight_lbs - \
+        sum([fuel["weight_lb"] for fuel in fuel_burned])
+    landing_weight_moment = takeoff_weight_moment + \
+        sum([fuel["moment_lb_in"] for fuel in fuel_burned])
+    landing_weight = {
+        "weight_lb": landing_weight_lbs,
+        "arm_in": landing_weight_moment / landing_weight_lbs,
+        "moment_lb_in": landing_weight_moment,
+    }
+
+    if performance_profile[0].max_landing_weight_lb is not None and\
+            performance_profile[0].max_landing_weight_lb < landing_weight_lbs:
+        warnings.append(
+            f"Maximum landing weight of {performance_profile[0].max_landing_weight_lb} lbs exceeded!!!"
+        )
+
+    # Organize return data
+    return {
+        "warnings": warnings,
+        "seats": seats,
+        "compartments": compartments,
+        "fuel_on_board": fuel_on_board,
+        "fuel_burned_pre_takeoff": fuel_burned_pre_takeoff,
+        "fuel_burned": fuel_burned,
+        "zero_fuel_weight": zero_fuel_weight,
+        "ramp_weight": ramp_weight,
+        "takeoff_weight": takeoff_weight,
+        "landing_weight": landing_weight
+    }
