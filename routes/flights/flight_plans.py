@@ -181,6 +181,7 @@ async def get_nav_log_and_fuel_calculations(
 
     fuel_data["pre_takeoff_gallons"] = float(
         performance_profile.take_off_taxi_fuel_gallons)
+    fuel_data["additional_fuel_hours"] = float(flight.additional_fuel_hours)
     fuel_data["reserve_fuel_hours"] = float(flight.reserve_fuel_hours)
     fuel_data["contingency_fuel_hours"] = float(flight.contingency_fuel_hours)
     fuel_data["gallons_on_board"] = round(fuel_gallons, 2)
@@ -267,6 +268,10 @@ async def fuel_calculations(
             "hours": fuel_data["hours_enroute"],
             "gallons": round(fuel_data["hours_enroute"] * average_gph, 2)
         },
+        "additional_fuel": {
+            "hours": fuel_data["additional_fuel_hours"],
+            "gallons": round(fuel_data["additional_fuel_hours"] * average_gph, 2)
+        },
         "reserve_fuel": {
             "hours": fuel_data["reserve_fuel_hours"],
             "gallons": round(fuel_data["reserve_fuel_hours"] * average_gph, 2)
@@ -349,10 +354,14 @@ async def takeoff_and_landing_distances(
         user_id=user_id
     )
 
+    average_gph = round(
+        fuel_data["gallons_enroute"] / fuel_data["hours_enroute"], 1)
+
     gallons_burned = float(sum([
         fuel_data["pre_takeoff_gallons"],
         fuel_data["climb_gallons"],
-        fuel_data["gallons_enroute"]
+        fuel_data["gallons_enroute"],
+        fuel_data["additional_fuel_hours"] * average_gph
     ]))
 
     fuel_type = db_session.query(models.FuelType).filter_by(
@@ -644,8 +653,10 @@ async def weight_and_balance_report(
     }
 
     # Get total gallons burned
+    average_gph = round(
+        fuel_data["gallons_enroute"] / fuel_data["hours_enroute"], 1)
     gallons_burned = float(sum([
-        fuel_data["pre_takeoff_gallons"],
+        fuel_data["additional_fuel_hours"] * average_gph,
         fuel_data["climb_gallons"],
         fuel_data["gallons_enroute"]
     ]))
@@ -687,7 +698,7 @@ async def weight_and_balance_report(
         ])
         enough_fuel_in_tanks = gallons_burned <= total_gallons_in_tanks
         if not enough_fuel_in_tanks:
-            for tank_with_seq in tanks_with_sequence:
+            for tank_with_seq in tanks_with_sequence['fuel_tanks']:
                 fuel_burned.append(tank_with_seq)
                 gallons_burned -= total_gallons_in_tanks
         else:
@@ -772,6 +783,12 @@ async def weight_and_balance_report(
         "arm_in": takeoff_weight_moment / takeoff_weight_lbs,
         "moment_lb_in": takeoff_weight_moment,
     }
+
+    if performance_profile[0].max_take_off_weight_lb is not None and\
+            performance_profile[0].max_take_off_weight_lb < takeoff_weight_lbs:
+        warnings.append(
+            f"Maximum takeoff weight of {performance_profile[0].max_take_off_weight_lb} lbs exceeded!!!"
+        )
 
     # Prepare Landing weight data
     landing_weight_lbs = takeoff_weight_lbs - \
