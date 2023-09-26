@@ -112,6 +112,7 @@ class FuelCalculationResults(BaseModel):
     climb_gallons: confloat(ge=0)
     average_gph: confloat(ge=0)
     enroute_fuel: FuelEnduranceAndGallons
+    additional_fuel: FuelEnduranceAndGallons
     reserve_fuel: FuelEnduranceAndGallons
     contingency_fuel: FuelEnduranceAndGallons
     gallons_on_board: confloat(ge=0)
@@ -181,7 +182,7 @@ class WeightAndBalanceFuelReturn(BaseWeightAndBalanceReportReturn):
     weight and balance data to the client, as pasrt of the W&B report.
     """
 
-    gallons: confloat(allow_inf_nan=False, ge=0, le=999.99)
+    gallons: confloat(allow_inf_nan=False, le=999.99)
 
     @field_validator('gallons')
     @classmethod

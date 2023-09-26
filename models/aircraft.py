@@ -25,9 +25,10 @@ class PerformanceProfile(BaseModel):
     name = Column(String(255), nullable=False)
     is_complete = Column(Boolean, nullable=False, default=False)
     center_of_gravity_in = Column(DECIMAL(5, 2))
-    empty_weight_lb = Column(DECIMAL(7, 2))
-    max_ramp_weight_lb = Column(DECIMAL(7, 2))
-    max_landing_weight_lb = Column(DECIMAL(7, 2))
+    empty_weight_lb = Column(DECIMAL(7, 2), nullable=False, default=0.0)
+    max_ramp_weight_lb = Column(DECIMAL(7, 2), nullable=False, default=0.0)
+    max_take_off_weight_lb = Column(DECIMAL(7, 2), nullable=False, default=0.0)
+    max_landing_weight_lb = Column(DECIMAL(7, 2), nullable=False, default=0.0)
     baggage_allowance_lb = Column(DECIMAL(6, 2))
     take_off_taxi_fuel_gallons = Column(
         DECIMAL(4, 2), nullable=False, default=0.0)
@@ -200,7 +201,6 @@ class WeightBalanceProfile(BaseModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False, default="Normal Category")
-    max_take_off_weight_lb = Column(DECIMAL(7, 2), nullable=False)
     performance_profile_id = Column(
         Integer,
         ForeignKey(

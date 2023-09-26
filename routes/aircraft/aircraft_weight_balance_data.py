@@ -92,6 +92,8 @@ async def get_weight_balance_data(
         if performance_profile.empty_weight_lb is not None else 0,
         "max_ramp_weight_lb": performance_profile.max_ramp_weight_lb
         if performance_profile.max_ramp_weight_lb is not None else 0,
+        "max_take_off_weight_lb": performance_profile.max_take_off_weight_lb
+        if performance_profile.max_take_off_weight_lb is not None else 0,
         "max_landing_weight_lb": performance_profile.max_landing_weight_lb
         if performance_profile.max_landing_weight_lb is not None else 0,
         "baggage_allowance_lb": performance_profile.baggage_allowance_lb
@@ -120,7 +122,6 @@ async def get_weight_balance_data(
         "weight_balance_profiles": [{
             "id": profile.id,
             "name": profile.name,
-            "max_take_off_weight_lb": profile.max_take_off_weight_lb,
             "limits": [{
                 "id": limit.id,
                 "from_cg_in": limit.from_cg_in,
@@ -402,8 +403,7 @@ async def post_new_weight_and_balance_profile(
     # Post weight and balance profile
     new_profile = models.WeightBalanceProfile(
         performance_profile_id=profile_id,
-        name=data.name,
-        max_take_off_weight_lb=data.max_take_off_weight_lb
+        name=data.name
     )
     db_session.add(new_profile)
     db_session.commit()
@@ -482,6 +482,7 @@ async def edit_weight_and_balance_data_for_performance_profile(
         "center_of_gravity_in": performance_data.center_of_gravity_in,
         "empty_weight_lb": performance_data.empty_weight_lb,
         "max_ramp_weight_lb": performance_data.max_ramp_weight_lb,
+        "max_take_off_weight_lb": performance_data.max_take_off_weight_lb,
         "max_landing_weight_lb": performance_data.max_landing_weight_lb,
         "baggage_allowance_lb": performance_data.baggage_allowance_lb
     })
@@ -794,8 +795,7 @@ async def edit_weight_and_balance_profile(
 
     # Update weight and balance profile
     wb_profile_query.update({
-        "name": data.name,
-        "max_take_off_weight_lb": data.max_take_off_weight_lb
+        "name": data.name
     })
 
     db_session.commit()

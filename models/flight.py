@@ -31,6 +31,11 @@ class Flight(BaseModel):
         default=datetime.utcnow()
     )
     bhp_percent = Column(Integer, nullable=False, default=65)
+    additional_fuel_hours = Column(
+        DECIMAL(4, 2),
+        nullable=False,
+        default=0.0
+    )
     reserve_fuel_hours = Column(
         DECIMAL(4, 2),
         nullable=False,

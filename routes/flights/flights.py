@@ -289,8 +289,8 @@ async def edit_flight(
         )
 
     # Edit flight
-
     flight_query.update(data.model_dump())
+    db_session.commit()
 
     return get_basic_flight_data_for_return(
         flight_ids=[flight_id],

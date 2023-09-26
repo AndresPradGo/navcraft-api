@@ -234,9 +234,9 @@ class UpdateFlightData(BaseModel):
     """
     departure_time: AwareDatetime
     bhp_percent: conint(ge=45, le=75)
+    additional_fuel_hours: confloat(allow_inf_nan=False, ge=0, le=99.99)
     reserve_fuel_hours: confloat(allow_inf_nan=False, ge=0, le=99.99)
     contingency_fuel_hours: confloat(allow_inf_nan=False, ge=0, le=99.99)
-    fuel_on_board_gallons: confloat(allow_inf_nan=False, ge=0, le=999.99)
 
     @model_validator(mode='after')
     @classmethod
@@ -244,9 +244,9 @@ class UpdateFlightData(BaseModel):
         '''
         Classmethod to round the fuel values.
         '''
+        values.additional_fuel_hours = round(values.additional_fuel_hours, 2)
         values.reserve_fuel_hours = round(values.reserve_fuel_hours, 2)
         values.contingency_fuel_hours = round(values.contingency_fuel_hours, 2)
-        values.fuel_on_board_gallons = round(values.fuel_on_board_gallons, 2)
 
         return values
 

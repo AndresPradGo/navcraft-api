@@ -112,9 +112,8 @@ class PerformanceProfileReturn(OfficialPerformanceProfileData):
     center_of_gravity_in: Optional[confloat(ge=0)] = None
     empty_weight_lb: Optional[confloat(ge=0)] = None
     max_ramp_weight_lb: Optional[confloat(ge=0)] = None
+    max_take_off_weight_lb: Optional[confloat(ge=0)] = None
     max_landing_weight_lb: Optional[confloat(ge=0)] = None
-    fuel_capacity_gallons: Optional[confloat(ge=0)] = None
-    unusable_fuel_gallons: Optional[confloat(ge=0)] = None
     baggage_allowance_lb: Optional[confloat(ge=0)] = None
     is_preferred: Optional[bool] = None
 
@@ -229,6 +228,7 @@ class PerformanceProfileWeightBalanceData(BaseModel):
     center_of_gravity_in: confloat(ge=0)
     empty_weight_lb: confloat(ge=0)
     max_ramp_weight_lb: confloat(ge=0)
+    max_take_off_weight_lb: confloat(ge=0)
     max_landing_weight_lb: confloat(ge=0)
     baggage_allowance_lb: confloat(ge=0)
 
@@ -364,14 +364,13 @@ class WeightBalanceData(BaseModel):
         max_length=50,
         pattern="^[\-a-zA-Z0-9\(\) ]+$"  # pylint: disable=anomalous-backslash-in-string
     )
-    max_take_off_weight_lb: confloat(ge=0)
     limits: List[WeightBalanceLimitData] = []
 
-    @model_validator(mode='after')
+    @field_validator('name')
     @classmethod
-    def round_values_clean_name(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def clean_name(cls, value: str) -> str:
         '''
-        Classmethod to round weight data and clean name.
+        Classmethod to clean name.
 
         Parameters:
         - values (Dict): dictionary with the input values.
@@ -380,11 +379,7 @@ class WeightBalanceData(BaseModel):
         (Dict): dictionary with the input values corrected.
 
         '''
-
-        values.max_take_off_weight_lb = round(values.max_take_off_weight_lb, 2)
-        values.name = clean_string(values.name)
-
-        return values
+        return clean_string(value)
 
 
 class WeightBalanceReturn(WeightBalanceData):
