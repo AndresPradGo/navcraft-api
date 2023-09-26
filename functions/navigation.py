@@ -211,26 +211,26 @@ def get_takeoff_weight(flight_id: int, db_session: Session):
         models.PersonOnBoard.flight_id == flight_id
     ).all()
 
-    pobs_weight = float(sum([
+    pobs_weight = float(sum((
         pob.weight_lb if pob.weight_lb is not None
         else user_weight if user_weight is not None
         else passenger_weight
         for pob, user_weight, passenger_weight in persons
-    ]))
+    )))
 
     # Get baggages
     baggages = db_session.query(models.Baggage).filter(
         models.Baggage.flight_id == flight_id
     ).all()
 
-    baggages_weight = float(sum([baggage.weight_lb for baggage in baggages]))
+    baggages_weight = float(sum((baggage.weight_lb for baggage in baggages)))
 
     # Get total fuel gallons
     fuel_tanks = db_session.query(models.Fuel).filter(
         models.Fuel.flight_id == flight_id
     ).all()
 
-    fuel_gallons = float(sum([fuel_tank.gallons for fuel_tank in fuel_tanks]))
+    fuel_gallons = float(sum((fuel_tank.gallons for fuel_tank in fuel_tanks)))
 
     # Get aircraft data
     flight = db_session.query(models.Flight).filter_by(id=flight_id).first()
@@ -268,13 +268,13 @@ def get_takeoff_weight(flight_id: int, db_session: Session):
     empty_weight = float(performance_profile[0].empty_weight_lb)
 
     # Calculate and return weight
-    takeoff_weight = round(sum([
+    takeoff_weight = round(sum((
         empty_weight,
         pobs_weight,
         baggages_weight,
         fuel_gallons * density,
         pre_takeoff_fuel_burn_weight
-    ]), 2)
+    )), 2)
 
     return takeoff_weight
 

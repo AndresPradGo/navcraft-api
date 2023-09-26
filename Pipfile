@@ -14,6 +14,7 @@ python-jose = {extras = ["cryptography"], version = "*"}
 python-multipart = "*"
 pytz = "*"
 numpy = "*"
+matplotlib = "*"
 
 [dev-packages]
 

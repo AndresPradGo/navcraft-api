@@ -30,7 +30,7 @@ async def get_nav_log_and_fuel_calculations(
     user_id: int
 ):
     """
-    This reusable function prepares all the data to get the nav-log and fuel data,
+    This reusable function prepares all the nav-log and fuel data,
     and returns the results.
     """
 
@@ -160,7 +160,7 @@ async def get_nav_log_and_fuel_calculations(
         models.Fuel.flight_id == flight_id
     ).all()
 
-    fuel_gallons = float(sum([fuel_tank.gallons for fuel_tank in fuel_tanks]))
+    fuel_gallons = float(sum((fuel_tank.gallons for fuel_tank in fuel_tanks)))
 
     # Get and return nav log and fuel data
     nav_log_data, fuel_data = navigation.calculate_nav_log(
@@ -187,6 +187,17 @@ async def get_nav_log_and_fuel_calculations(
     fuel_data["gallons_on_board"] = round(fuel_gallons, 2)
 
     return nav_log_data, fuel_data
+
+
+async def get_weight_balance_calculations(
+    flight_id: int,
+    db_session: Session,
+    user_id: int
+):
+    """
+    This reusable function prepares all the weight and balance report data,
+    and returns the results.
+    """
 
 
 @router.get(
@@ -357,12 +368,12 @@ async def takeoff_and_landing_distances(
     average_gph = round(
         fuel_data["gallons_enroute"] / fuel_data["hours_enroute"], 1)
 
-    gallons_burned = float(sum([
+    gallons_burned = float(sum((
         fuel_data["pre_takeoff_gallons"],
         fuel_data["climb_gallons"],
         fuel_data["gallons_enroute"],
         fuel_data["additional_fuel_hours"] * average_gph
-    ]))
+    )))
 
     fuel_type = db_session.query(models.FuelType).filter_by(
         id=performance_profile.fuel_type_id).first()
@@ -552,12 +563,12 @@ async def weight_and_balance_report(
             models.PersonOnBoard.flight_id == flight_id
         )).all()
 
-        total_weight = float(sum([
+        total_weight = float(sum((
             pob.weight_lb if pob.weight_lb is not None
             else user_weight if user_weight is not None
             else passenger_weight
             for pob, user_weight, passenger_weight in persons
-        ]))
+        )))
 
         seats.append({
             "weight_lb": total_weight,
@@ -584,7 +595,7 @@ async def weight_and_balance_report(
             models.Baggage.flight_id == flight_id
         )).all()
 
-        total_weight = float(sum([baggage.weight_lb for baggage in baggages]))
+        total_weight = float(sum((baggage.weight_lb for baggage in baggages)))
 
         compartments.append({
             "weight_lb": total_weight,
@@ -601,8 +612,8 @@ async def weight_and_balance_report(
             )
 
     if performance_profile[0].baggage_allowance_lb is not None:
-        total_baggage_lbs = sum([baggage["weight_lb"]
-                                for baggage in compartments])
+        total_baggage_lbs = sum((baggage["weight_lb"]
+                                for baggage in compartments))
         if performance_profile[0].baggage_allowance_lb < total_baggage_lbs:
             warnings.append(
                 f"This aircraft can only hold {performance_profile[0].baggage_allowance_lb} lbs of baggage!!!"
@@ -655,11 +666,11 @@ async def weight_and_balance_report(
     # Get total gallons burned
     average_gph = round(
         fuel_data["gallons_enroute"] / fuel_data["hours_enroute"], 1)
-    gallons_burned = float(sum([
+    gallons_burned = float(sum((
         fuel_data["additional_fuel_hours"] * average_gph,
         fuel_data["climb_gallons"],
         fuel_data["gallons_enroute"]
-    ]))
+    )))
 
     fuel_burn_sequences = {tank.burn_sequence for tank in fuel_tanks}
 
@@ -693,9 +704,9 @@ async def weight_and_balance_report(
     idx = 0
     while gallons_burned >= 5e-3 and idx < len(tanks_grouped_by_sequence):
         tanks_with_sequence = tanks_grouped_by_sequence[idx]
-        total_gallons_in_tanks = sum([
+        total_gallons_in_tanks = sum((
             tank["gallons"] for tank in tanks_with_sequence["fuel_tanks"]
-        ])
+        ))
         enough_fuel_in_tanks = gallons_burned <= total_gallons_in_tanks
         if not enough_fuel_in_tanks:
             for tank_with_seq in tanks_with_sequence['fuel_tanks']:
@@ -740,17 +751,17 @@ async def weight_and_balance_report(
         idx += 1
 
     # Prepare zero-fuel weight data
-    zero_fuel_weight_lbs = sum([
+    zero_fuel_weight_lbs = sum((
         float(performance_profile[0].empty_weight_lb),
-        sum([seat["weight_lb"] for seat in seats]),
-        sum([compartment["weight_lb"] for compartment in compartments])
-    ])
-    zero_fuel_weight_moment = sum([
+        sum((seat["weight_lb"] for seat in seats)),
+        sum((compartment["weight_lb"] for compartment in compartments))
+    ))
+    zero_fuel_weight_moment = sum((
         float(performance_profile[0].empty_weight_lb) *
         float(performance_profile[0].center_of_gravity_in),
-        sum([seat["moment_lb_in"] for seat in seats]),
-        sum([compartment["moment_lb_in"] for compartment in compartments])
-    ])
+        sum((seat["moment_lb_in"] for seat in seats)),
+        sum((compartment["moment_lb_in"] for compartment in compartments))
+    ))
     zero_fuel_weight = {
         "weight_lb": zero_fuel_weight_lbs,
         "arm_in": zero_fuel_weight_moment / zero_fuel_weight_lbs,
@@ -759,9 +770,9 @@ async def weight_and_balance_report(
 
     # Prepare ramp weight data
     ramp_weight_lbs = zero_fuel_weight_lbs + \
-        sum([fuel["weight_lb"] for fuel in fuel_on_board])
+        sum((fuel["weight_lb"] for fuel in fuel_on_board))
     ramp_weight_moment = zero_fuel_weight_moment + \
-        sum([fuel["moment_lb_in"] for fuel in fuel_on_board])
+        sum((fuel["moment_lb_in"] for fuel in fuel_on_board))
     ramp_weight = {
         "weight_lb": ramp_weight_lbs,
         "arm_in": ramp_weight_moment / ramp_weight_lbs,
@@ -792,9 +803,9 @@ async def weight_and_balance_report(
 
     # Prepare Landing weight data
     landing_weight_lbs = takeoff_weight_lbs - \
-        sum([fuel["weight_lb"] for fuel in fuel_burned])
+        sum((fuel["weight_lb"] for fuel in fuel_burned))
     landing_weight_moment = takeoff_weight_moment + \
-        sum([fuel["moment_lb_in"] for fuel in fuel_burned])
+        sum((fuel["moment_lb_in"] for fuel in fuel_burned))
     landing_weight = {
         "weight_lb": landing_weight_lbs,
         "arm_in": landing_weight_moment / landing_weight_lbs,

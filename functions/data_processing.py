@@ -324,7 +324,7 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
             "additional_fuel_hours": flight.additional_fuel_hours,
             "reserve_fuel_hours": flight.reserve_fuel_hours,
             "contingency_fuel_hours": flight.contingency_fuel_hours,
-            "fuel_on_board_gallons": sum([tank.gallons for tank in fuel_tanks]),
+            "fuel_on_board_gallons": sum((tank.gallons for tank in fuel_tanks)),
             "legs": [{
                 "id": leg.id,
                 "sequence": leg.sequence,
