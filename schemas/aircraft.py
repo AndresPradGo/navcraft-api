@@ -320,10 +320,9 @@ class WeightBalanceLimitData(BaseModel):
     weight and balance profile.
     """
 
-    from_cg_in: confloat(ge=0)
-    from_weight_lb: confloat(ge=0)
-    to_cg_in: confloat(ge=0)
-    to_weight_lb: confloat(ge=0)
+    cg_location_in: confloat(ge=0, le=999.99)
+    weight_lb: confloat(ge=0, le=99999.99)
+    sequence: conint(ge=1)
 
     @model_validator(mode='after')
     @classmethod
@@ -339,10 +338,9 @@ class WeightBalanceLimitData(BaseModel):
 
         '''
 
-        values.from_cg_in = round(values.from_cg_in, 2)
-        values.from_weight_lb = round(values.from_weight_lb, 2)
-        values.to_cg_in = round(values.to_cg_in, 2)
-        values.to_weight_lb = round(values.to_weight_lb, 2)
+        values.cg_location_in = round(values.cg_location_in, 2)
+        values.weight_lb = round(values.weight_lb, 2)
+
         return values
 
 

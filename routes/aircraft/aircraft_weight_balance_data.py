@@ -124,10 +124,9 @@ async def get_weight_balance_data(
             "name": profile.name,
             "limits": [{
                 "id": limit.id,
-                "from_cg_in": limit.from_cg_in,
-                "from_weight_lb": limit.from_weight_lb,
-                "to_cg_in": limit.to_cg_in,
-                "to_weight_lb": limit.to_weight_lb
+                "cg_location_in": limit.cg_location_in,
+                "weight_lb": limit.weight_lb,
+                "sequence": limit.sequence
             } for limit in weight_balance_profile_limits]
         } for profile in weight_balance_profiles]
     }
@@ -413,10 +412,9 @@ async def post_new_weight_and_balance_profile(
     wb_profile_id = new_profile.id
     new_limits = [models.WeightBalanceLimit(
         weight_balance_profile_id=wb_profile_id,
-        from_cg_in=limit.from_cg_in,
-        from_weight_lb=limit.from_weight_lb,
-        to_cg_in=limit.to_cg_in,
-        to_weight_lb=limit.to_weight_lb,
+        cg_location_in=limit.cg_location_in,
+        weight_lb=limit.weight_lb,
+        sequence=limit.sequence,
     ) for limit in data.limits]
 
     db_session.add_all(new_limits)
@@ -781,10 +779,9 @@ async def edit_weight_and_balance_profile(
     # Update weight and balance limts
     new_limits = [models.WeightBalanceLimit(
         weight_balance_profile_id=wb_profile_id,
-        from_cg_in=limit.from_cg_in,
-        from_weight_lb=limit.from_weight_lb,
-        to_cg_in=limit.to_cg_in,
-        to_weight_lb=limit.to_weight_lb
+        cg_location_in=limit.cg_location_in,
+        weight_lb=limit.weight_lb,
+        sequence=limit.sequence,
     ) for limit in data.limits]
 
     _ = db_session.query(models.WeightBalanceLimit).filter(

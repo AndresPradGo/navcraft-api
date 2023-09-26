@@ -67,34 +67,29 @@
             "name": "Normal Category",
             "limits":[
                 {
-                    "from_cg_in": 47.3,
-                    "from_weight_lb": 1500,
-                    "to_cg_in": 35,
-                    "to_weight_lb": 1500 
+                    "cg_location_in": 35,
+                    "weight_lb": 1500,
+                    "sequence": 1
                 },
                 {
-                    "from_cg_in": 35,
-                    "from_weight_lb": 1500,
-                    "to_cg_in": 35,
-                    "to_weight_lb": 1950 
+                    "cg_location_in": 35,
+                    "weight_lb": 1950,
+                    "sequence": 2
                 },
                 {
-                    "from_cg_in": 35,
-                    "from_weight_lb": 1950,
-                    "to_cg_in": 38.5,
-                    "to_weight_lb": 2300 
+                    "cg_location_in": 38.5,
+                    "weight_lb": 2300,
+                    "sequence": 3 
                 },
                 {
-                    "from_cg_in": 38.5,
-                    "from_weight_lb": 2300,
-                    "to_cg_in": 47.3,
-                    "to_weight_lb": 2300 
+                    "cg_location_in": 47.3,
+                    "weight_lb": 2300,
+                    "sequence": 4
                 },
                 {
-                    "from_cg_in": 47.3,
-                    "from_weight_lb": 2300,
-                    "to_cg_in": 47.3,
-                    "to_weight_lb": 1500 
+                    "cg_location_in": 47.3,
+                    "weight_lb": 1500,
+                    "sequence": 5
                 }
             ]
         },
@@ -102,34 +97,29 @@
             "name": "Utility Category",
             "limits":[
                 {
-                    "from_cg_in": 40.5,
-                    "from_weight_lb": 1500,
-                    "to_cg_in": 35,
-                    "to_weight_lb": 1500 
+                    "cg_location_in": 35,
+                    "weight_lb": 1500,
+                    "sequence": 1
                 },
                 {
-                    "from_cg_in": 35,
-                    "from_weight_lb": 1500,
-                    "to_cg_in": 35,
-                    "to_weight_lb": 1950 
+                    "cg_location_in": 35,
+                    "weight_lb": 1950,
+                    "sequence": 2
                 },
                 {
-                    "from_cg_in": 35,
-                    "from_weight_lb": 1950,
-                    "to_cg_in": 35.5,
-                    "to_weight_lb": 2000 
+                    "cg_location_in": 35.5,
+                    "weight_lb": 2000,
+                    "sequence": 3
                 },
                 {
-                    "from_cg_in": 35.5,
-                    "from_weight_lb": 2000,
-                    "to_cg_in": 40.5,
-                    "to_weight_lb": 2000 
+                    "cg_location_in": 40.5,
+                    "weight_lb": 2000,
+                    "sequence": 4
                 },
                 {
-                    "from_cg_in": 40.5,
-                    "from_weight_lb": 2000,
-                    "to_cg_in": 40.5,
-                    "to_weight_lb": 1500 
+                    "cg_location_in": 40.5,
+                    "weight_lb": 1500,
+                    "sequence": 5
                 }
             ]
         }

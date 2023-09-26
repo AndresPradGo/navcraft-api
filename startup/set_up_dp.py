@@ -443,10 +443,9 @@ def _add_performance_profile_models():
 
                             new_wb_limits = [models.WeightBalanceLimit(
                                 weight_balance_profile_id=new_wb_profile.id,
-                                from_cg_in=limit.from_cg_in,
-                                from_weight_lb=limit.from_weight_lb,
-                                to_cg_in=limit.to_cg_in,
-                                to_weight_lb=limit.to_weight_lb
+                                cg_location_in=limit.cg_location_in,
+                                weight_lb=limit.weight_lb,
+                                sequence=limit.sequence
                             ) for limit in wb_profile.limits]
                             db_session.add_all(new_wb_limits)
                             db_session.commit()
