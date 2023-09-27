@@ -959,12 +959,12 @@ async def weight_and_balance_graph(
             label=weight_balance_profile["name"]
         )
         plt.fill_between(data[0], data[1],
-                         color=colors[idx], alpha=0.08 + 0.08 * idx)
+                         color=colors[idx], alpha=0.12 + 0.06 * idx)
 
         for i, cg_location in enumerate(data[0]):
             plt.text(
                 cg_location,
-                data[1][i] + 5,
+                data[1][i] + 10,
                 f"({cg_location}, {data[1][i]/1000}K)",
                 ha="right",
                 va="bottom",
