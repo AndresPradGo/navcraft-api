@@ -68,7 +68,7 @@
             "limits":[
                 {
                     "cg_location_in": 35,
-                    "weight_lb": 1500,
+                    "weight_lb": 1400,
                     "sequence": 1
                 },
                 {
@@ -88,7 +88,7 @@
                 },
                 {
                     "cg_location_in": 47.3,
-                    "weight_lb": 1500,
+                    "weight_lb": 1400,
                     "sequence": 5
                 }
             ]
@@ -98,7 +98,7 @@
             "limits":[
                 {
                     "cg_location_in": 35,
-                    "weight_lb": 1500,
+                    "weight_lb": 1400,
                     "sequence": 1
                 },
                 {
@@ -118,7 +118,7 @@
                 },
                 {
                     "cg_location_in": 40.5,
-                    "weight_lb": 1500,
+                    "weight_lb": 1400,
                     "sequence": 5
                 }
             ]
