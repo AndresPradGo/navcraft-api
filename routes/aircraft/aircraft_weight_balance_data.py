@@ -7,8 +7,11 @@ Usage:
 - Import the router to add it to the FastAPI app.
 
 """
+import io
 
 from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi.responses import StreamingResponse
+import matplotlib.pyplot as plt
 from sqlalchemy import and_, not_
 from sqlalchemy.orm import Session
 
@@ -31,7 +34,7 @@ router = APIRouter(tags=["Aircraft Weight and Balance Data"])
     status_code=status.HTTP_200_OK,
     response_model=schemas.GetWeightBalanceData
 )
-async def get_weight_balance_data(
+async def get_aircraft_weight_balance_data(
     profile_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -132,6 +135,144 @@ async def get_weight_balance_data(
     }
 
     return data
+
+
+@router.get(
+    "/graph/{profile_id}",
+    status_code=status.HTTP_200_OK
+)
+async def get_aircraft_weight_and_balance_graph(
+    profile_id: int,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Get Aircraft Weight and Balance Graph Endpoint.
+
+    Parameters:
+    - profile_id (int): aircraft performance profile id.
+
+    Returns: 
+    - Png-file: W&B graph.
+
+    Raise:
+    - HTTPException (400): if performance profile doesn't exist.
+    - HTTPException (401): if user is not authenticated.
+    - HTTPException (500): if there is a server error. 
+    """
+    # Get the performance profile and check permissions.
+    performance_profile = check_performance_profile_and_permissions(
+        db_session=db_session,
+        user_id=await get_user_id_from_email(
+            email=current_user.email, db_session=db_session
+        ),
+        user_is_active_admin=current_user.is_active and current_user.is_admin,
+        profile_id=profile_id,
+        auth_non_admin_get_model=True
+    ).first()
+
+    # Define line graph style variables
+    colors = ['#00D5C8', '#D500CB', '#4AD500', '#D50000']
+    line_styles = ['-', '--', '-.', ':']
+
+    # Get weight and balance profiles
+    weight_balance_profile_limits = db_session.query(
+        models.WeightBalanceProfile,
+        models.WeightBalanceLimit
+    ).join(
+        models.WeightBalanceLimit,
+        models.WeightBalanceProfile.id == models.WeightBalanceLimit.weight_balance_profile_id
+    ).filter(
+        models.WeightBalanceProfile.performance_profile_id == profile_id
+    ).order_by(
+        models.WeightBalanceProfile.id,
+        models.WeightBalanceLimit.sequence
+    ).all()
+    weight_balance_profiles_names = {
+        profile.name for profile, _ in weight_balance_profile_limits}
+    weight_balance_profiles = []
+
+    for profile_name in weight_balance_profiles_names:
+        weight_balance_profile = {"name": profile_name}
+        cg_locations = []
+        weights = []
+        for profile, limit in weight_balance_profile_limits:
+            if profile.name == profile_name:
+                cg_locations.append(float(limit.cg_location_in))
+                weights.append(float(limit.weight_lb))
+        weight_balance_profile["limits"] = (cg_locations, weights)
+        weight_balance_profiles.append(weight_balance_profile)
+
+    weight_balance_profiles.sort(
+        key=lambda i: max(i["limits"][1]), reverse=True)
+
+    # Create plot limits
+    plot_limits = {
+        "top": float(performance_profile.max_take_off_weight_lb),
+        "right": 0,
+        "bottom": float(performance_profile.max_take_off_weight_lb),
+        "left": 10000
+    }
+    for weight_balance_profile in weight_balance_profiles:
+        limits = weight_balance_profile["limits"]
+        plot_limits["right"] = max(*limits[0], plot_limits["right"])
+        plot_limits["bottom"] = min(*limits[1], plot_limits["bottom"])
+        plot_limits["left"] = min(*limits[0], plot_limits["left"])
+    vertical_range = plot_limits["top"] - plot_limits["bottom"]
+    horizontal_range = plot_limits["right"] - plot_limits["left"]
+    plot_limits["top"] += 0.25 * vertical_range
+    plot_limits["right"] += 0.25 * horizontal_range
+    plot_limits["bottom"] -= 0 * vertical_range
+    plot_limits["left"] -= 0.25 * horizontal_range
+
+    # Create matplotlib plot
+    plt.style.use('seaborn-v0_8-dark')
+    for idx, weight_balance_profile in enumerate(weight_balance_profiles):
+        data = weight_balance_profile["limits"]
+        plt.plot(
+            data[0],
+            data[1],
+            color=colors[idx],
+            linestyle=line_styles[idx],
+            marker='o',
+            linewidth=2,
+            markersize=7,
+            label=weight_balance_profile["name"]
+        )
+        plt.fill_between(data[0], data[1],
+                         color=colors[idx], alpha=0.08 + 0.08 * idx)
+
+        for i, cg_location in enumerate(data[0]):
+            plt.text(
+                cg_location,
+                data[1][i] + 5,
+                f"({cg_location}, {data[1][i]/1000}K)",
+                ha="right",
+                va="bottom",
+                color='#404040',
+                fontsize=10
+            )
+
+    plt.xlim(plot_limits["left"], plot_limits["right"])
+    plt.ylim(plot_limits["bottom"], plot_limits["top"])
+    plt.xlabel("C.G. Location [Inches Aft of Datum]")
+    plt.ylabel("Aircraft Weight [lbs]")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+
+    # Save the plot to a BytesIO object
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format="png")
+    buffer.seek(0)
+    plt.close()
+
+    # Return the plot as a streaming response
+    graph_response = StreamingResponse(
+        io.BytesIO(buffer.read()), media_type="image/png")
+    graph_response.headers[
+        "Content-Disposition"] = 'attachment; filename="weight_and_balance_graph.png"'
+    return graph_response
 
 
 @router.post(
