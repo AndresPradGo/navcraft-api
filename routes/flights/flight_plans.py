@@ -496,10 +496,10 @@ async def get_weight_balance_calculations(
         "moment_lb_in": takeoff_weight_moment,
     }
 
-    if performance_profile[0].max_take_off_weight_lb is not None and\
-            performance_profile[0].max_take_off_weight_lb < takeoff_weight_lbs:
+    if performance_profile[0].max_takeoff_weight_lb is not None and\
+            performance_profile[0].max_takeoff_weight_lb < takeoff_weight_lbs:
         warnings.append(
-            f"Maximum takeoff weight of {performance_profile[0].max_take_off_weight_lb} lbs exceeded!!!"
+            f"Maximum takeoff weight of {performance_profile[0].max_takeoff_weight_lb} lbs exceeded!!!"
         )
 
     # Prepare Landing weight data
@@ -532,7 +532,7 @@ async def get_weight_balance_calculations(
         "takeoff_weight": takeoff_weight,
         "landing_weight": landing_weight,
         "performance_profile_id": performance_profile[0].id,
-        "max_takeoff_weight_lb": performance_profile[0].max_take_off_weight_lb
+        "max_takeoff_weight_lb": performance_profile[0].max_takeoff_weight_lb
     }
 
 

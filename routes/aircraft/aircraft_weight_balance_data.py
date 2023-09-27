@@ -95,8 +95,8 @@ async def get_aircraft_weight_balance_data(
         if performance_profile.empty_weight_lb is not None else 0,
         "max_ramp_weight_lb": performance_profile.max_ramp_weight_lb
         if performance_profile.max_ramp_weight_lb is not None else 0,
-        "max_take_off_weight_lb": performance_profile.max_take_off_weight_lb
-        if performance_profile.max_take_off_weight_lb is not None else 0,
+        "max_takeoff_weight_lb": performance_profile.max_takeoff_weight_lb
+        if performance_profile.max_takeoff_weight_lb is not None else 0,
         "max_landing_weight_lb": performance_profile.max_landing_weight_lb
         if performance_profile.max_landing_weight_lb is not None else 0,
         "baggage_allowance_lb": performance_profile.baggage_allowance_lb
@@ -208,9 +208,9 @@ async def get_aircraft_weight_and_balance_graph(
 
     # Create plot limits
     plot_limits = {
-        "top": float(performance_profile.max_take_off_weight_lb),
+        "top": float(performance_profile.max_takeoff_weight_lb),
         "right": 0,
-        "bottom": float(performance_profile.max_take_off_weight_lb),
+        "bottom": float(performance_profile.max_takeoff_weight_lb),
         "left": 10000
     }
     for weight_balance_profile in weight_balance_profiles:
@@ -621,7 +621,7 @@ async def edit_weight_and_balance_data_for_performance_profile(
         "center_of_gravity_in": performance_data.center_of_gravity_in,
         "empty_weight_lb": performance_data.empty_weight_lb,
         "max_ramp_weight_lb": performance_data.max_ramp_weight_lb,
-        "max_take_off_weight_lb": performance_data.max_take_off_weight_lb,
+        "max_takeoff_weight_lb": performance_data.max_takeoff_weight_lb,
         "max_landing_weight_lb": performance_data.max_landing_weight_lb,
         "baggage_allowance_lb": performance_data.baggage_allowance_lb
     })

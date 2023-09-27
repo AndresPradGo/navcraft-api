@@ -112,7 +112,7 @@ class PerformanceProfileReturn(OfficialPerformanceProfileData):
     center_of_gravity_in: Optional[confloat(ge=0)] = None
     empty_weight_lb: Optional[confloat(ge=0)] = None
     max_ramp_weight_lb: Optional[confloat(ge=0)] = None
-    max_take_off_weight_lb: Optional[confloat(ge=0)] = None
+    max_takeoff_weight_lb: Optional[confloat(ge=0)] = None
     max_landing_weight_lb: Optional[confloat(ge=0)] = None
     baggage_allowance_lb: Optional[confloat(ge=0)] = None
     is_preferred: Optional[bool] = None
@@ -228,7 +228,7 @@ class PerformanceProfileWeightBalanceData(BaseModel):
     center_of_gravity_in: confloat(ge=0)
     empty_weight_lb: confloat(ge=0)
     max_ramp_weight_lb: confloat(ge=0)
-    max_take_off_weight_lb: confloat(ge=0)
+    max_takeoff_weight_lb: confloat(ge=0)
     max_landing_weight_lb: confloat(ge=0)
     baggage_allowance_lb: confloat(ge=0)
 

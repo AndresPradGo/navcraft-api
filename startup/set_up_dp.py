@@ -409,7 +409,7 @@ def _add_performance_profile_models():
                             center_of_gravity_in=profile_data["weight_balance"].center_of_gravity_in,
                             empty_weight_lb=profile_data["weight_balance"].empty_weight_lb,
                             max_ramp_weight_lb=profile_data["weight_balance"].max_ramp_weight_lb,
-                            max_take_off_weight_lb=profile_data["weight_balance"].max_take_off_weight_lb,
+                            max_takeoff_weight_lb=profile_data["weight_balance"].max_takeoff_weight_lb,
                             max_landing_weight_lb=profile_data["weight_balance"].max_landing_weight_lb,
                             baggage_allowance_lb=profile_data["weight_balance"].baggage_allowance_lb,
                             take_off_taxi_fuel_gallons=profile_data["climb"].take_off_taxi_fuel_gallons,

@@ -5,7 +5,7 @@
     "center_of_gravity_in": 39.12,
     "empty_weight_lb": 1400,
     "max_ramp_weight_lb": 2300,
-    "max_take_off_weight_lb": 2300,
+    "max_takeoff_weight_lb": 2300,
     "max_landing_weight_lb": 2300,
     "baggage_allowance_lb": 120,
     "percent_decrease_takeoff_headwind_knot": 1.11,
