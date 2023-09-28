@@ -184,7 +184,8 @@ async def get_nav_log_and_fuel_calculations(
 
     fuel_data["pre_takeoff_gallons"] = float(
         performance_profile.take_off_taxi_fuel_gallons)
-    fuel_data["additional_fuel_hours"] = float(flight.additional_fuel_hours)
+    fuel_data["added_enroute_time_hours"] = float(
+        flight.added_enroute_time_hours)
     fuel_data["reserve_fuel_hours"] = float(flight.reserve_fuel_hours)
     fuel_data["contingency_fuel_hours"] = float(flight.contingency_fuel_hours)
     fuel_data["gallons_on_board"] = round(fuel_gallons, 2)
@@ -367,7 +368,7 @@ async def get_weight_balance_calculations(
     average_gph = round(
         fuel_data["gallons_enroute"] / fuel_data["hours_enroute"], 1)
     gallons_burned = float(sum((
-        fuel_data["additional_fuel_hours"] * average_gph,
+        fuel_data["added_enroute_time_hours"] * average_gph,
         fuel_data["climb_gallons"],
         fuel_data["gallons_enroute"]
     )))
@@ -616,8 +617,8 @@ async def fuel_calculations(
             "gallons": round(fuel_data["hours_enroute"] * average_gph, 2)
         },
         "additional_fuel": {
-            "hours": fuel_data["additional_fuel_hours"],
-            "gallons": round(fuel_data["additional_fuel_hours"] * average_gph, 2)
+            "hours": fuel_data["added_enroute_time_hours"],
+            "gallons": round(fuel_data["added_enroute_time_hours"] * average_gph, 2)
         },
         "reserve_fuel": {
             "hours": fuel_data["reserve_fuel_hours"],
@@ -708,7 +709,7 @@ async def takeoff_and_landing_distances(
         fuel_data["pre_takeoff_gallons"],
         fuel_data["climb_gallons"],
         fuel_data["gallons_enroute"],
-        fuel_data["additional_fuel_hours"] * average_gph
+        fuel_data["added_enroute_time_hours"] * average_gph
     )))
 
     fuel_type = db_session.query(models.FuelType).filter_by(

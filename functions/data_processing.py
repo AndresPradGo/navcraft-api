@@ -321,7 +321,7 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
             "arrival_aerodrome_is_private": arrival[1].user_waypoint is not None
             if arrival is not None else None,
             "bhp_percent": flight.bhp_percent,
-            "additional_fuel_hours": flight.additional_fuel_hours,
+            "added_enroute_time_hours": flight.added_enroute_time_hours,
             "reserve_fuel_hours": flight.reserve_fuel_hours,
             "contingency_fuel_hours": flight.contingency_fuel_hours,
             "fuel_on_board_gallons": sum((tank.gallons for tank in fuel_tanks)),
