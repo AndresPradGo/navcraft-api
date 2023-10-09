@@ -47,7 +47,7 @@ def invalid_credentials(post_fix: str = ""):
     """
     response = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail=f"Invalid credentials, please log in with a valid email and password{post_fix}.",
+        detail=f"Invalid credentials, please login with a valid email and password{post_fix}.",
         headers={"WWW-Authenticate": "Bearer"},
     )
     return response

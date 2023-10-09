@@ -12,6 +12,7 @@ Usage:
 from fastapi import FastAPI
 
 from startup.create_db import create_database
+from startup.config_cors import config_cors
 from startup.set_up_dp import set_up_database
 from startup.routes import link_routes
 
@@ -19,4 +20,5 @@ app = FastAPI()
 
 create_database()
 set_up_database()
+config_cors(app)
 link_routes(app)

@@ -8,5 +8,6 @@
     "master_user_weight": "FLIGHT_PLANNER_MASTER_USER_WEIGHT",
     "master_user_password": "FLIGHT_PLANNER_MASTER_USER_PASSWORD",
     "jwt_secret_key": "FLIGHT_PLANNER_JWT_SECRET_KEY",
-    "jwt_algorithm": "FLIGHT_PLANNER_JWT_ALGORITHM"
+    "jwt_algorithm": "FLIGHT_PLANNER_JWT_ALGORITHM",
+    "client_origin": "FLIGHT_PLANNER_CLIENT_ORIGIN"
 }
