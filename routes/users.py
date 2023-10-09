@@ -106,10 +106,9 @@ async def get_passenger_profiles(
     return profiles
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.UserReturnBasic)
-async def sign_in(
-    user: schemas.UserSigin,
-    response: Response,
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.JWTData)
+async def register(
+    user: schemas.UserRegister,
     db_session: Session = Depends(get_db)
 ):
     """
@@ -149,9 +148,7 @@ async def sign_in(
     db_session.commit()
     db_session.refresh(new_user)
 
-    response.headers["x-access-token"] = new_user.generate_auth_token()
-    response.headers["x-token-type"] = "bearer"
-    return new_user
+    return {"access_token": new_user.generate_auth_token(), "token_type": "bearer"}
 
 
 @router.post(

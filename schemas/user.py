@@ -179,9 +179,9 @@ class UserWeight(BaseModel):
         return round(value, 1)
 
 
-class UserSigin(UserPassword, UserName, UserEmail):
+class UserRegister(UserPassword, UserName, UserEmail):
     '''
-    This class defines the data required to sign in as a new user.
+    This class defines the data required to register as a new user.
     '''
 
 
