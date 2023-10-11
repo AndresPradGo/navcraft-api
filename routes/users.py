@@ -148,7 +148,7 @@ async def register(
     db_session.commit()
     db_session.refresh(new_user)
 
-    return {"access_token": new_user.generate_auth_token(), "token_type": "bearer"}
+    return {"access_token": new_user.generate_auth_token(), "token_type": "Bearer"}
 
 
 @router.post(

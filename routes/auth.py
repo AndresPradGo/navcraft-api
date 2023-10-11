@@ -54,4 +54,4 @@ async def login(
 
     token = user.generate_auth_token()
 
-    return {"access_token": token, "token_type": "bearer"}
+    return {"access_token": token, "token_type": "Bearer"}
