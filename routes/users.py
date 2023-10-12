@@ -95,8 +95,11 @@ async def get_passenger_profiles(
     - HTTPException (401): validation fails.
     - HTTPException (500): if there is a server error. 
     """
+    user_id = await get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
+    print(user_id)
     profiles = db_session.query(models.PassengerProfile).filter(and_(
-        models.User.email == current_user.email,
+        models.PassengerProfile.creator_id == user_id,
         or_(
             not_(profile_id),
             models.PassengerProfile.id == profile_id
