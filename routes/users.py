@@ -27,6 +27,8 @@ router = APIRouter(tags=["Users"])
 
 @router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.UserReturnBasic])
 async def get_all_users(
+    limit: Optional[int] = -1,
+    start: Optional[int] = 0,
     user_id: Optional[int] = 0,
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_master_user)
@@ -34,7 +36,11 @@ async def get_all_users(
     """
     Get All Users Endpoint.
 
-    Parameters: None
+    Parameters: 
+    - limit (int): number of results.
+    - start (int): index of the first user.
+    - user_id (int): user id.
+
 
     Returns: 
     - list: list of user dictionaries.
@@ -43,10 +49,15 @@ async def get_all_users(
     - HTTPException (401): if user is not master user.
     - HTTPException (500): if there is a server error. 
     """
-    return db_session.query(models.User).filter(or_(
+
+    users = db_session.query(models.User).filter(or_(
         not_(user_id),
         models.User.id == user_id
     )).order_by(models.User.id).all()
+
+    limit = len(users) if limit == -1 else limit
+
+    return users[start:start + limit]
 
 
 @router.get("/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturn)
@@ -97,7 +108,6 @@ async def get_passenger_profiles(
     """
     user_id = await get_user_id_from_email(
         email=current_user.email, db_session=db_session)
-    print(user_id)
     profiles = db_session.query(models.PassengerProfile).filter(and_(
         models.PassengerProfile.creator_id == user_id,
         or_(

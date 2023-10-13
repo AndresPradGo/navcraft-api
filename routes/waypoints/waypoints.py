@@ -31,6 +31,8 @@ router = APIRouter(tags=["Waypoints"])
     response_model=List[schemas.UserWaypointReturn]
 )
 async def get_all_user_waypoints(
+    limit: Optional[int] = -1,
+    start: Optional[int] = 0,
     waypoint_id: Optional[int] = 0,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -39,6 +41,8 @@ async def get_all_user_waypoints(
     Get All User Waypoints Endpoint.
 
     Parameters:
+    - limit (int): number of results.
+    - start (int): index of the first waypoint.
     - waypoint_id (int): waypoint id.
 
     Returns: 
@@ -61,12 +65,14 @@ async def get_all_user_waypoints(
         ))\
         .join(u, w.id == u.waypoint_id).order_by(u.name).all()
 
+    limit = len(user_waypoints) if limit == -1 else limit
+
     return [{
         **w.__dict__,
         **v.__dict__,
         "created_at_utc": pytz.timezone('UTC').localize((v.created_at)),
         "last_updated_utc": pytz.timezone('UTC').localize((v.last_updated))
-    } for w, v in user_waypoints]
+    } for w, v in user_waypoints[start: start + limit]]
 
 
 @router.get(
@@ -75,6 +81,8 @@ async def get_all_user_waypoints(
     response_model=List[schemas.VfrWaypointReturn]
 )
 async def get_all_vfr_waypoints(
+    limit: Optional[int] = -1,
+    start: Optional[int] = 0,
     waypoint_id: Optional[int] = 0,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -83,6 +91,8 @@ async def get_all_vfr_waypoints(
     Get All VFR Waypoints Endpoint.
 
     Parameters: 
+    - limit (int): number of results.
+    - start (int): index of the first waypoint.
     - waypoint_id (int): waypoint id.
 
     Returns: 
@@ -113,6 +123,7 @@ async def get_all_vfr_waypoints(
         ))\
         .join(v, w.id == v.waypoint_id).order_by(v.name).all()
 
+    limit = len(query_results) if limit == -1 else limit
     return [{
         **w.__dict__,
         "code": v.code,
@@ -120,7 +131,7 @@ async def get_all_vfr_waypoints(
         "hidden": v.hidden if user_is_active_admin else None,
         "created_at_utc": pytz.timezone('UTC').localize((v.created_at)),
         "last_updated_utc": pytz.timezone('UTC').localize((v.last_updated))
-    } for w, v in query_results]
+    } for w, v in query_results[start: start + limit]]
 
 
 @router.get(
@@ -129,6 +140,8 @@ async def get_all_vfr_waypoints(
     response_model=List[schemas.AerodromeReturnWithRunways]
 )
 async def get_all_aerodromes(
+    limit: Optional[int] = -1,
+    start: Optional[int] = 0,
     aerodrome_id: Optional[int] = 0,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -137,6 +150,8 @@ async def get_all_aerodromes(
     Get All Aerodromes Endpoint.
 
     Parameters: 
+    - limit (int): number of results.
+    - start (int): index of the first aerodromes.
     - aerodrome_id (optional int): aerodrome id.
 
     Returns: 
@@ -216,8 +231,8 @@ async def get_all_aerodromes(
     } for w, v, a, s in aerodromes]
 
     aerodromes.sort(key=lambda a: (a["registered"], a["name"]))
-
-    return aerodromes
+    limit = len(aerodromes) if limit == -1 else limit
+    return aerodromes[start: start + limit]
 
 
 @router.get(
