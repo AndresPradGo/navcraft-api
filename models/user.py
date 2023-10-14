@@ -8,8 +8,6 @@ Usage:
 
 """
 
-from datetime import datetime, timedelta
-
 from jose import jwt
 from sqlalchemy import Column, Integer, DECIMAL, String, Boolean, ForeignKey
 from sqlalchemy.orm import Relationship
@@ -71,7 +69,7 @@ class User(BaseModel):
         passive_updates=True
     )
 
-    def generate_auth_token(self, expires_delta: timedelta | None = None):
+    def generate_auth_token(self):
         """
         This method generates a Jason Web Token.
 
@@ -88,13 +86,6 @@ class User(BaseModel):
             "admin"] if self.is_admin else []
         to_encode = {"email": self.email,
                      "permissions": permissions, "active": self.is_active}
-
-        if expires_delta:
-            expire = datetime.utcnow() + expires_delta
-        else:
-            # 24 hours of expiration time
-            expire = datetime.utcnow() + timedelta(minutes=24 * 60)
-        to_encode.update({"exp": expire})
 
         encoded_jwt = jwt.encode(to_encode, jwt_key, algorithm=jwt_algorithm)
 

@@ -8,7 +8,6 @@ Usage:
   can be called directly form the auth package.
 
 """
-
 from typing import Annotated, List
 
 from fastapi import Depends
@@ -40,7 +39,6 @@ def get_jwt_payload(token: str):
             environ.get("jwt_secret_key"),
             algorithms=environ.get("jwt_algorithm")
         )
-
     except JWTError:
         # pylint: disable=raise-missing-from
         raise common_responses.invalid_credentials()
