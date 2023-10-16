@@ -240,7 +240,7 @@ async def change_email(
         new_user = db_session.query(models.User).filter(
             models.User.email == user_data.email).first()
         response.headers["x-access-token"] = new_user.generate_auth_token()
-        response.headers["x-token-type"] = "bearer"
+        response.headers["x-token-type"] = "Bearer"
         return new_user
 
     # Check if user with new email already exists
@@ -264,7 +264,7 @@ async def change_email(
     new_user = db_session.query(models.User).filter(
         models.User.email == user_data.email).first()
     response.headers["x-access-token"] = new_user.generate_auth_token()
-    response.headers["x-token-type"] = "bearer"
+    response.headers["x-token-type"] = "Bearer"
     return new_user
 
 
@@ -308,7 +308,7 @@ async def change_password(
     new_user = db_session.query(models.User).filter(
         models.User.email == current_user.email).first()
     response.headers["x-access-token"] = new_user.generate_auth_token()
-    response.headers["x-token-type"] = "bearer"
+    response.headers["x-token-type"] = "Bearer"
     return new_user
 
 
