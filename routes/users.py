@@ -312,7 +312,7 @@ async def change_password(
     return new_user
 
 
-@router.put("/me", status_code=status.HTTP_200_OK, response_model=schemas.UserEditProfileData)
+@router.put("/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturnBasic)
 async def edit_user_profile(
     user_data: schemas.UserEditProfileData,
     db_session: Session = Depends(get_db),
