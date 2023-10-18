@@ -165,7 +165,7 @@ async def register(
 
 
 @router.post(
-    "/new-passenger-profile",
+    "/passenger-profile",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.PassengerProfileReturn
 )
