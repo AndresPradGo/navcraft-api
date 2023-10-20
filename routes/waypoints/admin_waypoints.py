@@ -22,6 +22,8 @@ import schemas
 from utils import common_responses
 from utils.db import get_db
 from functions.data_processing import get_user_id_from_email, clean_string
+from functions.navigation import get_magnetic_variation_for_waypoint
+
 
 router = APIRouter(tags=["Admin Waypoints"])
 
@@ -70,6 +72,10 @@ async def post_vfr_waypoint(
         lon_seconds=waypoint.lon_seconds,
         lon_direction=waypoint.lon_direction,
         magnetic_variation=waypoint.magnetic_variation,
+    )
+    new_waypoint.magnetic_variation = get_magnetic_variation_for_waypoint(
+        waypoint=new_waypoint,
+        db_session=db_session
     )
 
     db_session.add(new_waypoint)
@@ -138,18 +144,21 @@ async def update_vfr_waypoint(
             detail=msg
         )
 
+    update_waypoint_data = {
+        "lat_degrees": waypoint.lat_degrees,
+        "lat_minutes": waypoint.lat_minutes,
+        "lat_seconds": waypoint.lat_seconds,
+        "lat_direction": waypoint.lat_direction,
+        "lon_degrees": waypoint.lon_degrees,
+        "lon_minutes": waypoint.lon_minutes,
+        "lon_seconds": waypoint.lon_seconds,
+        "lon_direction": waypoint.lon_direction,
+    }
+    if waypoint.magnetic_variation is not None:
+        update_waypoint_data["magnetic_variation"] = waypoint.magnetic_variation
+
     db_session.query(models.Waypoint).filter(
-        models.Waypoint.id == waypoint_id).update({
-            "lat_degrees": waypoint.lat_degrees,
-            "lat_minutes": waypoint.lat_minutes,
-            "lat_seconds": waypoint.lat_seconds,
-            "lat_direction": waypoint.lat_direction,
-            "lon_degrees": waypoint.lon_degrees,
-            "lon_minutes": waypoint.lon_minutes,
-            "lon_seconds": waypoint.lon_seconds,
-            "lon_direction": waypoint.lon_direction,
-            "magnetic_variation": waypoint.magnetic_variation
-        })
+        models.Waypoint.id == waypoint_id).update(update_waypoint_data)
 
     db_session.query(models.VfrWaypoint).filter(
         models.VfrWaypoint.waypoint_id == waypoint_id).update({

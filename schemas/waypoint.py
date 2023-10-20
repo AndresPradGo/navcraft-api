@@ -62,7 +62,7 @@ class WaypointBase(BaseModel):
         max_length=1,
         pattern='^[EWew]$'
     )
-    magnetic_variation: confloat(allow_inf_nan=False)
+    magnetic_variation: Optional[confloat(allow_inf_nan=False)] = None
 
 
 class UserWaypointReturn(WaypointBase):
@@ -108,6 +108,8 @@ class UserWaypointData(WaypointBase):
         (float) : The magnetic_variation value rounded to 1 decimal place.
 
         '''
+        if value is None:
+            return None
         return round(value, 1)
 
     @field_validator('name')

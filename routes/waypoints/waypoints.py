@@ -21,6 +21,7 @@ import schemas
 from utils import common_responses
 from utils.db import get_db
 from functions.data_processing import get_user_id_from_email
+from functions.navigation import get_magnetic_variation_for_waypoint
 
 router = APIRouter(tags=["Waypoints"])
 
@@ -313,6 +314,11 @@ async def post_new_user_waypoint(
         magnetic_variation=waypoint.magnetic_variation,
     )
 
+    new_waypoint.magnetic_variation = get_magnetic_variation_for_waypoint(
+        waypoint=new_waypoint,
+        db_session=db_session
+    )
+
     db_session.add(new_waypoint)
     db_session.commit()
     db_session.refresh(new_waypoint)
@@ -393,6 +399,10 @@ async def post_private_aerodrome(
         lon_seconds=aerodrome.lon_seconds,
         lon_direction=aerodrome.lon_direction,
         magnetic_variation=aerodrome.magnetic_variation,
+    )
+    new_waypoint.magnetic_variation = get_magnetic_variation_for_waypoint(
+        waypoint=new_waypoint,
+        db_session=db_session
     )
 
     db_session.add(new_waypoint)
@@ -492,7 +502,7 @@ async def edit_user_waypoint(
             detail=f"Waypoint with code {waypoint.code} already exists."
         )
 
-    db_session.query(models.Waypoint).filter(models.Waypoint.id == waypoint_id).update({
+    update_waypoint_data = {
         "lat_degrees": waypoint.lat_degrees,
         "lat_minutes": waypoint.lat_minutes,
         "lat_seconds": waypoint.lat_seconds,
@@ -501,8 +511,13 @@ async def edit_user_waypoint(
         "lon_minutes": waypoint.lon_minutes,
         "lon_seconds": waypoint.lon_seconds,
         "lon_direction": waypoint.lon_direction,
-        "magnetic_variation": waypoint.magnetic_variation
-    })
+    }
+    if waypoint.magnetic_variation is not None:
+        update_waypoint_data["magnetic_variation"] = waypoint.magnetic_variation
+
+    db_session.query(models.Waypoint).filter(models.Waypoint.id == waypoint_id).update(
+        update_waypoint_data
+    )
 
     db_session.query(models.UserWaypoint).filter(
         models.UserWaypoint.waypoint_id == waypoint_id).update({
@@ -593,18 +608,21 @@ async def edit_private_aerodrome(
             detail=f"Aerodrome with code {aerodrome.code} already exists."
         )
 
+    update_waypoint_data = {
+        "lat_degrees": aerodrome.lat_degrees,
+        "lat_minutes": aerodrome.lat_minutes,
+        "lat_seconds": aerodrome.lat_seconds,
+        "lat_direction": aerodrome.lat_direction,
+        "lon_degrees": aerodrome.lon_degrees,
+        "lon_minutes": aerodrome.lon_minutes,
+        "lon_seconds": aerodrome.lon_seconds,
+        "lon_direction": aerodrome.lon_direction,
+    }
+    if aerodrome.magnetic_variation is not None:
+        update_waypoint_data["magnetic_variation"] = aerodrome.magnetic_variation
+
     db_session.query(models.Waypoint).filter(
-        models.Waypoint.id == aerodrome_id).update({
-            "lat_degrees": aerodrome.lat_degrees,
-            "lat_minutes": aerodrome.lat_minutes,
-            "lat_seconds": aerodrome.lat_seconds,
-            "lat_direction": aerodrome.lat_direction,
-            "lon_degrees": aerodrome.lon_degrees,
-            "lon_minutes": aerodrome.lon_minutes,
-            "lon_seconds": aerodrome.lon_seconds,
-            "lon_direction": aerodrome.lon_direction,
-            "magnetic_variation": aerodrome.magnetic_variation
-        })
+        models.Waypoint.id == aerodrome_id).update(update_waypoint_data)
 
     db_session.query(models.UserWaypoint).filter(
         models.UserWaypoint.waypoint_id == aerodrome_id).update({

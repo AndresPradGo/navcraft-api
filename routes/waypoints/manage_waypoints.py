@@ -21,6 +21,7 @@ from utils import csv_tools as csv
 from utils.config import get_table_header
 from utils.db import get_db
 from functions.data_processing import get_user_id_from_email
+from functions.navigation import get_magnetic_variation_for_waypoint
 
 router = APIRouter(tags=["Manage Waypoints"])
 
@@ -224,7 +225,10 @@ async def manage_vfr_waypoints_with_csv_file(
             lon_minutes=int(float(v[headers["lon_minutes"]])),
             lon_seconds=int(float(v[headers["lon_seconds"]])),
             lon_direction=v[headers["lon_direction"]],
-            magnetic_variation=v[headers["magnetic_variation"]],
+            magnetic_variation=None if headers["magnetic_variation"] not in v
+            or not v[headers["magnetic_variation"]]
+            or v[headers["magnetic_variation"]].isspace()
+            else v[headers["magnetic_variation"]],
             hidden=v[headers["hidden"]]
         ) for v in await csv.extract_data(file=csv_file)]
     except ValidationError as error:
@@ -266,8 +270,13 @@ async def manage_vfr_waypoints_with_csv_file(
             lon_minutes=waypoint.lon_minutes,
             lon_seconds=waypoint.lon_seconds,
             lon_direction=waypoint.lon_direction,
-            magnetic_variation=waypoint.magnetic_variation,
+            magnetic_variation=waypoint.magnetic_variation
         )
+        new_waypoint.magnetic_variation = get_magnetic_variation_for_waypoint(
+            waypoint=new_waypoint,
+            db_session=db_session
+        )
+
         db_session.add(new_waypoint)
         db_session.commit()
         db_session.refresh(new_waypoint)
@@ -284,6 +293,7 @@ async def manage_vfr_waypoints_with_csv_file(
 
     # Edit data
     for waypoint in data_to_edit:
+
         waypoint_to_edit = {
             "id": db_vfr_waypoint_ids[waypoint.code],
             "lat_degrees": waypoint.lat_degrees,
@@ -293,9 +303,11 @@ async def manage_vfr_waypoints_with_csv_file(
             "lon_degrees": waypoint.lon_degrees,
             "lon_minutes": waypoint.lon_minutes,
             "lon_seconds": waypoint.lon_seconds,
-            "lon_direction": waypoint.lon_direction,
-            "magnetic_variation": waypoint.magnetic_variation
+            "lon_direction": waypoint.lon_direction
         }
+        if waypoint.magnetic_variation is not None:
+            waypoint_to_edit["magnetic_variation"] = waypoint.magnetic_variation
+
         db_session.query(models.Waypoint)\
             .filter(models.Waypoint.id == waypoint_to_edit["id"])\
             .update(waypoint_to_edit, synchronize_session=False)
@@ -368,7 +380,10 @@ async def manage_registered_aerodrome_with_csv_file(
             lon_minutes=int(float(a[headers["lon_minutes"]])),
             lon_seconds=int(float(a[headers["lon_seconds"]])),
             lon_direction=a[headers["lon_direction"]],
-            magnetic_variation=a[headers["magnetic_variation"]],
+            magnetic_variation=None if headers["magnetic_variation"] not in a
+            or not a[headers["magnetic_variation"]]
+            or a[headers["magnetic_variation"]].isspace()
+            else a[headers["magnetic_variation"]],
             status=a[headers["status_id"]],
             elevation_ft=int(float(a[headers["elevation_ft"]])),
             has_taf=a[headers["has_taf"]],
@@ -426,6 +441,11 @@ async def manage_registered_aerodrome_with_csv_file(
             lon_direction=aerodrome.lon_direction,
             magnetic_variation=aerodrome.magnetic_variation,
         )
+        new_waypoint.magnetic_variation = get_magnetic_variation_for_waypoint(
+            waypoint=new_waypoint,
+            db_session=db_session
+        )
+
         db_session.add(new_waypoint)
         db_session.commit()
         db_session.refresh(new_waypoint)
@@ -463,8 +483,10 @@ async def manage_registered_aerodrome_with_csv_file(
             "lon_minutes": aerodrome.lon_minutes,
             "lon_seconds": aerodrome.lon_seconds,
             "lon_direction": aerodrome.lon_direction,
-            "magnetic_variation": aerodrome.magnetic_variation
         }
+        if aerodrome.magnetic_variation is not None:
+            waypoint_to_edit["magnetic_variation"] = aerodrome.magnetic_variation
+
         db_session.query(models.Waypoint)\
             .filter(models.Waypoint.id == waypoint_to_edit["id"])\
             .update(waypoint_to_edit, synchronize_session=False)

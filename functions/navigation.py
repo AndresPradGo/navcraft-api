@@ -72,6 +72,26 @@ def find_closest_waypoint(
     return other_waypoints[0]
 
 
+def get_magnetic_variation_for_waypoint(waypoint: models.Waypoint, db_session: Session) -> float:
+    """
+    This function returns the magnetic variation for a given waypoint.
+    """
+
+    if waypoint.magnetic_variation is not None:
+        return waypoint.magnetic_variation
+
+    vfr_waypoints = db_session.query(models.Waypoint, models.VfrWaypoint)\
+        .join(models.VfrWaypoint, models.Waypoint.id == models.VfrWaypoint.waypoint_id)\
+        .filter(models.Waypoint.magnetic_variation.isnot(None))
+
+    waypoints = [row[0] for row in vfr_waypoints]
+
+    closest_waypoint = find_closest_waypoint(
+        waypoint=waypoint, other_waypoints=waypoints)
+
+    return closest_waypoint.magnetic_variation
+
+
 def get_magnetic_variation_for_leg(
         from_waypoint: models.Waypoint,
         to_waypoint: models.Waypoint,
