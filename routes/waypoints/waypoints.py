@@ -52,19 +52,29 @@ async def get_all_user_waypoints(
     Raise:
     - HTTPException (500): if there is a server error. 
     """
+
+    a = models.Aerodrome
     u = models.UserWaypoint
     w = models.Waypoint
     user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
 
+    user_aerodromes = db_session.query(a, u)\
+        .join(u, u.waypoint_id == a.user_waypoint_id)\
+        .filter(u.creator_id == user_id).all()
+
+    aerodrome_ids = [u.waypoint_id for _, u in user_aerodromes]
+
     user_waypoints = db_session.query(w, u)\
+        .join(u, w.id == u.waypoint_id)\
+        .order_by(u.name)\
         .filter(and_(
             u.creator_id == user_id,
+            u.waypoint_id.notin_(aerodrome_ids),
             or_(
                 not_(waypoint_id),
                 w.id == waypoint_id
             )
-        ))\
-        .join(u, w.id == u.waypoint_id).order_by(u.name).all()
+        )).all()
 
     limit = len(user_waypoints) if limit == -1 else limit
 
@@ -116,7 +126,7 @@ async def get_all_vfr_waypoints(
                 not_(waypoint_id),
                 w.id == waypoint_id
             ),
-            not_(w.id.in_(aerodromes)),
+            w.id.notin_(aerodromes),
             or_(
                 not_(v.hidden),
                 user_is_active_admin
