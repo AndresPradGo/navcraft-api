@@ -72,7 +72,7 @@ class UserWaypointReturn(WaypointBase):
     """
 
     id: conint(gt=0)
-    name: Optional[constr(min_length=2, max_length=50)] = None
+    name: Optional[constr(min_length=2, max_length=255)] = None
     created_at_utc: AwareDatetime
     last_updated_utc: AwareDatetime
 
