@@ -1,4 +1,4 @@
-aerodrome_id,number,position,length_ft,landing_length_ft,interception_departure_length_ft,surface_id
+aerodrome_id,number,position,length_ft,landing_length_ft,intersection_departure_length_ft,surface_id
 127,7,,5606,5606,,1
 127,13,,5605,4505,4505,1
 127,25,,5606,4582,,1

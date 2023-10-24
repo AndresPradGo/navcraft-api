@@ -243,9 +243,9 @@ def _add_runways():
         "landing_length_ft": None if not r["landing_length_ft"]
         or r["landing_length_ft"].isspace()
         else int(float(r["landing_length_ft"])),
-        "interception_departure_length_ft": None if not r["interception_departure_length_ft"]
-        or r["interception_departure_length_ft"].isspace()
-        else int(float(r["interception_departure_length_ft"])),
+        "intersection_departure_length_ft": None if not r["intersection_departure_length_ft"]
+        or r["intersection_departure_length_ft"].isspace()
+        else int(float(r["intersection_departure_length_ft"])),
         "surface_id": r["surface_id"]
     }) if r["position"] == "" else schemas.RunwayData(**{
         "aerodrome_id": r["aerodrome_id"],
@@ -255,9 +255,9 @@ def _add_runways():
         "landing_length_ft": None if not r["landing_length_ft"]
         or r["landing_length_ft"].isspace()
         else int(float(r["landing_length_ft"])),
-        "interception_departure_length_ft": None if not r["interception_departure_length_ft"]
-        or r["interception_departure_length_ft"].isspace()
-        else int(float(r["interception_departure_length_ft"])),
+        "intersection_departure_length_ft": None if not r["intersection_departure_length_ft"]
+        or r["intersection_departure_length_ft"].isspace()
+        else int(float(r["intersection_departure_length_ft"])),
         "surface_id": r["surface_id"]
     }) for r in csv.csv_to_list(file_path=f"{_PATH}runways.csv")]
 
@@ -273,7 +273,7 @@ def _add_runways():
                         position=runway.position,
                         length_ft=runway.length_ft,
                         landing_length_ft=runway.landing_length_ft,
-                        interception_departure_length_ft=runway.interception_departure_length_ft,
+                        intersection_departure_length_ft=runway.intersection_departure_length_ft,
                         surface_id=runway.surface_id
                     )
                     db_session.add(new_runway)

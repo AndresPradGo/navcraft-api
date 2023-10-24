@@ -133,7 +133,7 @@ class TakeoffLandingDistancesResults(BaseModel):
         pattern="^[0-3][0-9][RLC]?$"
     )
     length_available_ft: conint(gt=0)
-    interception_departure_length: Optional[conint(gt=0)] = None
+    intersection_departure_length: Optional[conint(gt=0)] = None
     weight_lb: confloat(ge=0)
     pressure_altitude_ft: int
     truncated_pressure_altitude_ft: int

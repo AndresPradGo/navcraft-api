@@ -796,7 +796,7 @@ async def takeoff_and_landing_distances(
                 "runway_id": runway.id,
                 "runway": f"{prefix}{runway.number}{suffix}",
                 "length_available_ft": runway_length,
-                "interception_departure_length": runway.interception_departure_length_ft,
+                "intersection_departure_length": runway.intersection_departure_length_ft,
                 "weight_lb": takeoff_weight if key == "departure" else landing_weight,
                 "pressure_altitude_ft": pressure_alt,
                 "truncated_pressure_altitude_ft": performance_data_truncated_inputs["pressure_alt_ft"],

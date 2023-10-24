@@ -234,7 +234,7 @@ async def get_all_aerodromes(
                 position=r.position,
                 length_ft=r.length_ft,
                 landing_length_ft=r.landing_length_ft,
-                interception_departure_length_ft=r.interception_departure_length_ft,
+                intersection_departure_length_ft=r.intersection_departure_length_ft,
                 surface=rs,
                 surface_id=r.surface_id
             ) for r, rs in filter(lambda i: i[0].aerodrome_id == a.id, runways)

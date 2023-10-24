@@ -38,7 +38,7 @@
         "position": "Position['R', 'L', 'C']",
         "length_ft": "Total Length[ft]",
         "landing_length_ft": "Landing Length[ft]",
-        "interception_departure_length_ft": "Interception Departure Length[ft]",
+        "intersection_departure_length_ft": "Intersection Departure Length[ft]",
         "surface_id": "Runway Surface ID"
     },
     "runway_surface_ids": {

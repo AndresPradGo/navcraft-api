@@ -70,7 +70,7 @@ async def get_all_runways(
         id=r[0].id,
         length_ft=r[0].length_ft,
         landing_length_ft=r[0].landing_length_ft,
-        interception_departure_length_ft=r[0].interception_departure_length_ft,
+        intersection_departure_length_ft=r[0].intersection_departure_length_ft,
         number=r[0].number,
         position=r[0].position,
         surface_id=r[0].surface_id,
@@ -137,7 +137,7 @@ async def get_csv_file_with_all_runways(
                     runway_headers["position"]: r.position,
                     runway_headers["length_ft"]: r.length_ft,
                     runway_headers["landing_length_ft"]: r.landing_length_ft,
-                    runway_headers["interception_departure_length_ft"]: r.interception_departure_length_ft,
+                    runway_headers["intersection_departure_length_ft"]: r.intersection_departure_length_ft,
                     runway_headers["surface_id"]: r.surface_id,
                 } for r in runways],
                 key=lambda r: (
@@ -151,7 +151,7 @@ async def get_csv_file_with_all_runways(
                 runway_headers["position"]: "",
                 runway_headers["length_ft"]: "",
                 runway_headers["landing_length_ft"]: "",
-                runway_headers["interception_departure_length_ft"]: "",
+                runway_headers["intersection_departure_length_ft"]: "",
                 runway_headers["surface_id"]: "",
             }]
         },
@@ -303,7 +303,7 @@ async def post_runway_(
     new_runway = models.Runway(
         length_ft=runway_data.length_ft,
         landing_length_ft=runway_data.landing_length_ft,
-        interception_departure_length_ft=runway_data.interception_departure_length_ft,
+        intersection_departure_length_ft=runway_data.intersection_departure_length_ft,
         number=runway_data.number,
         position=runway_data.position,
         aerodrome_id=runway_data.aerodrome_id,
@@ -410,9 +410,9 @@ async def manage_runways_with_csv_file(
             landing_length_ft=None if not r[headers["landing_length_ft"]]
             or r[headers["landing_length_ft"]].isspace()
             else int(float(r[headers["landing_length_ft"]])),
-            interception_departure_length_ft=None if not r[headers["interception_departure_length_ft"]]
-            or r[headers["interception_departure_length_ft"]].isspace()
-            else int(float(r[headers["interception_departure_length_ft"]])),
+            intersection_departure_length_ft=None if not r[headers["intersection_departure_length_ft"]]
+            or r[headers["intersection_departure_length_ft"]].isspace()
+            else int(float(r[headers["intersection_departure_length_ft"]])),
             surface_id=int(float(r[headers["surface_id"]]))
         ) for r in dict_list]
     except ValidationError as error:
@@ -451,7 +451,7 @@ async def manage_runways_with_csv_file(
             position=runway.position,
             length_ft=runway.length_ft,
             landing_length_ft=runway.landing_length_ft,
-            interception_departure_length_ft=runway.interception_departure_length_ft,
+            intersection_departure_length_ft=runway.intersection_departure_length_ft,
             surface_id=runway.surface_id
         )
         db_session.add(new_runway)
@@ -585,7 +585,7 @@ async def edit_runway(
     runway_query.update({
         "length_ft": runway_data.length_ft,
         "landing_length_ft": runway_data.landing_length_ft,
-        "interception_departure_length_ft": runway_data.interception_departure_length_ft,
+        "intersection_departure_length_ft": runway_data.intersection_departure_length_ft,
         "number": runway_data.number,
         "position": runway_data.position,
         "surface_id": runway_data.surface_id
