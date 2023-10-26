@@ -80,7 +80,7 @@ async def get_all_runways(
     ) for r in runways]
 
     runways_return.sort(key=lambda r: (
-        r["aerodrome"], r["number"], r["position"]))
+        r.aerodrome, r.number, r.position))
 
     return runways_return
 
@@ -670,9 +670,9 @@ async def edit_runway_surface(
     return new_surface
 
 
-@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_runways(
-    runway_ids: List[int],
+@router.delete("/{runway_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_runway(
+    runway_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
@@ -680,7 +680,7 @@ async def delete_runways(
     Delete Runways.
 
     Parameters: 
-    runway_ids (List[int]): list of runway ids to be deleted.
+    runway_id (int): runway id to be deleted.
 
     Returns: None
 
@@ -691,48 +691,46 @@ async def delete_runways(
     """
 
     # Check if runway exists
-    db_runway_ids = {r.id for r in db_session.query(
-        models.Runway).filter(models.Runway.id.in_(runway_ids)).all()}
+    db_runway = db_session.query(
+        models.Runway).filter(models.Runway.id == runway_id).first()
 
-    if not all(id in db_runway_ids for id in runway_ids):
+    if db_runway is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Not all the Runways you're trying to delete are in the database."
+            detail="The Runway you're trying to delete is not in the database."
         )
 
     # Define some variables
     user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
     user_is_active_admin = current_user.is_active and current_user.is_admin
 
-    # Loop thorugh ids
-    for runway_id in runway_ids:
-        # Check if user has permission to update this aerodrome
-        runway_query = db_session.query(models.Runway).filter_by(id=runway_id)
-        aerodrome_id = runway_query.first().aerodrome_id
+    # Check if user has permission to update this aerodrome
+    runway_query = db_session.query(models.Runway).filter_by(id=runway_id)
+    aerodrome_id = runway_query.first().aerodrome_id
 
-        no_permission_exception = HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"You do not have permission to update aerodrome with id {aerodrome_id}."
-        )
+    no_permission_exception = HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=f"You do not have permission to update aerodrome with id {aerodrome_id}."
+    )
 
-        aerodrome_is_registered = db_session.query(models.Aerodrome.vfr_waypoint_id).filter_by(
-            id=aerodrome_id).first()[0] is not None
+    aerodrome_is_registered = db_session.query(models.Aerodrome.vfr_waypoint_id).filter_by(
+        id=aerodrome_id).first()[0] is not None
 
-        if aerodrome_is_registered and not user_is_active_admin:
-            raise no_permission_exception
+    if aerodrome_is_registered and not user_is_active_admin:
+        raise no_permission_exception
 
-        aerodrome_created_by_user = db_session.query(models.UserWaypoint).filter(and_(
-            models.UserWaypoint.waypoint_id == aerodrome_id,
-            models.UserWaypoint.creator_id == user_id
-        )).first()
+    aerodrome_created_by_user = db_session.query(models.UserWaypoint).filter(and_(
+        models.UserWaypoint.waypoint_id == aerodrome_id,
+        models.UserWaypoint.creator_id == user_id
+    )).first()
 
-        if not aerodrome_is_registered and not aerodrome_created_by_user:
-            raise no_permission_exception
+    if not aerodrome_is_registered and not aerodrome_created_by_user:
+        raise no_permission_exception
 
-        deleted = runway_query.delete(synchronize_session=False)
+    deleted = runway_query.delete(synchronize_session=False)
 
-        if not deleted:
-            raise common_responses.internal_server_error()
+    if not deleted:
+        raise common_responses.internal_server_error()
 
     db_session.commit()
 
