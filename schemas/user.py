@@ -219,3 +219,12 @@ class TokenData(BaseModel):
     is_admin: bool
     is_master: bool
     is_active: bool
+
+
+class EditUserData(BaseModel):
+    '''
+    This class defines the data required from a master user, to update another user.
+    '''
+
+    make_admin: bool
+    activate: bool
