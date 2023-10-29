@@ -609,6 +609,7 @@ async def edit_private_aerodrome(
 
     duplicated_code = db_session.query(models.UserWaypoint).filter(and_(
         models.UserWaypoint.code == aerodrome.code,
+        models.UserWaypoint.creator_id == user_id,
         not_(models.UserWaypoint.waypoint_id == aerodrome_id)
     )).first()
 
