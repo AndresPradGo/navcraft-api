@@ -62,6 +62,6 @@ def link_routes(app: FastAPI) -> None:
         prefix="/aircraft-weight-balance-data"
     )
     app.include_router(waypoints, prefix="/waypoints")
-    app.include_router(admin_waypoints, prefix="/admin_waypoints")
-    app.include_router(manage_waypoints, prefix="/manage_waypoints")
+    app.include_router(admin_waypoints, prefix="/admin-waypoints")
+    app.include_router(manage_waypoints, prefix="/manage-waypoints")
     app.include_router(runways, prefix="/runways")

@@ -9,7 +9,6 @@ Usage:
 """
 
 import re
-from typing import List
 
 from fastapi import APIRouter, Depends, status, HTTPException
 import pytz
@@ -482,9 +481,9 @@ async def edit_registered_aerodrome(
     }
 
 
-@router.delete("/registered", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/registered/{waypoint_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_vfr_waypoints_or_aerodromes(
-    waypoint_ids: List[int],
+    waypoint_id: int,
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
@@ -492,7 +491,7 @@ async def delete_vfr_waypoints_or_aerodromes(
     Delete VFR Waypoint or Aerodrome.
 
     Parameters: 
-    waypoint_ids (List[int]): list of waypoint ids to be deleted.
+    waypoint_id int: waypoint id to be deleted.
 
     Returns: None
 
@@ -503,21 +502,19 @@ async def delete_vfr_waypoints_or_aerodromes(
     """
 
     waypoint_query = db_session.query(models.VfrWaypoint).filter(
-        models.VfrWaypoint.waypoint_id.in_(waypoint_ids))
-    db_waypoint_ids = {w.waypoint_id for w in waypoint_query.all()}
+        models.VfrWaypoint.waypoint_id == waypoint_id).first()
 
-    if not all(id in db_waypoint_ids for id in waypoint_ids):
+    if not waypoint_query:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Not all the VFR waypoint you're trying to delete are in the database."
+            detail="The Waypoint or Aerodrome you're trying to delete, is not in the database."
         )
 
-    for waypoint_id in waypoint_ids:
-        deleted = db_session.query(models.Waypoint).filter(
-            models.Waypoint.id == waypoint_id).delete(synchronize_session=False)
+    deleted = db_session.query(models.Waypoint).filter(
+        models.Waypoint.id == waypoint_id).delete(synchronize_session=False)
 
-        if not deleted:
-            raise common_responses.internal_server_error()
+    if not deleted:
+        raise common_responses.internal_server_error()
 
     db_session.commit()
 
