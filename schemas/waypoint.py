@@ -212,6 +212,9 @@ class RegisteredAerodromeReturn(VfrWaypointReturn, AerodromeBase):
     """
     status: str
     registered: bool
+    has_taf: bool
+    has_metar: bool
+    has_fds: bool
 
 
 class PrivateAerodromeReturn(UserWaypointReturn, AerodromeBase):
