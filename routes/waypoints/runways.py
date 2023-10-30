@@ -136,7 +136,7 @@ async def get_csv_file_with_all_runways(
                     runway_headers["number"]: r.number,
                     runway_headers["position"]: r.position,
                     runway_headers["length_ft"]: r.length_ft,
-                    runway_headers["landing_length_ft"]: r.landing_length_ft,
+                    runway_headers["landing_length_ft"]: r.length_ft - r.landing_length_ft if r.landing_length_ft is not None else "",
                     runway_headers["intersection_departure_length_ft"]: r.intersection_departure_length_ft,
                     runway_headers["surface_id"]: r.surface_id,
                 } for r in runways],
@@ -387,7 +387,7 @@ async def manage_runways_with_csv_file(
                        for r in dict_list}
     aerodrome_objects = db_session.query(a, v)\
         .join(v, a.vfr_waypoint_id == v.waypoint_id)\
-        .filter(and_(a.vfr_waypoint.isnot(None), v.code.in_(aerodrome_codes)))\
+        .filter(v.code.in_(aerodrome_codes))\
         .all()
 
     aerodrome_ids_in_db = {v.code: v.waypoint_id for _, v in aerodrome_objects}
@@ -409,13 +409,14 @@ async def manage_runways_with_csv_file(
             length_ft=int(float(r[headers["length_ft"]])),
             landing_length_ft=None if not r[headers["landing_length_ft"]]
             or r[headers["landing_length_ft"]].isspace()
-            else int(float(r[headers["landing_length_ft"]])),
+            else int(float(r[headers["length_ft"]])) - int(float(r[headers["landing_length_ft"]])),
             intersection_departure_length_ft=None if not r[headers["intersection_departure_length_ft"]]
             or r[headers["intersection_departure_length_ft"]].isspace()
             else int(float(r[headers["intersection_departure_length_ft"]])),
             surface_id=int(float(r[headers["surface_id"]]))
         ) for r in dict_list]
     except ValidationError as error:
+        print("errorrrrrrr", error)
         # pylint: disable=raise-missing-from
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
