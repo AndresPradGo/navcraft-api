@@ -56,7 +56,7 @@ class NavigationLogLegResults(BaseModel):
     wind_magnitude_knot: conint(ge=0)
     wind_direction: Optional[conint(gt=0, le=360)] = None
     true_heading: conint(gt=0, le=360)
-    magnetic_variation: confloat(allow_inf_nan=False)
+    magnetic_variation: confloat(allow_inf_nan=False, ge=-99.94, le=99.94)
     magnetic_heading: int
     ground_speed: conint(ge=0)
     distance_to_climb: conint(ge=0)
@@ -182,7 +182,7 @@ class WeightAndBalanceFuelReturn(BaseWeightAndBalanceReportReturn):
     weight and balance data to the client, as pasrt of the W&B report.
     """
 
-    gallons: confloat(allow_inf_nan=False, le=999.99)
+    gallons: confloat(allow_inf_nan=False, le=999.94)
 
     @field_validator('gallons')
     @classmethod

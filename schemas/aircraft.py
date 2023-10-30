@@ -25,7 +25,7 @@ class FuelTypeData(BaseModel):
         max_length=50,
         pattern="^[-a-zA-Z0-9 /]+$"
     )
-    density_lb_gal: confloat(gt=0, allow_inf_nan=False)
+    density_lb_gal: confloat(gt=0, le=99.94, allow_inf_nan=False)
 
     @field_validator('density_lb_gal')
     @classmethod
@@ -78,7 +78,7 @@ class PerformanceProfileData(BaseModel):
 
     @field_validator("performance_profile_name")
     @classmethod
-    def clean_performance_profile_name(cls, value: str) -> float:
+    def clean_performance_profile_name(cls, value: str) -> str:
         '''
         Classmethod to clean profile name.
 
@@ -109,12 +109,12 @@ class PerformanceProfileReturn(OfficialPerformanceProfileData):
     """
 
     id: conint(gt=0)
-    center_of_gravity_in: Optional[confloat(ge=0)] = None
-    empty_weight_lb: Optional[confloat(ge=0)] = None
-    max_ramp_weight_lb: Optional[confloat(ge=0)] = None
-    max_takeoff_weight_lb: Optional[confloat(ge=0)] = None
-    max_landing_weight_lb: Optional[confloat(ge=0)] = None
-    baggage_allowance_lb: Optional[confloat(ge=0)] = None
+    center_of_gravity_in: Optional[confloat(ge=0, le=999.94)] = None
+    empty_weight_lb: Optional[confloat(ge=0, le=99999.94)] = None
+    max_ramp_weight_lb: Optional[confloat(ge=0, le=99999.94)] = None
+    max_takeoff_weight_lb: Optional[confloat(ge=0, le=99999.94)] = None
+    max_landing_weight_lb: Optional[confloat(ge=0, le=99999.94)] = None
+    baggage_allowance_lb: Optional[confloat(ge=0, le=9999.94)] = None
     is_preferred: Optional[bool] = None
 
 
@@ -128,8 +128,8 @@ class BaggageCompartmentData(BaseModel):
         max_length=50,
         pattern="^[\-a-zA-Z0-9 ]+$"  # pylint: disable=anomalous-backslash-in-string
     )
-    arm_in: confloat(ge=0)
-    weight_limit_lb: Optional[confloat(ge=0)] = None
+    arm_in: confloat(ge=0, le=999.94)
+    weight_limit_lb: Optional[confloat(ge=0, le=9999.94)] = None
 
     @model_validator(mode='after')
     @classmethod
@@ -170,9 +170,9 @@ class FuelTankData(BaseModel):
         max_length=50,
         pattern="^[\-a-zA-Z0-9 ]+$"  # pylint: disable=anomalous-backslash-in-string
     )
-    arm_in: confloat(ge=0)
-    fuel_capacity_gallons: confloat(ge=0)
-    unusable_fuel_gallons: Optional[confloat(ge=0)] = None
+    arm_in: confloat(ge=0, le=999.94)
+    fuel_capacity_gallons: confloat(ge=0, le=999.94)
+    unusable_fuel_gallons: Optional[confloat(ge=0, le=999.94)] = None
     burn_sequence: Optional[conint(ge=1)] = None
 
     @model_validator(mode='after')
@@ -225,12 +225,12 @@ class PerformanceProfileWeightBalanceData(BaseModel):
     This class defines the data structure reuired from the client, in order to add
     weight and balance data to a performance profile.
     '''
-    center_of_gravity_in: confloat(ge=0)
-    empty_weight_lb: confloat(ge=0)
-    max_ramp_weight_lb: confloat(ge=0)
-    max_takeoff_weight_lb: confloat(ge=0)
-    max_landing_weight_lb: confloat(ge=0)
-    baggage_allowance_lb: confloat(ge=0)
+    center_of_gravity_in: confloat(ge=0, le=999.94)
+    empty_weight_lb: confloat(ge=0, le=99999.94)
+    max_ramp_weight_lb: confloat(ge=0, le=99999.94)
+    max_takeoff_weight_lb: confloat(ge=0, le=99999.94)
+    max_landing_weight_lb: confloat(ge=0, le=99999.94)
+    baggage_allowance_lb: confloat(ge=0, le=9999.94)
 
     @model_validator(mode='after')
     @classmethod
@@ -320,8 +320,8 @@ class WeightBalanceLimitData(BaseModel):
     weight and balance profile.
     """
 
-    cg_location_in: confloat(ge=0, le=999.99)
-    weight_lb: confloat(ge=0, le=99999.99)
+    cg_location_in: confloat(ge=0, le=999.94)
+    weight_lb: confloat(ge=0, le=99999.94)
     sequence: conint(ge=1)
 
     @model_validator(mode='after')
@@ -406,7 +406,7 @@ class RunwaySurfacePercentIncrease(BaseModel):
     '''
 
     surface_id: conint(gt=0)
-    percent: confloat(ge=0)
+    percent: confloat(ge=0, le=99.94)
 
     @field_validator('percent')
     @classmethod
@@ -430,8 +430,8 @@ class RunwayDistanceAdjustmentPercentages(BaseModel):
     adjustment percentages to the client.
     '''
 
-    percent_decrease_knot_headwind: Optional[confloat(ge=0)] = None
-    percent_increase_knot_tailwind: Optional[confloat(ge=0)] = None
+    percent_decrease_knot_headwind: Optional[confloat(ge=0, le=99.94)] = None
+    percent_increase_knot_tailwind: Optional[confloat(ge=0, le=99.94)] = None
     percent_increase_runway_surfaces: Optional[
         List[RunwaySurfacePercentIncrease]
     ] = []
@@ -487,8 +487,9 @@ class ClimbPerformanceAdjustments(BaseModel):
     This class defines the data structure of climb adjustment data.
     '''
 
-    take_off_taxi_fuel_gallons: Optional[confloat(ge=0)] = None
-    percent_increase_climb_temperature_c: Optional[confloat(ge=0)] = None
+    take_off_taxi_fuel_gallons: Optional[confloat(ge=0, le=99.94)] = None
+    percent_increase_climb_temperature_c: Optional[confloat(
+        ge=0, le=99.94)] = None
 
     @model_validator(mode='after')
     @classmethod
@@ -526,7 +527,7 @@ class ClimbPerformanceDataEntry(BaseModel):
     kias: Optional[conint(ge=0)] = None
     fpm: Optional[conint(ge=0)] = None
     time_min: conint(ge=0)
-    fuel_gal: confloat(ge=0)
+    fuel_gal: confloat(ge=0, le=99.94)
     distance_nm: conint(ge=0)
 
     @field_validator('fuel_gal')
@@ -563,7 +564,7 @@ class CruisePerformanceDataEntry(BaseModel):
     pressure_alt_ft: conint(ge=0)
     temperature_c: int
     bhp_percent: conint(ge=0)
-    gph: confloat(ge=0)
+    gph: confloat(ge=0, le=9999.94)
     rpm: conint(ge=0)
     ktas: conint(ge=0)
 

@@ -38,10 +38,10 @@ class WaypointBase(BaseModel):
         strip_whitespace=True,
         to_upper=True,
         min_length=2,
-        max_length=50,
+        max_length=12,
         pattern="^['a-zA-Z0-9-]+$",
     )
-    name: constr(min_length=2, max_length=255)
+    name: constr(min_length=2, max_length=50)
     lat_degrees: conint(ge=0, le=90)
     lat_minutes: conint(ge=0, le=59)
     lat_seconds: Optional[conint(ge=0, le=59)] = None
@@ -62,7 +62,8 @@ class WaypointBase(BaseModel):
         max_length=1,
         pattern='^[EWew]$'
     )
-    magnetic_variation: Optional[confloat(allow_inf_nan=False)] = None
+    magnetic_variation: Optional[confloat(
+        allow_inf_nan=False, ge=-99.94, le=99.94)] = None
 
 
 class UserWaypointReturn(WaypointBase):
@@ -72,7 +73,7 @@ class UserWaypointReturn(WaypointBase):
     """
 
     id: conint(gt=0)
-    name: Optional[constr(min_length=2, max_length=255)] = None
+    name: Optional[constr(min_length=2, max_length=50)] = None
     created_at_utc: AwareDatetime
     last_updated_utc: AwareDatetime
 
@@ -105,12 +106,12 @@ class UserWaypointData(WaypointBase):
         - value (float): the values to be validated.
 
         Returns:
-        (float) : The magnetic_variation value rounded to 1 decimal place.
+        (float) : The magnetic_variation value rounded to 2 decimal place.
 
         '''
         if value is None:
             return None
-        return round(value, 1)
+        return round(value, 2)
 
     @field_validator('name')
     @classmethod

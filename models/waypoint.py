@@ -267,7 +267,7 @@ class VfrWaypoint(BaseModel):
         nullable=False,
         unique=True
     )
-    code = Column(String(50), nullable=False, unique=True)
+    code = Column(String(12), nullable=False, unique=True)
     name = Column(String(255), nullable=False)
     hidden = Column(Boolean, nullable=False, default=True)
     creator_id = Column(
@@ -309,8 +309,8 @@ class UserWaypoint(BaseModel):
         nullable=False,
         unique=True
     )
-    code = Column(String(50), nullable=False)
-    name = Column(String(255), nullable=False)
+    code = Column(String(12), nullable=False)
+    name = Column(String(50), nullable=False)
     creator_id = Column(
         Integer,
         ForeignKey(
@@ -350,8 +350,8 @@ class FlightWaypoint(BaseModel):
         nullable=False,
         unique=True
     )
-    code = Column(String(50), nullable=False)
-    name = Column(String(255), nullable=False)
+    code = Column(String(12), nullable=False)
+    name = Column(String(50), nullable=False)
     from_user_waypoint = Column(Boolean, nullable=False, default=False)
     from_vfr_waypoint = Column(Boolean, nullable=False, default=False)
     leg_id = Column(

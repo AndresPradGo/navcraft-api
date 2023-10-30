@@ -34,7 +34,7 @@ class PersonOnBoardData(BaseModel):
         max_length=255,
         pattern="^[-a-zA-Z0-9' ]+$",
     )] = None
-    weight_lb: Optional[confloat(allow_inf_nan=False, ge=0, le=999.99)] = None
+    weight_lb: Optional[confloat(allow_inf_nan=False, ge=0, le=999.94)] = None
     is_me: Optional[bool] = None
     passenger_profile_id: Optional[conint(gt=0)] = None
 
@@ -90,7 +90,7 @@ class PersonOnBoardReturn(BaseModel):
         max_length=255,
         pattern="^[-a-zA-Z0-9' ]+$",
     )
-    weight_lb: confloat(allow_inf_nan=False, ge=0, le=999.99)
+    weight_lb: confloat(allow_inf_nan=False, ge=0, le=999.94)
     user_id: Optional[conint(gt=0)] = None
     passenger_profile_id: Optional[conint(gt=0)] = None
 
@@ -108,7 +108,7 @@ class FlightBaggageData(BaseModel):
         max_length=255,
         pattern="^[-a-zA-Z0-9' ]+$",
     )
-    weight_lb: confloat(allow_inf_nan=False, ge=0, le=999.99)
+    weight_lb: confloat(allow_inf_nan=False, ge=0, le=999.94)
 
     @model_validator(mode='after')
     @classmethod
@@ -141,4 +141,4 @@ class FlightFuelReturn(BaseModel):
     """
     id: conint(gt=0)
     fuel_tank_id: conint(gt=0)
-    gallons: confloat(allow_inf_nan=False, ge=0, le=999.99)
+    gallons: confloat(allow_inf_nan=False, ge=0, le=999.94)

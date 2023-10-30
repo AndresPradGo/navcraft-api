@@ -53,7 +53,8 @@ class NewFlightWaypointData(BaseModel):
         max_length=1,
         pattern='^[EWew]$'
     )] = None
-    magnetic_variation: Optional[confloat(allow_inf_nan=False)] = None
+    magnetic_variation: Optional[confloat(
+        allow_inf_nan=False, ge=-99.94, le=99.94)] = None
 
     @field_validator('magnetic_variation')
     @classmethod
@@ -65,7 +66,7 @@ class NewFlightWaypointData(BaseModel):
         - value (float): the values to be validated.
 
         Returns:
-        (float) : The magnetic_variation value rounded to 1 decimal place.
+        (float) : The magnetic_variation value rounded to 2 decimal place.
 
         '''
         if value is not None:
@@ -155,7 +156,7 @@ class LegWeatherData(BaseModel):
     This class defines the data required to update flight-legs weather data.
     """
     temperature_c: int
-    altimeter_inhg: float
+    altimeter_inhg: confloat(ge=-99.94, le=99.94)
     wind_direction: Optional[conint(gt=0, le=360)] = None
     wind_magnitude_knot: conint(ge=0)
     temperature_last_updated: Optional[AwareDatetime] = None
@@ -166,7 +167,7 @@ class LegWeatherData(BaseModel):
     @classmethod
     def round_altimeter_inhg(cls, value: float) -> float | None:
         '''
-        Classmethod to round altimeter_inhg input value to 1 decimal place.
+        Classmethod to round altimeter_inhg input value to 2 decimal place.
         '''
         return round(value, 2)
 
@@ -234,9 +235,9 @@ class UpdateFlightData(BaseModel):
     """
     departure_time: AwareDatetime
     bhp_percent: conint(ge=45, le=75)
-    added_enroute_time_hours: confloat(allow_inf_nan=False, ge=0, le=99.99)
-    reserve_fuel_hours: confloat(allow_inf_nan=False, ge=0, le=99.99)
-    contingency_fuel_hours: confloat(allow_inf_nan=False, ge=0, le=99.99)
+    added_enroute_time_hours: confloat(allow_inf_nan=False, ge=0, le=99.94)
+    reserve_fuel_hours: confloat(allow_inf_nan=False, ge=0, le=99.94)
+    contingency_fuel_hours: confloat(allow_inf_nan=False, ge=0, le=99.94)
 
     @model_validator(mode='after')
     @classmethod
@@ -271,7 +272,7 @@ class UpdateDepartureArrivalData(BaseModel):
     wind_direction: Optional[conint(gt=0, le=360)] = None
     wind_magnitude_knot: conint(ge=0)
     temperature_c: int
-    altimeter_inhg: float
+    altimeter_inhg: confloat(ge=-99.94, le=99.94)
     temperature_last_updated: Optional[AwareDatetime] = None
     wind_last_updated: Optional[AwareDatetime] = None
     altimeter_last_updated: Optional[AwareDatetime] = None
@@ -296,7 +297,7 @@ class UpdateDepartureArrivalData(BaseModel):
     @classmethod
     def round_altimeter_inhg(cls, value: float) -> float | None:
         '''
-        Classmethod to round altimeter_inhg input value to 1 decimal place.
+        Classmethod to round altimeter_inhg input value to 2 decimal place.
         '''
         return round(value, 2)
 

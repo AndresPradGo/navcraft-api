@@ -26,7 +26,7 @@ class User(BaseModel):
     id = Column(Integer, primary_key=True, autoincrement=True)
     email = Column(String(255), nullable=False, unique=True)
     name = Column(String(255), nullable=False)
-    weight_lb = Column(DECIMAL(4, 1), nullable=False, default=200.0)
+    weight_lb = Column(DECIMAL(5, 2), nullable=False, default=200.0)
     password = Column(String(255), nullable=False)
     is_active = Column(Boolean, nullable=False, default=True)
     is_admin = Column(Boolean, nullable=False, default=False)

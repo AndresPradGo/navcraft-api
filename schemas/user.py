@@ -27,7 +27,7 @@ class PassengerProfileData(BaseModel):
         max_length=255,
         pattern="^[A-Za-z0-9 .'-]+$",
     )
-    weight_lb: confloat(allow_inf_nan=False, ge=0, le=999.99)
+    weight_lb: confloat(allow_inf_nan=False, ge=0, le=999.94)
 
     @field_validator('name')
     @classmethod
@@ -43,6 +43,21 @@ class PassengerProfileData(BaseModel):
 
         '''
         return clean_string(value)
+
+    @field_validator('weight_lb')
+    @classmethod
+    def round_user_weight(cls, value: float) -> float:
+        '''
+        Classmethod to round weight_lb input value to 1 decimal place.
+
+        Parameters:
+        - value (float): the weight to be validated.
+
+        Returns:
+        (float): weight value rounded to 2 decimal place.
+
+        '''
+        return round(value, 2)
 
 
 class PassengerProfileReturn(PassengerProfileData):
@@ -101,7 +116,7 @@ class UserReturnBasic(UserName, UserEmail):
     is_admin: bool
     is_master: bool
     is_active: bool
-    weight_lb: confloat(ge=0)
+    weight_lb: confloat(ge=0, le=999.94)
 
 
 class UserReturn(UserReturnBasic):
@@ -127,7 +142,7 @@ class UserPassword(BaseModel):
 
     @field_validator('password')
     @classmethod
-    def check_passwrod_criteria(cls, password: float) -> float:
+    def check_passwrod_criteria(cls, password: str) -> str:
         '''
         Classmethod to check if password contains at least 1 uppercase, 
         1 lowercase and 1 number characters.
@@ -161,7 +176,7 @@ class UserWeight(BaseModel):
     """
     This class defines the user weight data structure.
     """
-    weight_lb: confloat(ge=0)
+    weight_lb: confloat(ge=0, le=999.94)
 
     @field_validator('weight_lb')
     @classmethod
@@ -173,10 +188,10 @@ class UserWeight(BaseModel):
         - value (float): the weight to be validated.
 
         Returns:
-        (float): weight value rounded to 1 decimal place.
+        (float): weight value rounded to 2 decimal place.
 
         '''
-        return round(value, 1)
+        return round(value, 2)
 
 
 class UserRegister(UserPassword, UserName, UserEmail):
