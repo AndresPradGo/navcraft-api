@@ -29,8 +29,14 @@ def clean_string(input_string: str) -> str:
     Returns:
     str: cleaned string.
     '''
+    list_by_space = [word.capitalize()
+                     for word in input_string.strip().split()]
+    new_list = []
+    for sub_string in list_by_space:
+        list_by_slash = [word.capitalize() for word in sub_string.split("/")]
+        new_list.append('/'.join(list_by_slash))
 
-    return ' '.join([word.capitalize() for word in input_string.strip().split()])
+    return ' '.join(new_list)
 
 
 async def get_user_id_from_email(email: str, db_session: Session):

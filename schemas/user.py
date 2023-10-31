@@ -25,7 +25,7 @@ class PassengerProfileData(BaseModel):
         strict=True,
         min_length=2,
         max_length=255,
-        pattern="^[A-Za-z0-9 .'-]+$",
+        pattern="^[A-Za-z0-9 /.'-]+$",
     )
     weight_lb: confloat(allow_inf_nan=False, ge=0, le=999.94)
 
@@ -87,7 +87,7 @@ class UserName(BaseModel):
         strict=True,
         min_length=2,
         max_length=255,
-        pattern="^[A-Za-z0-9 .'-]+$",
+        pattern="^[A-Za-z0-9 /.'-]+$",
     )
 
     @field_validator('name')
