@@ -108,6 +108,7 @@ async def get_takeoff_landing_performance_csv_file(
         media_type="text/csv",
     )
     csv_response.headers["Content-Disposition"] = f'attachment; filename="{table_name}.csv"'
+    csv_response.headers["filename"] = f'{table_name}.csv'
 
     return csv_response
 
@@ -186,6 +187,7 @@ async def get_climb_performance_csv_file(
         media_type="text/csv",
     )
     csv_response.headers["Content-Disposition"] = f'attachment; filename="{table_name}.csv"'
+    csv_response.headers["filename"] = f'{table_name}.csv'
 
     return csv_response
 
@@ -263,6 +265,7 @@ async def get_cruise_performance_csv_file(
         media_type="text/csv",
     )
     csv_response.headers["Content-Disposition"] = f'attachment; filename="{table_name}.csv"'
+    csv_response.headers["filename"] = f'{table_name}.csv'
 
     return csv_response
 

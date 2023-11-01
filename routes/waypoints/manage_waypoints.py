@@ -93,6 +93,7 @@ async def get_csv_file_with_all_vfr_waypoints(
         media_type="text/csv",
     )
     response.headers["Content-Disposition"] = f'attachment; filename="{table_name}.csv"'
+    response.headers["filename"] = f'{table_name}.csv'
     return response
 
 
@@ -170,6 +171,7 @@ async def get_csv_file_with_all_aerodromes(
         media_type="text/csv",
     )
     response.headers["Content-Disposition"] = f'attachment; filename="{table_name}.csv"'
+    response.headers["filename"] = f'{table_name}.csv'
     return response
 
 

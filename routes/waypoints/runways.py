@@ -188,7 +188,9 @@ async def get_csv_file_with_all_runways(
         iter([zip_buffer.getvalue()]),
         media_type="application/zip",
         headers={
-            "Content-Disposition": 'attachment; filename="runways_data.zip"'}
+            "Content-Disposition": 'attachment; filename="runways_data.zip"',
+            "filename": "runways_data.zip"
+        }
     )
 
     return response
