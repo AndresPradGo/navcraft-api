@@ -25,7 +25,7 @@ from functions.data_processing import get_user_id_from_email
 router = APIRouter(tags=["Users"])
 
 
-@router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.UserReturnBasic])
+@router.get("", status_code=status.HTTP_200_OK, response_model=List[schemas.UserReturnBasic])
 async def get_all_users(
     limit: Optional[int] = -1,
     start: Optional[int] = 0,
@@ -119,7 +119,7 @@ async def get_passenger_profiles(
     return profiles
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.JWTData)
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=schemas.JWTData)
 async def register(
     user: schemas.UserRegister,
     db_session: Session = Depends(get_db)

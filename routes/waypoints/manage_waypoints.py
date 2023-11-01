@@ -26,7 +26,7 @@ from functions.navigation import get_magnetic_variation_for_waypoint
 router = APIRouter(tags=["Manage Waypoints"])
 
 
-@router.get("/", status_code=status.HTTP_200_OK)
+@router.get("", status_code=status.HTTP_200_OK)
 async def get_csv_file_with_all_vfr_waypoints(
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
@@ -175,7 +175,7 @@ async def get_csv_file_with_all_aerodromes(
     return response
 
 
-@router.post("/", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("", status_code=status.HTTP_204_NO_CONTENT)
 async def manage_vfr_waypoints_with_csv_file(
     csv_file: UploadFile,
     db_session: Session = Depends(get_db),
@@ -195,7 +195,7 @@ async def manage_vfr_waypoints_with_csv_file(
     - Make sure there are no typos or repeated entries.
     - After getting a 204 response, download csv list again to check it has been uploaded correctly.
 
-    NOTE: This endpoint will post new data-entries, and updata existing ones, 
+    NOTE: This endpoint will post new data-entries, and update existing ones, 
     but it will not delete any entries already in the database. To delete existing 
     data-entries, use the appropriate delete endpoint.
 
@@ -349,7 +349,7 @@ async def manage_registered_aerodrome_with_csv_file(
     - Make sure there are no typos or repeated entries.
     - After getting a 204 response, download csv list again to check it has been uploaded correctly.
 
-    NOTE: This endpoint will post new data-entries, and updata existing ones, 
+    NOTE: This endpoint will post new data-entries, and update existing ones, 
     but it will not delete any entries already in the database. To delete 
     existing data-entries, use the appropriate delete endpoint.
 

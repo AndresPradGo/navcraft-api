@@ -29,7 +29,7 @@ router = APIRouter(tags=["Aircraft"])
 
 
 @router.get(
-    "/",
+    "",
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.GetAircraftList]
 )
@@ -96,7 +96,7 @@ async def get_aircraft_list(
 
 
 @router.post(
-    "/",
+    "",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.AircraftReturn
 )

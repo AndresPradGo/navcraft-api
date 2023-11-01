@@ -25,7 +25,7 @@ router = APIRouter(tags=["Aircraft Model"])
 
 
 @router.get(
-    "/",
+    "",
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.GetPerformanceProfileList]
 )

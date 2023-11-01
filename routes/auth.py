@@ -24,7 +24,7 @@ from auth import Hasher
 router = APIRouter(tags=["Auth"])
 
 
-@router.post("/", status_code=status.HTTP_200_OK, response_model=schemas.JWTData)
+@router.post("", status_code=status.HTTP_200_OK, response_model=schemas.JWTData)
 async def login(
     login_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db_session: Session = Depends(get_db)

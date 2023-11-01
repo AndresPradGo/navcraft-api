@@ -31,7 +31,7 @@ router = APIRouter(tags=["Flights"])
 
 
 @router.get(
-    "/",
+    "",
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.NewFlightReturn]
 )
@@ -71,7 +71,7 @@ async def get_all_flights(
 
 
 @router.post(
-    "/",
+    "",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.NewFlightReturn
 )

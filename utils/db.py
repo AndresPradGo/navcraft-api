@@ -10,9 +10,11 @@ Usage:
 - Import this module whenever you need to connect to the API's database.
 
 """
+import logging
+
 
 from sqlalchemy import create_engine
-from sqlalchemy.exc import IntegrityError, OperationalError, TimeoutError as SqlalchemyTimeoutError
+from sqlalchemy.exc import IntegrityError, OperationalError, InterfaceError, TimeoutError as SqlalchemyTimeoutError
 from sqlalchemy.orm import sessionmaker, scoped_session
 
 from utils import common_responses, environ_variable_tools as environ
@@ -33,6 +35,8 @@ Session = scoped_session(
     )
 )
 
+logger = logging.getLogger(__name__)
+
 
 def get_db():
     """
@@ -45,9 +49,10 @@ def get_db():
     try:
         yield database
 
-    except (IntegrityError, SqlalchemyTimeoutError, OperationalError) as error:
+    except (IntegrityError, SqlalchemyTimeoutError, OperationalError, InterfaceError) as error:
         # pylint: disable=raise-missing-from
-        print(error)
+        logger.exception(
+            "An error occurred while handling the database session: %s", error)
         database.rollback()
         raise common_responses.internal_server_error()
     finally:

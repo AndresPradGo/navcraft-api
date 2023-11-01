@@ -26,7 +26,7 @@ from functions.data_processing import get_user_id_from_email, runways_are_unique
 router = APIRouter(tags=["Runways"])
 
 
-@router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.RunwayReturn])
+@router.get("", status_code=status.HTTP_200_OK, response_model=List[schemas.RunwayReturn])
 async def get_all_runways(
     runway_id: Optional[int] = 0,
     db_session: Session = Depends(get_db),
@@ -225,7 +225,7 @@ async def get_all_runway_surfaces(
     )).order_by(models.RunwaySurface.surface).all()
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.RunwayReturn)
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=schemas.RunwayReturn)
 async def post_runway_(
     runway_data: schemas.RunwayData,
     db_session: Session = Depends(get_db),

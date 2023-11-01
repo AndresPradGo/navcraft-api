@@ -116,8 +116,10 @@ async def get_all_vfr_waypoints(
     v = models.VfrWaypoint
     w = models.Waypoint
 
-    aerodromes = [item[0] for item in db_session.query(
-        a.vfr_waypoint_id).filter(not_(a.vfr_waypoint_id.is_(None))).all()]
+    aerodromes_list_from_db = db_session.query(a).filter(
+        not_(a.vfr_waypoint_id.is_(None))).all()
+
+    aerodromes = [item.vfr_waypoint_id for item in aerodromes_list_from_db]
 
     user_is_active_admin = current_user.is_active and current_user.is_admin
     query_results = db_session.query(w, v)\
