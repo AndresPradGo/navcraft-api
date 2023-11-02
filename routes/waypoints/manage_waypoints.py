@@ -233,6 +233,12 @@ async def manage_vfr_waypoints_with_csv_file(
             else v[headers["magnetic_variation"]],
             hidden=v[headers["hidden"]]
         ) for v in await csv.extract_data(file=csv_file)]
+    except KeyError as error:
+        # pylint: disable=raise-missing-from
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f'CSV File is missing the header "{error}"'
+        )
     except ValidationError as error:
         # pylint: disable=raise-missing-from
         raise HTTPException(
@@ -393,6 +399,12 @@ async def manage_registered_aerodrome_with_csv_file(
             has_fds=a[headers["has_fds"]],
             hidden=a[headers["hidden"]]
         ) for a in await csv.extract_data(file=csv_file)]
+    except KeyError as error:
+        # pylint: disable=raise-missing-from
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f'CSV File is missing the header "{error}"'
+        )
     except ValidationError as error:
         # pylint: disable=raise-missing-from
         raise HTTPException(

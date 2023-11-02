@@ -577,6 +577,13 @@ async def manage_takeoff_landing_performance_data_with_csv_file(
             groundroll_ft=float(row[headers["groundroll_ft"]]),
             obstacle_clearance_ft=float(row[headers["obstacle_clearance_ft"]])
         ) for row in await csv.extract_data(file=csv_file)]
+
+    except KeyError as error:
+        # pylint: disable=raise-missing-from
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f'CSV File is missing the header "{error}"'
+        )
     except ValidationError as error:
         # pylint: disable=raise-missing-from
         raise HTTPException(
@@ -707,6 +714,13 @@ async def manage_climb_performance_data_with_csv_file(
             or row[headers["fpm"]].isspace()
             else int(float(row[headers["fpm"]]))
         ) for row in await csv.extract_data(file=csv_file)]
+
+    except KeyError as error:
+        # pylint: disable=raise-missing-from
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f'CSV File is missing the header "{error}"'
+        )
     except ValidationError as error:
         # pylint: disable=raise-missing-from
         raise HTTPException(
@@ -810,6 +824,13 @@ async def manage_cruise_performance_data_with_csv_file(
             ktas=int(float(row[headers["ktas"]])),
             gph=row[headers["gph"]]
         ) for row in await csv.extract_data(file=csv_file)]
+
+    except KeyError as error:
+        # pylint: disable=raise-missing-from
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f'CSV File is missing the header "{error}"'
+        )
     except ValidationError as error:
         # pylint: disable=raise-missing-from
         raise HTTPException(

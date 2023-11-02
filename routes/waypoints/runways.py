@@ -385,8 +385,16 @@ async def manage_runways_with_csv_file(
     a = models.Aerodrome
     v = models.VfrWaypoint
 
-    aerodrome_codes = {r[headers["aerodrome"]].strip().upper()
-                       for r in dict_list}
+    try:
+        aerodrome_codes = {r[headers["aerodrome"]].strip().upper()
+                           for r in dict_list}
+    except KeyError as error:
+        # pylint: disable=raise-missing-from
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f'CSV File is missing the header "{error}"'
+        )
+
     aerodrome_objects = db_session.query(a, v)\
         .join(v, a.vfr_waypoint_id == v.waypoint_id)\
         .filter(v.code.in_(aerodrome_codes))\
@@ -417,8 +425,13 @@ async def manage_runways_with_csv_file(
             else int(float(r[headers["intersection_departure_length_ft"]])),
             surface_id=int(float(r[headers["surface_id"]]))
         ) for r in dict_list]
-    except ValidationError as error:
-        print("errorrrrrrr", error)
+    except KeyError as error:
+        # pylint: disable=raise-missing-from
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f'CSV File is missing the header "{error}"'
+        )
+    except (ValidationError) as error:
         # pylint: disable=raise-missing-from
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
