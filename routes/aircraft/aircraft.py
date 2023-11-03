@@ -33,7 +33,7 @@ router = APIRouter(tags=["Aircraft"])
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.GetAircraftList]
 )
-async def get_aircraft_list(
+def get_aircraft_list(
     aircraft_id: Optional[int] = 0,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -53,7 +53,8 @@ async def get_aircraft_list(
     """
 
     # Get aircraft models
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     aircraft_models = db_session.query(models.Aircraft)\
         .filter(and_(
             models.Aircraft.owner_id == user_id,
@@ -100,7 +101,7 @@ async def get_aircraft_list(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.AircraftReturn
 )
-async def post_new_aircraft(
+def post_new_aircraft(
     aircraft_data: schemas.AircraftData,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -120,7 +121,8 @@ async def post_new_aircraft(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
 
     # Check if aircraft already exists in database
     aircraft_exists = db_session.query(models.Aircraft).filter(and_(
@@ -153,7 +155,7 @@ async def post_new_aircraft(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.PerformanceProfileReturn
 )
-async def post_new_aircraft_performance_profile(
+def post_new_aircraft_performance_profile(
     aircraft_id: int,
     performance_data: schemas.PerformanceProfileData,
     db_session: Session = Depends(get_db),
@@ -176,7 +178,7 @@ async def post_new_aircraft_performance_profile(
     """
 
     # Check if user has permission
-    user_id = await get_user_id_from_email(
+    user_id = get_user_id_from_email(
         email=current_user.email, db_session=db_session)
     aircraft = db_session.query(models.Aircraft).filter(and_(
         models.Aircraft.id == aircraft_id,
@@ -242,7 +244,7 @@ async def post_new_aircraft_performance_profile(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.PerformanceProfileReturn
 )
-async def post_new_aircraft_performance_profile_from_model(
+def post_new_aircraft_performance_profile_from_model(
     aircraft_id: int,
     model_id,
     db_session: Session = Depends(get_db),
@@ -264,7 +266,7 @@ async def post_new_aircraft_performance_profile_from_model(
     - HTTPException (500): if there is a server error. 
     """
     # Check if user has permission
-    user_id = await get_user_id_from_email(
+    user_id = get_user_id_from_email(
         email=current_user.email, db_session=db_session)
     aircraft = db_session.query(models.Aircraft).filter(and_(
         models.Aircraft.id == aircraft_id,
@@ -427,7 +429,7 @@ async def post_new_aircraft_performance_profile_from_model(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.AircraftReturn
 )
-async def edit_aircraft(
+def edit_aircraft(
     aircraft_id: int,
     aircraft_data: schemas.AircraftData,
     db_session: Session = Depends(get_db),
@@ -450,7 +452,7 @@ async def edit_aircraft(
     """
 
     # Check if aircraft exists
-    user_id = await get_user_id_from_email(
+    user_id = get_user_id_from_email(
         email=current_user.email, db_session=db_session)
     aircraft_query = db_session.query(models.Aircraft).filter(and_(
         models.Aircraft.id == aircraft_id,
@@ -487,7 +489,7 @@ async def edit_aircraft(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.PerformanceProfileReturn
 )
-async def edit_aircraft_performance_profile(
+def edit_aircraft_performance_profile(
     performance_profile_id: int,
     performance_data: schemas.PerformanceProfileData,
     db_session: Session = Depends(get_db),
@@ -521,7 +523,7 @@ async def edit_aircraft_performance_profile(
         )
 
     # Check is user has permission to edit this profile
-    user_id = await get_user_id_from_email(
+    user_id = get_user_id_from_email(
         email=current_user.email, db_session=db_session)
     user_is_aircraft_owner = db_session.query(models.Aircraft).filter(and_(
         models.Aircraft.id == performance_profile_query.first().aircraft_id,
@@ -584,7 +586,7 @@ async def edit_aircraft_performance_profile(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.PerformanceProfileReturn
 )
-async def make_aircraft_performance_profile_preferred_profile(
+def make_aircraft_performance_profile_preferred_profile(
     performance_profile_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -617,7 +619,7 @@ async def make_aircraft_performance_profile_preferred_profile(
 
     # Check if user has permission to edit this profile
     aircraft_id = performance_profile_query.first().aircraft_id
-    user_id = await get_user_id_from_email(
+    user_id = get_user_id_from_email(
         email=current_user.email, db_session=db_session)
     user_is_aircraft_owner = db_session.query(models.Aircraft).filter(and_(
         models.Aircraft.id == aircraft_id,
@@ -672,7 +674,7 @@ async def make_aircraft_performance_profile_preferred_profile(
 
 
 @router.delete("/performance-profile/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_aircraft_performance_profile(
+def delete_aircraft_performance_profile(
     profile_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -692,7 +694,7 @@ async def delete_aircraft_performance_profile(
     """
 
     # Check if performance profile exists and user has permission.
-    user_id = await get_user_id_from_email(
+    user_id = get_user_id_from_email(
         email=current_user.email, db_session=db_session)
     profile_query = db_session.query(models.PerformanceProfile).filter(and_(
         models.PerformanceProfile.id == profile_id,
@@ -721,7 +723,7 @@ async def delete_aircraft_performance_profile(
 
 
 @router.delete("/{aircraft_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_aircraft(
+def delete_aircraft(
     aircraft_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -741,7 +743,7 @@ async def delete_aircraft(
     """
 
     # Check if aircraft exists and user has permission.
-    user_id = await get_user_id_from_email(
+    user_id = get_user_id_from_email(
         email=current_user.email, db_session=db_session)
     aircraft_query = db_session.query(models.Aircraft).filter(and_(
         models.Aircraft.id == aircraft_id,

@@ -14,10 +14,10 @@ from datetime import datetime
 from sqlalchemy import Column, DateTime
 from sqlalchemy.orm import declarative_base
 
-from utils.db import Session
+# from utils.db import Session
 
 Model = declarative_base()
-Model.query = Session.query_property()
+# Model.query = Session.query_property()
 
 
 class BaseModel(Model):

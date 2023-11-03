@@ -27,7 +27,7 @@ router = APIRouter(tags=["Manage Waypoints"])
 
 
 @router.get("", status_code=status.HTTP_200_OK)
-async def get_csv_file_with_all_vfr_waypoints(
+def get_csv_file_with_all_vfr_waypoints(
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
@@ -98,7 +98,7 @@ async def get_csv_file_with_all_vfr_waypoints(
 
 
 @router.get("/aerodromes", status_code=status.HTTP_200_OK)
-async def get_csv_file_with_all_aerodromes(
+def get_csv_file_with_all_aerodromes(
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
@@ -266,7 +266,8 @@ async def manage_vfr_waypoints_with_csv_file(
         lambda i: i.code in list(db_vfr_waypoint_ids.keys()), data_list)]
 
     # Add data
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
 
     for waypoint in data_to_add:
         new_waypoint = models.Waypoint(
@@ -441,7 +442,8 @@ async def manage_registered_aerodrome_with_csv_file(
         lambda i: i.code in list(db_vfr_waypoint_ids.keys()), data_list)]
 
     # Add data
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
 
     for aerodrome in data_to_add:
         new_waypoint = models.Waypoint(

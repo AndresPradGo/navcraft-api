@@ -31,7 +31,7 @@ router = APIRouter(tags=["Flight Legs"])
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.NewFlightReturn
 )
-async def post_new_leg(
+def post_new_leg(
     flight_id: int,
     leg_data: schemas.NewLegData,
     db_session: Session = Depends(get_db),
@@ -54,7 +54,7 @@ async def post_new_leg(
     """
 
     # Check flight exists
-    user_id = await get_user_id_from_email(
+    user_id = get_user_id_from_email(
         email=current_user.email, db_session=db_session)
     flight = db_session.query(models.Flight).filter(and_(
         models.Flight.id == flight_id,
@@ -218,7 +218,7 @@ async def post_new_leg(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.NewFlightReturn
 )
-async def edit_flight_leg(
+def edit_flight_leg(
     leg_id: int,
     leg_data: schemas.UpdateLegData,
     db_session: Session = Depends(get_db),
@@ -250,7 +250,7 @@ async def edit_flight_leg(
     flight_id = leg_query.first().flight_id
 
     # Check user has permission to update flight
-    user_id = await get_user_id_from_email(
+    user_id = get_user_id_from_email(
         email=current_user.email, db_session=db_session)
     flight = db_session.query(models.Flight).filter(and_(
         models.Flight.id == flight_id,
@@ -370,7 +370,7 @@ async def edit_flight_leg(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.UpdateWaypointsReturn
 )
-async def update_flight_waypoints(
+def update_flight_waypoints(
     flight_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -390,7 +390,7 @@ async def update_flight_waypoints(
     - HTTPException (500): if there is a server error. 
     """
     # Check flight exists and user has permission to update flight
-    user_id = await get_user_id_from_email(
+    user_id = get_user_id_from_email(
         email=current_user.email, db_session=db_session)
     flight = db_session.query(models.Flight).filter(and_(
         models.Flight.id == flight_id,
@@ -516,7 +516,7 @@ async def update_flight_waypoints(
     status_code=status.HTTP_200_OK,
     response_model=schemas.NewFlightReturn
 )
-async def delete_flight_leg(
+def delete_flight_leg(
     leg_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -536,7 +536,8 @@ async def delete_flight_leg(
     """
 
     # Check leg exists and user has permission to delete
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     leg_query_results = db_session.query(models.Leg, models.Flight)\
         .join(models.Flight, models.Leg.flight_id == models.Flight.id)\
         .filter(and_(models.Leg.id == leg_id, models.Flight.pilot_id == user_id)).first()

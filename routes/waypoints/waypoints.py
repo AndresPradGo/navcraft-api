@@ -31,7 +31,7 @@ router = APIRouter(tags=["Waypoints"])
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.UserWaypointReturn]
 )
-async def get_all_user_waypoints(
+def get_all_user_waypoints(
     limit: Optional[int] = -1,
     start: Optional[int] = 0,
     waypoint_id: Optional[int] = 0,
@@ -56,7 +56,8 @@ async def get_all_user_waypoints(
     a = models.Aerodrome
     u = models.UserWaypoint
     w = models.Waypoint
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
 
     user_aerodromes = db_session.query(a, u)\
         .join(u, u.waypoint_id == a.user_waypoint_id)\
@@ -91,7 +92,7 @@ async def get_all_user_waypoints(
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.VfrWaypointReturn]
 )
-async def get_all_vfr_waypoints(
+def get_all_vfr_waypoints(
     limit: Optional[int] = -1,
     start: Optional[int] = 0,
     waypoint_id: Optional[int] = 0,
@@ -152,7 +153,7 @@ async def get_all_vfr_waypoints(
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.AerodromeReturnWithRunways]
 )
-async def get_all_aerodromes(
+def get_all_aerodromes(
     limit: Optional[int] = -1,
     start: Optional[int] = 0,
     aerodrome_id: Optional[int] = 0,
@@ -173,7 +174,8 @@ async def get_all_aerodromes(
     Raise:
     - HTTPException (500): if there is a server error. 
     """
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
 
     rs = models.RunwaySurface
     s = models.AerodromeStatus
@@ -253,7 +255,7 @@ async def get_all_aerodromes(
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.AerodromeStatusReturn]
 )
-async def get_all_aerodrome_status(
+def get_all_aerodrome_status(
     status_id: Optional[int] = 0,
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_user)
@@ -282,7 +284,7 @@ async def get_all_aerodrome_status(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.UserWaypointReturn
 )
-async def post_new_user_waypoint(
+def post_new_user_waypoint(
     waypoint: schemas.UserWaypointData,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -302,7 +304,8 @@ async def post_new_user_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
 
     exists = db_session.query(models.UserWaypoint).filter(and_(
         models.UserWaypoint.creator_id == user_id,
@@ -360,7 +363,7 @@ async def post_new_user_waypoint(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.PrivateAerodromeReturn
 )
-async def post_private_aerodrome(
+def post_private_aerodrome(
     aerodrome: schemas.PrivateAerodromeData,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -389,7 +392,8 @@ async def post_private_aerodrome(
             detail="Please provide a valid status ID."
         )
 
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
 
     waypoint_exists = db_session.query(models.UserWaypoint).filter(and_(
         models.UserWaypoint.creator_id == user_id,
@@ -469,7 +473,7 @@ async def post_private_aerodrome(
     status_code=status.HTTP_200_OK,
     response_model=schemas.UserWaypointReturn
 )
-async def edit_user_waypoint(
+def edit_user_waypoint(
     waypoint_id: int,
     waypoint: schemas.UserWaypointData,
     db_session: Session = Depends(get_db),
@@ -490,7 +494,8 @@ async def edit_user_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
 
     user_waypoint_exists = db_session.query(models.UserWaypoint).filter(and_(
         models.UserWaypoint.waypoint_id == waypoint_id,
@@ -558,7 +563,7 @@ async def edit_user_waypoint(
     status_code=status.HTTP_200_OK,
     response_model=schemas.PrivateAerodromeReturn
 )
-async def edit_private_aerodrome(
+def edit_private_aerodrome(
     aerodrome_id: int,
     aerodrome: schemas.PrivateAerodromeData,
     db_session: Session = Depends(get_db),
@@ -588,7 +593,8 @@ async def edit_private_aerodrome(
             detail="Invalid ID, the waypoint ID you provided is not an aerodrome."
         )
 
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     user_waypoint_query = db_session.query(models.UserWaypoint).filter(
         and_(
             models.UserWaypoint.waypoint_id == aerodrome_id,
@@ -677,7 +683,7 @@ async def edit_private_aerodrome(
 
 
 @router.delete("/user/{waypoint_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user_waypoint_or_private_aerodrome(
+def delete_user_waypoint_or_private_aerodrome(
     waypoint_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -696,7 +702,8 @@ async def delete_user_waypoint_or_private_aerodrome(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     waypoint_exists = db_session.query(models.UserWaypoint).filter(and_(
         models.UserWaypoint.waypoint_id == waypoint_id,
         models.UserWaypoint.creator_id == user_id

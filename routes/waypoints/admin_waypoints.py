@@ -27,7 +27,7 @@ from functions.navigation import get_magnetic_variation_for_waypoint
 router = APIRouter(tags=["Admin Waypoints"])
 
 
-async def post_vfr_waypoint(
+def post_vfr_waypoint(
         waypoint: schemas.VfrWaypointData,
         db_session: Session,
         creator_id: int
@@ -97,7 +97,7 @@ async def post_vfr_waypoint(
     return {**new_vfr_waypoint.__dict__, **new_waypoint.__dict__}
 
 
-async def update_vfr_waypoint(
+def update_vfr_waypoint(
         waypoint: schemas.VfrWaypointData,
         db_session: Session,
         creator_id: int,
@@ -175,7 +175,7 @@ async def update_vfr_waypoint(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.VfrWaypointReturn
 )
-async def post_new_vfr_waypoint(
+def post_new_vfr_waypoint(
     waypoint: schemas.VfrWaypointData,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_admin_user)
@@ -195,8 +195,10 @@ async def post_new_vfr_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
-    result = await post_vfr_waypoint(waypoint=waypoint, db_session=db_session, creator_id=user_id)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
+    result = post_vfr_waypoint(
+        waypoint=waypoint, db_session=db_session, creator_id=user_id)
 
     return {
         **result,
@@ -210,7 +212,7 @@ async def post_new_vfr_waypoint(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.RegisteredAerodromeReturn
 )
-async def post_registered_aerodrome(
+def post_registered_aerodrome(
     aerodrome: schemas.RegisteredAerodromeData,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_admin_user)
@@ -239,9 +241,10 @@ async def post_registered_aerodrome(
             detail="Please provide a valid status ID."
         )
 
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
 
-    waypoint_result = await post_vfr_waypoint(
+    waypoint_result = post_vfr_waypoint(
         waypoint=aerodrome,
         db_session=db_session,
         creator_id=user_id
@@ -280,7 +283,7 @@ async def post_registered_aerodrome(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.AerodromeStatusReturn
 )
-async def post_aerodrome_status(
+def post_aerodrome_status(
     aerodrome_status: str,
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
@@ -332,7 +335,7 @@ async def post_aerodrome_status(
     status_code=status.HTTP_200_OK,
     response_model=schemas.VfrWaypointReturn
 )
-async def edit_vfr_waypoint(
+def edit_vfr_waypoint(
     waypoint_id: int,
     waypoint: schemas.VfrWaypointData,
     db_session: Session = Depends(get_db),
@@ -353,7 +356,8 @@ async def edit_vfr_waypoint(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     is_aerodrome = db_session.query(models.Aerodrome).filter(
         models.Aerodrome.vfr_waypoint_id == waypoint_id).first()
     if is_aerodrome:
@@ -361,7 +365,7 @@ async def edit_vfr_waypoint(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You're trying to update and aerodrome, please use the apropriate API-endpoint."
         )
-    db_session = await update_vfr_waypoint(
+    db_session = update_vfr_waypoint(
         waypoint=waypoint,
         db_session=db_session,
         creator_id=user_id,
@@ -387,7 +391,7 @@ async def edit_vfr_waypoint(
     status_code=status.HTTP_200_OK,
     response_model=schemas.RegisteredAerodromeReturn
 )
-async def edit_registered_aerodrome(
+def edit_registered_aerodrome(
     aerodrome_id: int,
     aerodrome: schemas.RegisteredAerodromeData,
     db_session: Session = Depends(get_db),
@@ -425,7 +429,8 @@ async def edit_registered_aerodrome(
             detail="Please provide a valid status ID."
         )
 
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     waypoint_data = schemas.VfrWaypointData(
         code=aerodrome.code,
         name=aerodrome.name,
@@ -440,7 +445,7 @@ async def edit_registered_aerodrome(
         magnetic_variation=aerodrome.magnetic_variation,
         hidden=aerodrome.hidden
     )
-    db_session = await update_vfr_waypoint(
+    db_session = update_vfr_waypoint(
         waypoint=waypoint_data,
         db_session=db_session,
         creator_id=user_id,
@@ -482,7 +487,7 @@ async def edit_registered_aerodrome(
 
 
 @router.delete("/registered/{waypoint_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_vfr_waypoints_or_aerodromes(
+def delete_vfr_waypoints_or_aerodromes(
     waypoint_id: int,
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
@@ -520,7 +525,7 @@ async def delete_vfr_waypoints_or_aerodromes(
 
 
 @router.delete("/aerodrome-status/{status_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_aerodrome_status(
+def delete_aerodrome_status(
     status_id: int,
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)

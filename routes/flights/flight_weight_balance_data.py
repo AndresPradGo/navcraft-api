@@ -29,7 +29,7 @@ router = APIRouter(tags=["Flight Weight and Balance Data"])
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.PersonOnBoardReturn]
 )
-async def get_all_persons_on_board(
+def get_all_persons_on_board(
     flight_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -50,7 +50,8 @@ async def get_all_persons_on_board(
     """
 
     # Check flight exist
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     flight = db_session.query(models.Flight).filter(and_(
         models.Flight.pilot_id == user_id,
         models.Flight.id == flight_id
@@ -109,7 +110,7 @@ async def get_all_persons_on_board(
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.FlightBaggageReturn]
 )
-async def get_all_flight_baggage(
+def get_all_flight_baggage(
     flight_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -130,7 +131,8 @@ async def get_all_flight_baggage(
     """
 
     # Check flight exist
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     flight = db_session.query(models.Flight).filter(and_(
         models.Flight.pilot_id == user_id,
         models.Flight.id == flight_id
@@ -164,7 +166,7 @@ async def get_all_flight_baggage(
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.FlightFuelReturn]
 )
-async def get_all_flight_fuel(
+def get_all_flight_fuel(
     flight_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -185,7 +187,8 @@ async def get_all_flight_fuel(
     """
 
     # Check flight exist
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     flight = db_session.query(models.Flight).filter(and_(
         models.Flight.pilot_id == user_id,
         models.Flight.id == flight_id
@@ -224,7 +227,7 @@ async def get_all_flight_fuel(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.PersonOnBoardReturn
 )
-async def add_person_on_board(
+def add_person_on_board(
     flight_id: int,
     data: schemas.PersonOnBoardData,
     db_session: Session = Depends(get_db),
@@ -247,7 +250,8 @@ async def add_person_on_board(
     """
 
     # Check flight exist
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     flight = db_session.query(
         models.Flight,
         models.Aircraft,
@@ -388,7 +392,7 @@ async def add_person_on_board(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.FlightBaggageReturn
 )
-async def add_flight_baggage(
+def add_flight_baggage(
     flight_id: int,
     data: schemas.FlightBaggageData,
     db_session: Session = Depends(get_db),
@@ -411,7 +415,8 @@ async def add_flight_baggage(
     """
 
     # Check flight exist
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     flight = db_session.query(
         models.Flight,
         models.Aircraft,
@@ -478,7 +483,7 @@ async def add_flight_baggage(
     status_code=status.HTTP_200_OK,
     response_model=schemas.PersonOnBoardReturn
 )
-async def edit_person_on_board(
+def edit_person_on_board(
     pob_id: int,
     data: schemas.PersonOnBoardData,
     db_session: Session = Depends(get_db),
@@ -511,7 +516,8 @@ async def edit_person_on_board(
 
     # Check flight exist
     flight_id = person_on_board_query.first().flight_id
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     flight = db_session.query(
         models.Flight,
         models.Aircraft,
@@ -656,7 +662,7 @@ async def edit_person_on_board(
     status_code=status.HTTP_200_OK,
     response_model=schemas.FlightBaggageReturn
 )
-async def edit_flight_baggage(
+def edit_flight_baggage(
     baggage_id: int,
     data: schemas.FlightBaggageData,
     db_session: Session = Depends(get_db),
@@ -689,7 +695,8 @@ async def edit_flight_baggage(
 
     # Check flight exist
     flight_id = baggage_query.first().flight_id
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     flight = db_session.query(
         models.Flight,
         models.Aircraft,
@@ -754,7 +761,7 @@ async def edit_flight_baggage(
     status_code=status.HTTP_200_OK,
     response_model=schemas.FlightFuelReturn
 )
-async def edit_flight_fuel(
+def edit_flight_fuel(
     fuel_id: int,
     gallons: float,
     db_session: Session = Depends(get_db),
@@ -787,7 +794,8 @@ async def edit_flight_fuel(
 
     # Check flight exist
     flight_id = fuel_query.first().flight_id
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     flight = db_session.query(
         models.Flight,
         models.Aircraft,
@@ -832,7 +840,7 @@ async def edit_flight_fuel(
     "/person-on-board/{pob_id}",
     status_code=status.HTTP_204_NO_CONTENT
 )
-async def delete_person_on_board(
+def delete_person_on_board(
     pob_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -860,7 +868,8 @@ async def delete_person_on_board(
 
     # Check flight exist
     flight_id = person_on_board_query.first().flight_id
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     flight = db_session.query(
         models.Flight,
         models.Aircraft,
@@ -895,7 +904,7 @@ async def delete_person_on_board(
     "/baggage/{baggage_id}",
     status_code=status.HTTP_204_NO_CONTENT
 )
-async def delete_flight_baggage(
+def delete_flight_baggage(
     baggage_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -923,7 +932,8 @@ async def delete_flight_baggage(
 
     # Check flight exist
     flight_id = baggage_query.first().flight_id
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     flight = db_session.query(
         models.Flight,
         models.Aircraft,

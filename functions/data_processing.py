@@ -39,7 +39,7 @@ def clean_string(input_string: str) -> str:
     return ' '.join(new_list)
 
 
-async def get_user_id_from_email(email: str, db_session: Session):
+def get_user_id_from_email(email: str, db_session: Session):
     """
     This method queries the db for the user with the provided email, 
     and returns the user id.

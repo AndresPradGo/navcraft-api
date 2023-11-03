@@ -27,7 +27,7 @@ router = APIRouter(tags=["Runways"])
 
 
 @router.get("", status_code=status.HTTP_200_OK, response_model=List[schemas.RunwayReturn])
-async def get_all_runways(
+def get_all_runways(
     runway_id: Optional[int] = 0,
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
@@ -86,7 +86,7 @@ async def get_all_runways(
 
 
 @router.get("/csv", status_code=status.HTTP_200_OK)
-async def get_csv_file_with_all_runways(
+def get_csv_file_with_all_runways(
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
@@ -201,7 +201,7 @@ async def get_csv_file_with_all_runways(
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.RunwaySurfaceReturn]
 )
-async def get_all_runway_surfaces(
+def get_all_runway_surfaces(
     runway_id: Optional[int] = 0,
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_user)
@@ -226,7 +226,7 @@ async def get_all_runway_surfaces(
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=schemas.RunwayReturn)
-async def post_runway_(
+def post_runway(
     runway_data: schemas.RunwayData,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -246,7 +246,8 @@ async def post_runway_(
     """
 
     # Check if aerodrome exists
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     aerodrome = db_session.query(models.Aerodrome).filter_by(
         id=runway_data.aerodrome_id).first()
 
@@ -480,7 +481,7 @@ async def manage_runways_with_csv_file(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.RunwaySurfaceReturn
 )
-async def post_runway_surface(
+def post_runway_surface(
     surface_data: schemas.RunwaySurfaceData,
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
@@ -520,7 +521,7 @@ async def post_runway_surface(
 
 
 @router.put("/{runway_id}", status_code=status.HTTP_200_OK, response_model=schemas.RunwayReturn)
-async def edit_runway(
+def edit_runway(
     runway_id: int,
     runway_data: schemas.RunwayDataEdit,
     db_session: Session = Depends(get_db),
@@ -549,7 +550,8 @@ async def edit_runway(
         )
 
     # Check if user has permission to update this aerodrome
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     aerodrome_id = runway_query.first().aerodrome_id
 
     no_permission_exception = HTTPException(
@@ -635,7 +637,7 @@ async def edit_runway(
     status_code=status.HTTP_200_OK,
     response_model=schemas.RunwaySurfaceReturn
 )
-async def edit_runway_surface(
+def edit_runway_surface(
     surface_id: int,
     surface_data: schemas.RunwaySurfaceData,
     db_session: Session = Depends(get_db),
@@ -687,7 +689,7 @@ async def edit_runway_surface(
 
 
 @router.delete("/{runway_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_runway(
+def delete_runway(
     runway_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -717,7 +719,8 @@ async def delete_runway(
         )
 
     # Define some variables
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     user_is_active_admin = current_user.is_active and current_user.is_admin
 
     # Check if user has permission to update this aerodrome
@@ -752,7 +755,7 @@ async def delete_runway(
 
 
 @router.delete("/surface/{surface_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_runway_surface(
+def delete_runway_surface(
     surface_id: int,
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)

@@ -34,7 +34,7 @@ router = APIRouter(tags=["Aircraft Weight and Balance Data"])
     status_code=status.HTTP_200_OK,
     response_model=schemas.GetWeightBalanceData
 )
-async def get_aircraft_weight_balance_data(
+def get_aircraft_weight_balance_data(
     profile_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -56,7 +56,7 @@ async def get_aircraft_weight_balance_data(
     # Get the performance profile and check permissions.
     performance_profile = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -141,7 +141,7 @@ async def get_aircraft_weight_balance_data(
     "/graph/{profile_id}",
     status_code=status.HTTP_200_OK
 )
-async def get_aircraft_weight_and_balance_graph(
+def get_aircraft_weight_and_balance_graph(
     profile_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -163,7 +163,7 @@ async def get_aircraft_weight_and_balance_graph(
     # Get the performance profile and check permissions.
     performance_profile = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -280,7 +280,7 @@ async def get_aircraft_weight_and_balance_graph(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.BaggageCompartmentReturn
 )
-async def post_new_baggage_compartment(
+def post_new_baggage_compartment(
     profile_id: int,
     data: schemas.BaggageCompartmentData,
     db_session: Session = Depends(get_db),
@@ -305,7 +305,7 @@ async def post_new_baggage_compartment(
     # Check performance profile and permissions.
     _ = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -342,7 +342,7 @@ async def post_new_baggage_compartment(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.SeatRowReturn,
 )
-async def post_new_seat_row(
+def post_new_seat_row(
     profile_id: int,
     data: schemas.SeatRowData,
     db_session: Session = Depends(get_db),
@@ -367,7 +367,7 @@ async def post_new_seat_row(
     # Check performance profile and permissions.
     _ = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -413,7 +413,7 @@ async def post_new_seat_row(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.FuelTankReturn,
 )
-async def post_new_fuel_tank(
+def post_new_fuel_tank(
     profile_id: int,
     data: schemas.FuelTankData,
     db_session: Session = Depends(get_db),
@@ -438,7 +438,7 @@ async def post_new_fuel_tank(
     # Check performance profile and permissions.
     _ = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -485,7 +485,7 @@ async def post_new_fuel_tank(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.WeightBalanceReturn
 )
-async def post_new_weight_and_balance_profile(
+def post_new_weight_and_balance_profile(
     profile_id: int,
     data: schemas.WeightBalanceData,
     db_session: Session = Depends(get_db),
@@ -510,7 +510,7 @@ async def post_new_weight_and_balance_profile(
     # Check performance profile and permissions.
     _ = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -584,7 +584,7 @@ async def post_new_weight_and_balance_profile(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.PerformanceProfileReturn
 )
-async def edit_weight_and_balance_data_for_performance_profile(
+def edit_weight_and_balance_data_for_performance_profile(
     profile_id: int,
     performance_data: schemas.PerformanceProfileWeightBalanceData,
     db_session: Session = Depends(get_db),
@@ -609,7 +609,7 @@ async def edit_weight_and_balance_data_for_performance_profile(
     # Check performance profile and permissions.
     performance_profile_query = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -655,7 +655,7 @@ async def edit_weight_and_balance_data_for_performance_profile(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.BaggageCompartmentReturn
 )
-async def edit_baggage_compartment(
+def edit_baggage_compartment(
     compartment_id: int,
     data: schemas.BaggageCompartmentData,
     db_session: Session = Depends(get_db),
@@ -689,7 +689,7 @@ async def edit_baggage_compartment(
     # Check performance profile and permissions.
     performance_profile = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -724,7 +724,7 @@ async def edit_baggage_compartment(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.SeatRowReturn
 )
-async def edit_seat_row(
+def edit_seat_row(
     row_id: int,
     data: schemas.SeatRowData,
     db_session: Session = Depends(get_db),
@@ -757,7 +757,7 @@ async def edit_seat_row(
     # Check performance profile and permissions.
     performance_profile = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -793,7 +793,7 @@ async def edit_seat_row(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.FuelTankReturn
 )
-async def edit_fuel_tank(
+def edit_fuel_tank(
     tank_id: int,
     data: schemas.FuelTankData,
     db_session: Session = Depends(get_db),
@@ -826,7 +826,7 @@ async def edit_fuel_tank(
     # Check performance profile and permissions.
     performance_profile = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -863,7 +863,7 @@ async def edit_fuel_tank(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.WeightBalanceReturn
 )
-async def edit_weight_and_balance_profile(
+def edit_weight_and_balance_profile(
     wb_profile_id: int,
     data: schemas.WeightBalanceData,
     db_session: Session = Depends(get_db),
@@ -897,7 +897,7 @@ async def edit_weight_and_balance_profile(
     # Check performance profile and permissions.
     performance_profile = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -954,7 +954,7 @@ async def edit_weight_and_balance_profile(
     "/baggage-compartment/{compartment_id}",
     status_code=status.HTTP_204_NO_CONTENT
 )
-async def delete_baggage_compartment(
+def delete_baggage_compartment(
     compartment_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -985,7 +985,7 @@ async def delete_baggage_compartment(
     # Check performance profile and permissions.
     _ = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -1000,7 +1000,7 @@ async def delete_baggage_compartment(
 
 
 @router.delete("/seat-row/{row_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_seat_row(
+def delete_seat_row(
     row_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -1031,7 +1031,7 @@ async def delete_seat_row(
     performance_profile_id = row_query.first().performance_profile_id
     _ = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -1052,7 +1052,7 @@ async def delete_seat_row(
 
 
 @router.delete("/fuel-tank/{tank_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_fuel_tank(
+def delete_fuel_tank(
     tank_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -1083,7 +1083,7 @@ async def delete_fuel_tank(
     performance_profile_id = tank_query.first().performance_profile_id
     _ = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -1104,7 +1104,7 @@ async def delete_fuel_tank(
 
 
 @router.delete("/weight-balance-profile/{wb_profile_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_weight_and_balance_profile(
+def delete_weight_and_balance_profile(
     wb_profile_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -1136,7 +1136,7 @@ async def delete_weight_and_balance_profile(
     performance_profile_id = wb_profile_query.first().performance_profile_id
     _ = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,

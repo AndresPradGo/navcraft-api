@@ -35,7 +35,7 @@ router = APIRouter(tags=["Flights"])
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.NewFlightReturn]
 )
-async def get_all_flights(
+def get_all_flights(
     flight_id: Optional[int] = 0,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -52,7 +52,8 @@ async def get_all_flights(
     Raise:
     - HTTPException (500): if there is a server error. 
     """
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     user_flights = db_session.query(models.Flight).filter(and_(
         models.Flight.pilot_id == user_id,
         or_(
@@ -75,7 +76,7 @@ async def get_all_flights(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.NewFlightReturn
 )
-async def post_new_flight(
+def post_new_flight(
     flight_data: schemas.NewFlightData,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -95,7 +96,7 @@ async def post_new_flight(
     - HTTPException (500): if there is a server error. 
     """
     # Get user ID
-    user_id = await get_user_id_from_email(
+    user_id = get_user_id_from_email(
         email=current_user.email, db_session=db_session)
 
     # Check aircraft exists and is owned by user
@@ -253,7 +254,7 @@ async def post_new_flight(
     status_code=status.HTTP_200_OK,
     response_model=schemas.NewFlightReturn
 )
-async def edit_flight(
+def edit_flight(
     flight_id: int,
     data: schemas.UpdateFlightData,
     db_session: Session = Depends(get_db),
@@ -276,7 +277,8 @@ async def edit_flight(
     """
 
     # Create flight query and check if flight exists
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     flight_query = db_session.query(models.Flight).filter(and_(
         models.Flight.pilot_id == user_id,
         models.Flight.id == flight_id
@@ -304,7 +306,7 @@ async def edit_flight(
     status_code=status.HTTP_200_OK,
     response_model=schemas.NewFlightReturn
 )
-async def change_aircraft(
+def change_aircraft(
     flight_id: int,
     aircraft_id: int,
     db_session: Session = Depends(get_db),
@@ -326,7 +328,7 @@ async def change_aircraft(
     - HTTPException (500): if there is a server error. 
     """
     # Get user ID
-    user_id = await get_user_id_from_email(
+    user_id = get_user_id_from_email(
         email=current_user.email, db_session=db_session)
 
     # Check if flight exists
@@ -394,7 +396,7 @@ async def change_aircraft(
     status_code=status.HTTP_200_OK,
     response_model=schemas.UpdateDepartureArrivalReturn
 )
-async def edit_departure_arrival(
+def edit_departure_arrival(
     flight_id: int,
     is_departure: bool,
     data: schemas.UpdateDepartureArrivalData,
@@ -419,7 +421,8 @@ async def edit_departure_arrival(
     """
 
     # Check if flight exists
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     flight = db_session.query(models.Flight).filter(and_(
         models.Flight.pilot_id == user_id,
         models.Flight.id == flight_id
@@ -478,7 +481,7 @@ async def edit_departure_arrival(
 
 
 @router.delete("/{flight_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_flight(
+def delete_flight(
     flight_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -498,7 +501,8 @@ async def delete_flight(
     """
 
     # Create flight query and check if flight exists
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     flight_query = db_session.query(models.Flight).filter(and_(
         models.Flight.pilot_id == user_id,
         models.Flight.id == flight_id

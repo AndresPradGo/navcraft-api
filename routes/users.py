@@ -26,7 +26,7 @@ router = APIRouter(tags=["Users"])
 
 
 @router.get("", status_code=status.HTTP_200_OK, response_model=List[schemas.UserReturnBasic])
-async def get_all_users(
+def get_all_users(
     limit: Optional[int] = -1,
     start: Optional[int] = 0,
     user_id: Optional[int] = 0,
@@ -61,7 +61,7 @@ async def get_all_users(
 
 
 @router.get("/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturn)
-async def get_user_profile_data(
+def get_user_profile_data(
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
@@ -88,7 +88,7 @@ async def get_user_profile_data(
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.PassengerProfileReturn]
 )
-async def get_passenger_profiles(
+def get_passenger_profiles(
     profile_id: Optional[int] = 0,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -106,7 +106,7 @@ async def get_passenger_profiles(
     - HTTPException (401): validation fails.
     - HTTPException (500): if there is a server error. 
     """
-    user_id = await get_user_id_from_email(
+    user_id = get_user_id_from_email(
         email=current_user.email, db_session=db_session)
     profiles = db_session.query(models.PassengerProfile).filter(and_(
         models.PassengerProfile.creator_id == user_id,
@@ -120,7 +120,7 @@ async def get_passenger_profiles(
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=schemas.JWTData)
-async def register(
+def register(
     user: schemas.UserRegister,
     db_session: Session = Depends(get_db)
 ):
@@ -169,7 +169,7 @@ async def register(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.PassengerProfileReturn
 )
-async def add_new_passenger_profile(
+def add_new_passenger_profile(
     passenger_profile_data: schemas.PassengerProfileData,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -189,7 +189,8 @@ async def add_new_passenger_profile(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
 
     passenger_already_exists = db_session.query(models.PassengerProfile).filter(and_(
         models.PassengerProfile.name == passenger_profile_data.name,
@@ -214,7 +215,7 @@ async def add_new_passenger_profile(
 
 
 @router.put("/email/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturnBasic)
-async def change_email(
+def change_email(
     user_data: schemas.UserEmail,
     response: Response,
     db_session: Session = Depends(get_db),
@@ -269,7 +270,7 @@ async def change_email(
 
 
 @router.put("/password/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturnBasic)
-async def change_password(
+def change_password(
     user_data: schemas.PasswordChangeData,
     response: Response,
     db_session: Session = Depends(get_db),
@@ -313,7 +314,7 @@ async def change_password(
 
 
 @router.put("/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturnBasic)
-async def edit_user_profile(
+def edit_user_profile(
     user_data: schemas.UserEditProfileData,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -352,7 +353,7 @@ async def edit_user_profile(
     status_code=status.HTTP_200_OK,
     response_model=schemas.UserReturnBasic
 )
-async def grant_revoke_admin_privileges_or_deactivate(
+def grant_revoke_admin_privileges_or_deactivate(
     user_id: int,
     data: schemas.EditUserData,
     db_session: Session = Depends(get_db),
@@ -401,7 +402,7 @@ async def grant_revoke_admin_privileges_or_deactivate(
     status_code=status.HTTP_200_OK,
     response_model=schemas.PassengerProfileReturn
 )
-async def edit_existing_passenger_profile(
+def edit_existing_passenger_profile(
     profile_id: int,
     passenger_profile_data: schemas.PassengerProfileData,
     db_session: Session = Depends(get_db),
@@ -423,7 +424,8 @@ async def edit_existing_passenger_profile(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
 
     passenger_already_exists = db_session.query(models.PassengerProfile).filter(and_(
         models.PassengerProfile.name == passenger_profile_data.name,
@@ -455,7 +457,7 @@ async def edit_existing_passenger_profile(
 
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_account(
+def delete_account(
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
@@ -485,7 +487,7 @@ async def delete_account(
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(
+def delete_user(
     user_id: int,
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_master_user)
@@ -516,7 +518,7 @@ async def delete_user(
 
 
 @router.delete("/passenger-profile/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_passenger_profile(
+def delete_passenger_profile(
     profile_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -535,7 +537,8 @@ async def delete_passenger_profile(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     deleted = db_session.query(models.PassengerProfile).filter(and_(
         models.PassengerProfile.id == profile_id,
         models.PassengerProfile.creator_id == user_id

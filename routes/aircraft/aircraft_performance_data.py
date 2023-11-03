@@ -30,7 +30,7 @@ router = APIRouter(tags=["Aircraft Performance Data"])
 
 
 @router.get("/takeoff-landing/csv/{profile_id}", status_code=status.HTTP_200_OK)
-async def get_takeoff_landing_performance_csv_file(
+def get_takeoff_landing_performance_csv_file(
     profile_id: int,
     is_takeoff: bool = True,
     db_session: Session = Depends(get_db),
@@ -54,7 +54,7 @@ async def get_takeoff_landing_performance_csv_file(
     # Check permissions
     _ = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -114,7 +114,7 @@ async def get_takeoff_landing_performance_csv_file(
 
 
 @router.get("/climb/csv/{profile_id}", status_code=status.HTTP_200_OK)
-async def get_climb_performance_csv_file(
+def get_climb_performance_csv_file(
     profile_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -136,7 +136,7 @@ async def get_climb_performance_csv_file(
     # Check permissions
     _ = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -193,7 +193,7 @@ async def get_climb_performance_csv_file(
 
 
 @router.get("/cruise/csv/{profile_id}", status_code=status.HTTP_200_OK)
-async def get_cruise_performance_csv_file(
+def get_cruise_performance_csv_file(
     profile_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -215,7 +215,7 @@ async def get_cruise_performance_csv_file(
     # Check permissions
     _ = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -275,7 +275,7 @@ async def get_cruise_performance_csv_file(
     status_code=status.HTTP_200_OK,
     response_model=schemas.TakeoffLandingPerformanceReturn
 )
-async def get_takeoff_landing_performance_data(
+def get_takeoff_landing_performance_data(
     profile_id: int,
     is_takeoff: bool = True,
     db_session: Session = Depends(get_db),
@@ -299,7 +299,7 @@ async def get_takeoff_landing_performance_data(
     # Get the performance profile and check permissions.
     performance_profile = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -369,7 +369,7 @@ async def get_takeoff_landing_performance_data(
     status_code=status.HTTP_200_OK,
     response_model=schemas.ClimbPerformanceReturn
 )
-async def get_climb_performance_data(
+def get_climb_performance_data(
     profile_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -391,7 +391,7 @@ async def get_climb_performance_data(
     # Get the performance profile and check permissions.
     performance_profile = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -446,7 +446,7 @@ async def get_climb_performance_data(
     status_code=status.HTTP_200_OK,
     response_model=schemas.CruisePerformanceReturn
 )
-async def get_cruise_performance_data(
+def get_cruise_performance_data(
     profile_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -468,7 +468,7 @@ async def get_cruise_performance_data(
     # Get the performance profile and check permissions.
     _ = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -555,7 +555,7 @@ async def manage_takeoff_landing_performance_data_with_csv_file(
     # Check performance profile and permissions.
     _ = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -684,7 +684,7 @@ async def manage_climb_performance_data_with_csv_file(
     # Check performance profile and permissions.
     _ = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -801,7 +801,7 @@ async def manage_cruise_performance_data_with_csv_file(
     # Check performance profile and permissions.
     _ = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -870,7 +870,7 @@ async def manage_cruise_performance_data_with_csv_file(
 
 
 @router.put("/takeoff-landing-adjustments/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def edit_takeoff_landing_adjustment_values(
+def edit_takeoff_landing_adjustment_values(
     profile_id: int,
     adjustment_data: schemas.RunwayDistanceAdjustmentPercentages,
     is_takeoff: bool = True,
@@ -895,7 +895,7 @@ async def edit_takeoff_landing_adjustment_values(
     # Check performance profile and permissions.
     performance_profile_query = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
@@ -961,7 +961,7 @@ async def edit_takeoff_landing_adjustment_values(
 
 
 @router.put("/climb-adjustments/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def edit_climb_performance_adjustment_values(
+def edit_climb_performance_adjustment_values(
     profile_id: int,
     adjustment_data: schemas.ClimbPerformanceAdjustments,
     db_session: Session = Depends(get_db),
@@ -984,7 +984,7 @@ async def edit_climb_performance_adjustment_values(
     # Check performance profile and permissions.
     performance_profile_query = check_performance_profile_and_permissions(
         db_session=db_session,
-        user_id=await get_user_id_from_email(
+        user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,

@@ -27,7 +27,7 @@ from functions.data_processing import get_user_id_from_email
 router = APIRouter(tags=["Flight Plan"])
 
 
-async def get_nav_log_and_fuel_calculations(
+def get_nav_log_and_fuel_calculations(
     flight_id: int,
     db_session: Session,
     user_id: int
@@ -193,7 +193,7 @@ async def get_nav_log_and_fuel_calculations(
     return nav_log_data, fuel_data
 
 
-async def get_weight_balance_calculations(
+def get_weight_balance_calculations(
     flight_id: int,
     db_session: Session,
     user_id: int
@@ -348,7 +348,7 @@ async def get_weight_balance_calculations(
         })
 
     # Prepare fuel burned before takeoff
-    _, fuel_data = await get_nav_log_and_fuel_calculations(
+    _, fuel_data = get_nav_log_and_fuel_calculations(
         flight_id=flight_id,
         db_session=db_session,
         user_id=user_id
@@ -542,7 +542,7 @@ async def get_weight_balance_calculations(
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.NavigationLogLegResults]
 )
-async def navigation_log(
+def navigation_log(
     flight_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -562,8 +562,9 @@ async def navigation_log(
     - HTTPException (500): if there is a server error. 
     """
 
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
-    nav_log_data, _ = await get_nav_log_and_fuel_calculations(
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
+    nav_log_data, _ = get_nav_log_and_fuel_calculations(
         flight_id=flight_id,
         db_session=db_session,
         user_id=user_id
@@ -577,7 +578,7 @@ async def navigation_log(
     status_code=status.HTTP_200_OK,
     response_model=schemas.FuelCalculationResults
 )
-async def fuel_calculations(
+def fuel_calculations(
     flight_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -597,8 +598,9 @@ async def fuel_calculations(
     - HTTPException (500): if there is a server error. 
     """
     # Get fuel data
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
-    _, fuel_data = await get_nav_log_and_fuel_calculations(
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
+    _, fuel_data = get_nav_log_and_fuel_calculations(
         flight_id=flight_id,
         db_session=db_session,
         user_id=user_id
@@ -637,7 +639,7 @@ async def fuel_calculations(
     status_code=status.HTTP_200_OK,
     response_model=schemas.TakeoffAndLandingDistances
 )
-async def takeoff_and_landing_distances(
+def takeoff_and_landing_distances(
     flight_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -658,7 +660,8 @@ async def takeoff_and_landing_distances(
     """
 
     # Get flight and check permissions
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
     flight = db_session.query(models.Flight).filter(and_(
         models.Flight.id == flight_id,
         models.Flight.pilot_id == user_id
@@ -696,7 +699,7 @@ async def takeoff_and_landing_distances(
         db_session=db_session
     )
 
-    _, fuel_data = await get_nav_log_and_fuel_calculations(
+    _, fuel_data = get_nav_log_and_fuel_calculations(
         flight_id=flight_id,
         db_session=db_session,
         user_id=user_id
@@ -818,7 +821,7 @@ async def takeoff_and_landing_distances(
     status_code=status.HTTP_200_OK,
     response_model=schemas.WeightAndBalanceReport
 )
-async def weight_and_balance_report(
+def weight_and_balance_report(
     flight_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -837,8 +840,9 @@ async def weight_and_balance_report(
     - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
-    return await get_weight_balance_calculations(
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
+    return get_weight_balance_calculations(
         flight_id=flight_id,
         db_session=db_session,
         user_id=user_id
@@ -849,7 +853,7 @@ async def weight_and_balance_report(
     "/weight-balance-graph/{flight_id}",
     status_code=status.HTTP_200_OK
 )
-async def weight_and_balance_graph(
+def weight_and_balance_graph(
     flight_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -878,8 +882,9 @@ async def weight_and_balance_graph(
     labels_offset = ((-0.2, 1), (0.2, 1), (-0.2, 1))
 
     # Get weight and balance data
-    user_id = await get_user_id_from_email(email=current_user.email, db_session=db_session)
-    weight_balance_data = await get_weight_balance_calculations(
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
+    weight_balance_data = get_weight_balance_calculations(
         flight_id=flight_id,
         db_session=db_session,
         user_id=user_id

@@ -29,7 +29,7 @@ router = APIRouter(tags=["Aircraft Model"])
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.GetPerformanceProfileList]
 )
-async def get_performance_profile_list(
+def get_performance_profile_list(
     profile_id: Optional[int] = 0,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -85,7 +85,7 @@ async def get_performance_profile_list(
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.FuelTypeReturn]
 )
-async def get_fuel_types(
+def get_fuel_types(
     fuel_type_id: Optional[int] = 0,
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_user)
@@ -116,7 +116,7 @@ async def get_fuel_types(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.FuelTypeReturn
 )
-async def post_new_fuel_type(
+def post_new_fuel_type(
     fuel_type: schemas.FuelTypeData,
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
@@ -160,7 +160,7 @@ async def post_new_fuel_type(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.PerformanceProfileReturn
 )
-async def post_new_performance_profile(
+def post_new_performance_profile(
     performance_data: schemas.OfficialPerformanceProfileData,
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
@@ -223,7 +223,7 @@ async def post_new_performance_profile(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.FuelTypeReturn
 )
-async def edit_fuel_type(
+def edit_fuel_type(
     fuel_type_id: int,
     fuel_type: schemas.FuelTypeData,
     db_session: Session = Depends(get_db),
@@ -278,7 +278,7 @@ async def edit_fuel_type(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.PerformanceProfileReturn
 )
-async def edit_performance_profile(
+def edit_performance_profile(
     performance_profile_id: int,
     performance_data: schemas.OfficialPerformanceProfileData,
     db_session: Session = Depends(get_db),
@@ -359,7 +359,7 @@ async def edit_performance_profile(
 
 
 @router.delete("/fuel-type/{fuel_type_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_fuel_type(
+def delete_fuel_type(
     fuel_type_id: int,
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
@@ -395,7 +395,7 @@ async def delete_fuel_type(
 
 
 @router.delete("/performance-profile/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_performance_profile(
+def delete_performance_profile(
     profile_id: int,
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)

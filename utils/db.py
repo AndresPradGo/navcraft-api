@@ -14,8 +14,13 @@ import logging
 
 
 from sqlalchemy import create_engine
-from sqlalchemy.exc import IntegrityError, OperationalError, InterfaceError, TimeoutError as SqlalchemyTimeoutError
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.exc import (
+    IntegrityError,
+    OperationalError,
+    InterfaceError,
+    TimeoutError as SqlalchemyTimeoutError
+)
+from sqlalchemy.orm import sessionmaker
 
 from utils import common_responses, environ_variable_tools as environ
 
@@ -27,12 +32,10 @@ DB_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
 
 engine = create_engine(DB_URL, echo=False)
 
-Session = scoped_session(
-    sessionmaker(
-        autocommit=False,
-        autoflush=False,
-        bind=engine
-    )
+Session = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
 )
 
 logger = logging.getLogger(__name__)
