@@ -302,7 +302,7 @@ class GetPerformanceProfileList(OfficialPerformanceProfileData):
     a list of performance profiles to the client.
     """
     id: conint(gt=0)
-    is_preferred: Optional[bool] = None
+    # is_preferred: Optional[bool] = None
 
 
 class GetAircraftList(AircraftReturn):

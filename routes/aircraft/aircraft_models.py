@@ -29,13 +29,13 @@ router = APIRouter(tags=["Aircraft Model"])
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.GetPerformanceProfileList]
 )
-def get_performance_profile_list(
+def get_performance_profile_model_list(
     profile_id: Optional[int] = 0,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Performance Profile List Endpoint.
+    Get Performance Profile Model List Endpoint.
 
     Parameters: 
     - profile_id (int optional): If provided, only 1 profile will be provided.
