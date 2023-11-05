@@ -62,22 +62,6 @@ class PerformanceProfileData(BaseModel):
         pattern="^[\-a-zA-Z0-9, ]+$"  # pylint: disable=anomalous-backslash-in-string
     )
 
-    @field_validator("performance_profile_name")
-    @classmethod
-    def clean_performance_profile_name(cls, value: str) -> str:
-        '''
-        Classmethod to clean profile name.
-
-        Parameters:
-        - values (str): profile name.
-
-        Returns:
-        (str): profile name.
-
-        '''
-
-        return clean_string(value)
-
 
 class OfficialPerformanceProfileData(PerformanceProfileData):
     '''
@@ -248,13 +232,13 @@ class AircraftData(BaseModel):
     make: constr(
         strip_whitespace=True,
         min_length=2,
-        max_length=255,
+        max_length=50,
         pattern="^[\.\-a-zA-Z0-9\(\) ]+$"  # pylint: disable=anomalous-backslash-in-string
     )
     model: constr(
         strip_whitespace=True,
         min_length=2,
-        max_length=255,
+        max_length=50,
         pattern="^[\.\-a-zA-Z0-9\(\) ]+$"  # pylint: disable=anomalous-backslash-in-string
     )
     abbreviation: constr(
@@ -268,9 +252,24 @@ class AircraftData(BaseModel):
         to_upper=True,
         strip_whitespace=True,
         min_length=2,
-        max_length=50,
+        max_length=10,
         pattern="^[\-a-zA-Z0-9]+$"  # pylint: disable=anomalous-backslash-in-string
     )
+
+    @field_validator('make')
+    @classmethod
+    def clean_make(cls, value: str) -> str:
+        '''
+        Classmethod to clean make.
+
+        Parameters:
+        - value (string): Make.
+
+        Returns:
+        - value (string): clean Make value.
+
+        '''
+        return clean_string(value)
 
 
 class AircraftReturn(AircraftData):
@@ -288,7 +287,7 @@ class GetPerformanceProfileList(OfficialPerformanceProfileData):
     a list of performance profiles to the client.
     """
     id: conint(gt=0)
-    # is_preferred: Optional[bool] = None
+    is_preferred: Optional[bool] = None
 
 
 class GetAircraftList(AircraftReturn):
