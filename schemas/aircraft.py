@@ -41,20 +41,6 @@ class FuelTypeData(BaseModel):
         '''
         return round(value, 2)
 
-    @field_validator('name')
-    @classmethod
-    def clean_name(cls, value: str) -> str:
-        '''
-        Classmethod to clean name string.
-
-        Parameters:
-        - value (str): the name string to be validated.
-
-        Returns:
-        (str): cleaned name string.
-        '''
-        return clean_string(value)
-
 
 class FuelTypeReturn(FuelTypeData):
     """
