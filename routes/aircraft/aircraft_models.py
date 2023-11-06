@@ -156,7 +156,7 @@ def post_new_fuel_type(
 
 
 @router.post(
-    "/performance-profile",
+    "",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.PerformanceProfileReturn
 )
@@ -274,7 +274,7 @@ def edit_fuel_type(
 
 
 @router.put(
-    "/performance-profile/{performance_profile_id}",
+    "/{performance_profile_id}",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.PerformanceProfileReturn
 )
@@ -394,7 +394,7 @@ def delete_fuel_type(
     db_session.commit()
 
 
-@router.delete("/performance-profile/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_performance_profile(
     profile_id: int,
     db_session: Session = Depends(get_db),
