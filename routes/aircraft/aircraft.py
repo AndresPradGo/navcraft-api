@@ -246,7 +246,7 @@ def post_new_aircraft_performance_profile(
 )
 def post_new_aircraft_performance_profile_from_model(
     aircraft_id: int,
-    model_id,
+    model_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
