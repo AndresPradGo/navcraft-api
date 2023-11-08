@@ -208,7 +208,7 @@ def post_new_aircraft_performance_profile(
     if profile_exists:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"'{performance_data.performance_profile_name}' Profile already exists."
+            detail=f'"{performance_data.performance_profile_name}" Profile already exists.'
         )
 
     # Check fuel type exists
@@ -324,7 +324,7 @@ def post_new_aircraft_performance_profile_from_model(
     if profile_exists:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"'{model_profile.name}' Profile already exists."
+            detail=f'"{model_profile.name}" Profile already exists.'
         )
 
     completed_aircraft_profiles = [

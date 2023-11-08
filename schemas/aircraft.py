@@ -59,7 +59,7 @@ class PerformanceProfileData(BaseModel):
     performance_profile_name: constr(
         min_length=2,
         max_length=255,
-        pattern="^[\-a-zA-Z0-9, ]+$"  # pylint: disable=anomalous-backslash-in-string
+        pattern="^[a-zA-Z0-9\s.,()/\-]+$"  # pylint: disable=anomalous-backslash-in-string
     )
 
 
