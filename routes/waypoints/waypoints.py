@@ -240,7 +240,10 @@ def get_all_aerodromes(
                 landing_length_ft=r.landing_length_ft,
                 intersection_departure_length_ft=r.intersection_departure_length_ft,
                 surface=rs,
-                surface_id=r.surface_id
+                surface_id=r.surface_id,
+                created_at_utc=pytz.timezone('UTC').localize((r.created_at)),
+                last_updated_utc=pytz.timezone(
+                    'UTC').localize((r.last_updated)),
             ) for r, rs in filter(lambda i: i[0].aerodrome_id == a.id, runways)
         ]
     } for w, v, a, s in aerodromes]

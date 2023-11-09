@@ -11,6 +11,7 @@ from typing import List, Dict, Any, Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException
 from pydantic import ValidationError
+import pytz
 from sqlalchemy import and_, not_, or_
 from sqlalchemy.orm import Session
 
@@ -78,12 +79,18 @@ def get_aircraft_list(
             model=aircraft.model,
             abbreviation=aircraft.abbreviation,
             registration=aircraft.registration,
+            created_at_utc=pytz.timezone(
+                'UTC').localize((aircraft.created_at)),
+            last_updated_utc=pytz.timezone(
+                'UTC').localize((aircraft.last_updated)),
             profiles=[{
                 "id": profile.id,
                 "performance_profile_name": profile.name,
                 "is_complete": profile.is_complete,
                 "fuel_type_id": profile.fuel_type_id,
-                "is_preferred": profile.is_preferred
+                "is_preferred": profile.is_preferred,
+                "created_at_utc": pytz.timezone('UTC').localize((profile.created_at)),
+                "last_updated_utc": pytz.timezone('UTC').localize((profile.last_updated))
             } for profile in performance_profiles if profile.aircraft_id == aircraft.id]
         ) for aircraft in aircraft_models]
     except ValidationError as error:
@@ -147,7 +154,11 @@ def post_new_aircraft(
     db_session.commit()
     db_session.refresh(new_aircraft)
 
-    return {**new_aircraft.__dict__}
+    return {
+        **new_aircraft.__dict__,
+        "created_at_utc": pytz.timezone('UTC').localize((new_aircraft.created_at)),
+        "last_updated_utc": pytz.timezone('UTC').localize((new_aircraft.last_updated))
+    }
 
 
 @router.post(
@@ -235,7 +246,9 @@ def post_new_aircraft_performance_profile(
     db_session.refresh(new_performance_profile)
     return {
         **new_performance_profile.__dict__,
-        "performance_profile_name": new_performance_profile.name
+        "performance_profile_name": new_performance_profile.name,
+        "created_at_utc": pytz.timezone('UTC').localize((new_performance_profile.created_at)),
+        "last_updated_utc": pytz.timezone('UTC').localize((new_performance_profile.last_updated))
     }
 
 
@@ -428,7 +441,9 @@ def post_new_aircraft_performance_profile_from_model(
         **new_profile_dict,
         "performance_profile_name": new_profile_dict["name"],
         "fuel_capacity_gallons": fuel_capacity,
-        "unusable_fuel_gallons": unusable_fuel
+        "unusable_fuel_gallons": unusable_fuel,
+        "created_at_utc": pytz.timezone('UTC').localize((new_profile_dict["created_at"])),
+        "last_updated_utc": pytz.timezone('UTC').localize((new_profile_dict["last_updated"]))
     }
 
 
@@ -489,7 +504,11 @@ def edit_aircraft(
 
     new_aircraft = db_session.query(
         models.Aircraft).filter_by(id=aircraft_id).first()
-    return {**new_aircraft.__dict__}
+    return {
+        **new_aircraft.__dict__,
+        "created_at_utc": pytz.timezone('UTC').localize((new_aircraft.created_at)),
+        "last_updated_utc": pytz.timezone('UTC').localize((new_aircraft.last_updated))
+    }
 
 
 @router.put(
@@ -585,7 +604,9 @@ def edit_aircraft_performance_profile(
         **new_performance_profile.__dict__,
         "performance_profile_name": new_performance_profile.name,
         "fuel_capacity_gallons": fuel_capacity,
-        "unusable_fuel_gallons": unusable_fuel
+        "unusable_fuel_gallons": unusable_fuel,
+        "created_at_utc": pytz.timezone('UTC').localize((new_performance_profile.created_at)),
+        "last_updated_utc": pytz.timezone('UTC').localize((new_performance_profile.last_updated))
     }
 
 
@@ -677,7 +698,9 @@ def make_aircraft_performance_profile_preferred_profile(
         **new_performance_profile.__dict__,
         "performance_profile_name": new_performance_profile.name,
         "fuel_capacity_gallons": fuel_capacity,
-        "unusable_fuel_gallons": unusable_fuel
+        "unusable_fuel_gallons": unusable_fuel,
+        "created_at_utc": pytz.timezone('UTC').localize((new_performance_profile.created_at)),
+        "last_updated_utc": pytz.timezone('UTC').localize((new_performance_profile.last_updated))
     }
 
 

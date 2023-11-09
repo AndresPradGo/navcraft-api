@@ -252,6 +252,8 @@ class RunwayInAerodromeReturn(BaseModel):
         pattern="^[-a-zA-Z ']+$",
     )
     surface_id: int
+    created_at_utc: AwareDatetime
+    last_updated_utc: AwareDatetime
 
     @model_validator(mode='after')
     @classmethod

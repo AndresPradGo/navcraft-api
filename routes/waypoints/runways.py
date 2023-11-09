@@ -12,6 +12,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, status, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import ValidationError
+import pytz
 from sqlalchemy import and_, or_, not_
 from sqlalchemy.orm import Session
 
@@ -76,7 +77,9 @@ def get_all_runways(
         surface_id=r[0].surface_id,
         aerodrome_id=r[0].aerodrome_id,
         surface=r[1],
-        aerodrome=aerodrome_codes[r[0].aerodrome_id]
+        aerodrome=aerodrome_codes[r[0].aerodrome_id],
+        created_at_utc=pytz.timezone('UTC').localize((r[0].created_at)),
+        last_updated_utc=pytz.timezone('UTC').localize((r[0].last_updated))
     ) for r in runways]
 
     runways_return.sort(key=lambda r: (
@@ -336,7 +339,9 @@ def post_runway(
     return {
         "aerodrome": aerodrome_result[1],
         **runway_result[0].__dict__,
-        "surface": runway_result[1]
+        "surface": runway_result[1],
+        "created_at_utc": pytz.timezone('UTC').localize((runway_result[0].created_at)),
+        "last_updated_utc": pytz.timezone('UTC').localize((runway_result[0].last_updated))
     }
 
 
@@ -628,7 +633,9 @@ def edit_runway(
     return {
         "aerodrome": aerodrome_result[1],
         **runway_result[0].__dict__,
-        "surface": runway_result[1]
+        "surface": runway_result[1],
+        "created_at_utc": pytz.timezone('UTC').localize((runway_result[0].created_at)),
+        "last_updated_utc": pytz.timezone('UTC').localize((runway_result[0].last_updated))
     }
 
 

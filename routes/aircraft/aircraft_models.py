@@ -12,6 +12,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException
 from pydantic import ValidationError
+import pytz
 from sqlalchemy import and_, or_, not_
 from sqlalchemy.orm import Session
 
@@ -68,7 +69,10 @@ def get_performance_profile_model_list(
             id=profile.id,
             performance_profile_name=profile.name,
             is_complete=profile.is_complete,
-            fuel_type_id=profile.fuel_type_id
+            fuel_type_id=profile.fuel_type_id,
+            created_at_utc=pytz.timezone('UTC').localize((profile.created_at)),
+            last_updated_utc=pytz.timezone(
+                'UTC').localize((profile.last_updated))
         ) for profile in performance_profiles]
     except ValidationError as error:
         # pylint: disable=raise-missing-from
@@ -214,7 +218,9 @@ def post_new_performance_profile(
     db_session.refresh(new_performance_profile)
     return {
         **new_performance_profile.__dict__,
-        "performance_profile_name": new_performance_profile.name
+        "performance_profile_name": new_performance_profile.name,
+        "created_at_utc": pytz.timezone('UTC').localize((new_performance_profile.created_at)),
+        "last_updated_utc": pytz.timezone('UTC').localize((new_performance_profile.last_updated))
     }
 
 
@@ -354,7 +360,9 @@ def edit_performance_profile(
         **new_performance_profile.__dict__,
         "performance_profile_name": new_performance_profile.name,
         "fuel_capacity_gallons": fuel_capacity,
-        "unusable_fuel_gallons": unusable_fuel
+        "unusable_fuel_gallons": unusable_fuel,
+        "created_at_utc": pytz.timezone('UTC').localize((new_performance_profile.created_at)),
+        "last_updated_utc": pytz.timezone('UTC').localize((new_performance_profile.last_updated))
     }
 
 

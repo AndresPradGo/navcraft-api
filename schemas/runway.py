@@ -10,7 +10,7 @@ Usage:
 
 from typing import Optional
 
-from pydantic import BaseModel, constr, conint, field_validator, model_validator
+from pydantic import BaseModel, constr, conint, field_validator, model_validator, AwareDatetime
 
 from functions.data_processing import clean_string
 
@@ -85,6 +85,8 @@ class RunwayReturn(RunwayData):
         max_length=50,
         pattern='^[-a-zA-Z0-9]+$',
     )
+    created_at_utc: AwareDatetime
+    last_updated_utc: AwareDatetime
 
 
 class RunwaySurfaceData(BaseModel):

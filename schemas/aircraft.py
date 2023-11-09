@@ -10,7 +10,7 @@ Usage:
 
 from typing import Optional, List, Dict, Any
 
-from pydantic import BaseModel, constr, conint, confloat, field_validator, model_validator
+from pydantic import BaseModel, constr, conint, confloat, field_validator, model_validator, AwareDatetime
 
 from functions.data_processing import clean_string
 
@@ -86,6 +86,8 @@ class PerformanceProfileReturn(OfficialPerformanceProfileData):
     max_landing_weight_lb: Optional[confloat(ge=0, le=99999.94)] = None
     baggage_allowance_lb: Optional[confloat(ge=0, le=9999.94)] = None
     is_preferred: Optional[bool] = None
+    created_at_utc: AwareDatetime
+    last_updated_utc: AwareDatetime
 
 
 class BaggageCompartmentData(BaseModel):
@@ -279,6 +281,8 @@ class AircraftReturn(AircraftData):
     """
 
     id: conint(gt=0)
+    created_at_utc: AwareDatetime
+    last_updated_utc: AwareDatetime
 
 
 class GetPerformanceProfileList(OfficialPerformanceProfileData):
@@ -288,6 +292,8 @@ class GetPerformanceProfileList(OfficialPerformanceProfileData):
     """
     id: conint(gt=0)
     is_preferred: Optional[bool] = None
+    created_at_utc: AwareDatetime
+    last_updated_utc: AwareDatetime
 
 
 class GetAircraftList(AircraftReturn):
