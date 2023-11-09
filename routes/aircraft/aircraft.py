@@ -317,15 +317,27 @@ def post_new_aircraft_performance_profile_from_model(
             detail="This aircraft already has 3 profiles."
         )
 
+    # Change Profile Name if it exists
+    profile_values = remove_key_value_pairs(
+        dictionary=model_profile.__dict__,
+        keys=["aircraft_id"]
+    )
+
     profile_exists = len([
         profile.name for profile in aircraft_profiles
-        if profile.name == model_profile.name
+        if profile.name == profile_values["name"]
     ]) > 0
-    if profile_exists:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f'"{model_profile.name}" Profile already exists.'
-        )
+    copies = 1
+    original_name = profile_values["name"]
+
+    while profile_exists:
+        profile_values["name"] = f"{original_name} ({copies})"
+        profile_exists = len([
+            profile.name for profile in aircraft_profiles
+            if profile.name == profile_values["name"]
+        ]) > 0
+
+        copies += 1
 
     completed_aircraft_profiles = [
         profile for profile in aircraft_profiles if profile.is_complete
@@ -333,10 +345,6 @@ def post_new_aircraft_performance_profile_from_model(
     is_preferred = len(completed_aircraft_profiles) == 0
 
     # Post profile
-    profile_values = remove_key_value_pairs(
-        dictionary=model_profile.__dict__,
-        keys=["aircraft_id"]
-    )
     new_performance_profile = models.PerformanceProfile(**{
         **profile_values,
         "aircraft_id": aircraft_id,
