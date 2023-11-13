@@ -192,6 +192,16 @@ class SeatRowReturn(SeatRowData):
     id: conint(gt=0)
 
 
+class AircraftArrangementReturn(BaseModel):
+    """
+    This class defines the data-structure required to return all the 
+    aircraft arrangement data from a performance profile.
+    """
+    baggage_compartments: Optional[List[BaggageCompartmentReturn]] = []
+    seat_rows: Optional[List[SeatRowReturn]] = []
+    fuel_tanks: Optional[List[FuelTankReturn]] = []
+
+
 class PerformanceProfileWeightBalanceData(BaseModel):
     '''
     This class defines the data structure reuired from the client, in order to add
@@ -385,9 +395,6 @@ class GetWeightBalanceData(PerformanceProfileWeightBalanceData):
     This class defines the data-structure required to return all the weight 
     and balance data from a performance profile.
     """
-    baggage_compartments: Optional[List[BaggageCompartmentReturn]] = []
-    seat_rows: Optional[List[SeatRowReturn]] = []
-    fuel_tanks: Optional[List[FuelTankReturn]] = []
     weight_balance_profiles: Optional[List[WeightBalanceReturn]] = []
 
 
