@@ -24,7 +24,7 @@ class PerformanceProfile(BaseModel):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255), nullable=False)
     is_complete = Column(Boolean, nullable=False, default=False)
-    center_of_gravity_in = Column(DECIMAL(5, 2))
+    center_of_gravity_in = Column(DECIMAL(6, 2))
     empty_weight_lb = Column(DECIMAL(7, 2), nullable=False, default=0.0)
     max_ramp_weight_lb = Column(DECIMAL(7, 2), nullable=False, default=0.0)
     max_takeoff_weight_lb = Column(DECIMAL(7, 2), nullable=False, default=0.0)
@@ -231,7 +231,7 @@ class WeightBalanceLimit(BaseModel):
     __tablename__ = "weight_balance_limits"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    cg_location_in = Column(DECIMAL(5, 2), nullable=False)
+    cg_location_in = Column(DECIMAL(6, 2), nullable=False)
     weight_lb = Column(DECIMAL(7, 2), nullable=False)
     sequence = Column(Integer, nullable=False)
     weight_balance_profile_id = Column(
@@ -259,7 +259,7 @@ class BaggageCompartment(BaseModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False)
-    arm_in = Column(DECIMAL(5, 2), nullable=False)
+    arm_in = Column(DECIMAL(6, 2), nullable=False)
     weight_limit_lb = Column(DECIMAL(6, 2))
     performance_profile_id = Column(
         Integer,
@@ -293,7 +293,7 @@ class SeatRow(BaseModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False)
-    arm_in = Column(DECIMAL(5, 2), nullable=False)
+    arm_in = Column(DECIMAL(6, 2), nullable=False)
     weight_limit_lb = Column(DECIMAL(6, 2))
     number_of_seats = Column(Integer, nullable=False)
     performance_profile_id = Column(
@@ -327,7 +327,7 @@ class FuelTank(BaseModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False)
-    arm_in = Column(DECIMAL(5, 2), nullable=False)
+    arm_in = Column(DECIMAL(6, 2), nullable=False)
     fuel_capacity_gallons = Column(DECIMAL(5, 2), nullable=False)
     unusable_fuel_gallons = Column(DECIMAL(5, 2), nullable=False, default=0.0)
     burn_sequence = Column(Integer, nullable=False, default=1)

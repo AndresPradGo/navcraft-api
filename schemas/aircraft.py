@@ -79,7 +79,7 @@ class PerformanceProfileReturn(OfficialPerformanceProfileData):
     """
 
     id: conint(gt=0)
-    center_of_gravity_in: Optional[confloat(ge=0, le=999.94)] = None
+    center_of_gravity_in: Optional[confloat(ge=0, le=9999.94)] = None
     empty_weight_lb: Optional[confloat(ge=0, le=99999.94)] = None
     max_ramp_weight_lb: Optional[confloat(ge=0, le=99999.94)] = None
     max_takeoff_weight_lb: Optional[confloat(ge=0, le=99999.94)] = None
@@ -100,7 +100,7 @@ class BaggageCompartmentData(BaseModel):
         max_length=50,
         pattern="^[\-a-zA-Z0-9 ]+$"  # pylint: disable=anomalous-backslash-in-string
     )
-    arm_in: confloat(ge=0, le=999.94)
+    arm_in: confloat(ge=0, le=9999.94)
     weight_limit_lb: Optional[confloat(ge=0, le=9999.94)] = None
 
     @model_validator(mode='after')
@@ -142,7 +142,7 @@ class FuelTankData(BaseModel):
         max_length=50,
         pattern="^[\-a-zA-Z0-9 ]+$"  # pylint: disable=anomalous-backslash-in-string
     )
-    arm_in: confloat(ge=0, le=999.94)
+    arm_in: confloat(ge=0, le=9999.94)
     fuel_capacity_gallons: confloat(ge=0, le=999.94)
     unusable_fuel_gallons: Optional[confloat(ge=0, le=999.94)] = None
     burn_sequence: Optional[conint(ge=1)] = None
@@ -207,7 +207,7 @@ class PerformanceProfileWeightBalanceData(BaseModel):
     This class defines the data structure reuired from the client, in order to add
     weight and balance data to a performance profile.
     '''
-    center_of_gravity_in: confloat(ge=0, le=999.94)
+    center_of_gravity_in: confloat(ge=0, le=9999.94)
     empty_weight_lb: confloat(ge=0, le=99999.94)
     max_ramp_weight_lb: confloat(ge=0, le=99999.94)
     max_takeoff_weight_lb: confloat(ge=0, le=99999.94)
@@ -321,7 +321,7 @@ class WeightBalanceLimitData(BaseModel):
     weight and balance profile.
     """
 
-    cg_location_in: confloat(ge=0, le=999.94)
+    cg_location_in: confloat(ge=0, le=9999.94)
     weight_lb: confloat(ge=0, le=99999.94)
     sequence: conint(ge=1)
 
