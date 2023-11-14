@@ -273,15 +273,33 @@ def post_new_fuel_tank(
     )
 
     # Check fuel tank name is not repeated
-    fuel_tank_exists = db_session.query(models.FuelTank).filter(and_(
-        models.FuelTank.name == data.name,
+    fuel_tanks = db_session.query(models.FuelTank).filter(
         models.FuelTank.performance_profile_id == profile_id
-    )).first()
+    ).all()
+
+    if len(fuel_tanks) >= 4:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This profile already has 4 fuel tanks."
+        )
+
+    fuel_tank_exists = len([
+        tank.name for tank in fuel_tanks
+        if tank.name == data.name
+    ]) > 0
     if fuel_tank_exists:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Fuel tank {data.name} for profile with id {profile_id}, already exists."
         )
+
+    # Check burn sequence
+    fuel_tank_higher_burn_seq = db_session.query(models.FuelTank)\
+        .filter(models.FuelTank.performance_profile_id == profile_id)\
+        .order_by(models.FuelTank.burn_sequence.desc()).first()
+
+    burn_seq = min(
+        [fuel_tank_higher_burn_seq.burn_sequence + 1, data.burn_sequence])
 
     # Post fuel tank
     new_fuel_tank = models.FuelTank(
@@ -290,7 +308,7 @@ def post_new_fuel_tank(
         arm_in=data.arm_in,
         fuel_capacity_gallons=data.fuel_capacity_gallons,
         unusable_fuel_gallons=data.unusable_fuel_gallons,
-        burn_sequence=data.burn_sequence
+        burn_sequence=burn_seq
     )
 
     db_session.add(new_fuel_tank)
@@ -502,17 +520,27 @@ def edit_fuel_tank(
             detail=f"Fuel tank {data.name} already exists."
         )
 
+    # Check burn sequence
+    fuel_tank_higher_burn_seq = db_session.query(models.FuelTank)\
+        .filter(and_(
+            models.FuelTank.performance_profile_id == performance_profile.id,
+            not_(models.FuelTank.id == tank_id)
+        )).order_by(models.FuelTank.burn_sequence.desc()).first()
+
+    burn_seq = min(
+        [fuel_tank_higher_burn_seq.burn_sequence + 1, data.burn_sequence])
+
     # Edit fuel tank
     tank_query.update({
         "name": data.name,
         "arm_in": data.arm_in,
         "fuel_capacity_gallons": data.fuel_capacity_gallons,
-        "unusable_fuel_gallons": data.number_of_seats,
-        "burn_sequence": data.burn_sequence
+        "unusable_fuel_gallons": data.unusable_fuel_gallons,
+        "burn_sequence": burn_seq
     })
     db_session.commit()
 
-    return db_session.query(models.SeatRow).filter_by(id=tank_id).first().__dict__
+    return db_session.query(models.FuelTank).filter_by(id=tank_id).first().__dict__
 
 
 @router.delete(
