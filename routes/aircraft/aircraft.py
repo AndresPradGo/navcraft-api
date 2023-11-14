@@ -611,7 +611,7 @@ def edit_aircraft_performance_profile(
 
 
 @router.put(
-    "/performance-profile/make_preferred/{performance_profile_id}",
+    "/performance-profile/make-preferred/{performance_profile_id}",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.PerformanceProfileReturn
 )
