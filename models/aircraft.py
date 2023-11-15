@@ -29,7 +29,7 @@ class PerformanceProfile(BaseModel):
     max_ramp_weight_lb = Column(DECIMAL(7, 2), nullable=False, default=0.0)
     max_takeoff_weight_lb = Column(DECIMAL(7, 2), nullable=False, default=0.0)
     max_landing_weight_lb = Column(DECIMAL(7, 2), nullable=False, default=0.0)
-    baggage_allowance_lb = Column(DECIMAL(6, 2))
+    baggage_allowance_lb = Column(DECIMAL(6, 2), nullable=False, default=0.0)
     take_off_taxi_fuel_gallons = Column(
         DECIMAL(4, 2), nullable=False, default=0.0)
     percent_decrease_takeoff_headwind_knot = Column(

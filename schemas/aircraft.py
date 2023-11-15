@@ -385,9 +385,11 @@ class WeightBalanceReturn(WeightBalanceData):
     """
     This class defines the data-structure required to return a weight and balance profile.
     """
-
+    name: str
     id: conint(gt=0)
     limits: List[WeightBalanceLimitReturn] = []
+    created_at_utc: AwareDatetime
+    last_updated_utc: AwareDatetime
 
 
 class GetWeightBalanceData(PerformanceProfileWeightBalanceData):

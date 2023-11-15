@@ -11,6 +11,7 @@ import io
 
 from fastapi import APIRouter, Depends, status, HTTPException
 from fastapi.responses import StreamingResponse
+import pytz
 import matplotlib.pyplot as plt
 from sqlalchemy import and_, not_
 from sqlalchemy.orm import Session
@@ -96,7 +97,9 @@ def get_aircraft_weight_balance_data(
                 "cg_location_in": limit.cg_location_in,
                 "weight_lb": limit.weight_lb,
                 "sequence": limit.sequence
-            } for limit in weight_balance_profile_limits]
+            } for limit in weight_balance_profile_limits],
+            "created_at_utc": pytz.timezone('UTC').localize(profile.created_at),
+            "last_updated_utc": pytz.timezone('UTC').localize(profile.last_updated),
         } for profile in weight_balance_profiles]
     }
 
