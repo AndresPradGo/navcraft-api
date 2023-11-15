@@ -110,7 +110,7 @@ def get_aircraft_weight_balance_data(
     "/graph/{profile_id}",
     status_code=status.HTTP_200_OK
 )
-def get_aircraft_weight_and_balance_graph(
+async def get_aircraft_weight_and_balance_graph(
     profile_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)

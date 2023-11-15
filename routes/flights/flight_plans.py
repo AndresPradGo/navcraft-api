@@ -853,7 +853,7 @@ def weight_and_balance_report(
     "/weight-balance-graph/{flight_id}",
     status_code=status.HTTP_200_OK
 )
-def weight_and_balance_graph(
+async def weight_and_balance_graph(
     flight_id: int,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
