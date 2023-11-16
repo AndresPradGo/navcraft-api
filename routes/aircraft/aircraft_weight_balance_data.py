@@ -410,7 +410,9 @@ def edit_weight_and_balance_data_for_performance_profile(
         **new_performance_profile.__dict__,
         "performance_profile_name": new_performance_profile.name,
         "fuel_capacity_gallons": fuel_capacity,
-        "unusable_fuel_gallons": unusable_fuel
+        "unusable_fuel_gallons": unusable_fuel,
+        "created_at_utc": pytz.timezone('UTC').localize(new_performance_profile.created_at),
+        "last_updated_utc": pytz.timezone('UTC').localize(new_performance_profile.last_updated),
     }
 
 
