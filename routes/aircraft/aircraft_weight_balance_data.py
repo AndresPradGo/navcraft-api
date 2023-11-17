@@ -97,7 +97,7 @@ def get_aircraft_weight_balance_data(
                 "cg_location_in": limit.cg_location_in,
                 "weight_lb": limit.weight_lb,
                 "sequence": limit.sequence
-            } for limit in weight_balance_profile_limits],
+            } for limit in weight_balance_profile_limits if limit.weight_balance_profile_id == profile.id],
             "created_at_utc": pytz.timezone('UTC').localize(profile.created_at),
             "last_updated_utc": pytz.timezone('UTC').localize(profile.last_updated),
         } for profile in weight_balance_profiles]
@@ -141,7 +141,7 @@ async def get_aircraft_weight_and_balance_graph(
     ).first()
 
     # Define line graph style variables
-    colors = ['#00D5C8', '#D500CB', '#4AD500', '#D50000']
+    colors = ['#0078A3', '#E000C2', '#1D8F00', '#D6550A']
     line_styles = ['-', '--', '-.', ':']
 
     # Get weight and balance profiles
