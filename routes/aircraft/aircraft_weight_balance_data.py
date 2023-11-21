@@ -8,6 +8,7 @@ Usage:
 
 """
 import io
+import math
 
 from fastapi import APIRouter, Depends, status, HTTPException
 from fastapi.responses import StreamingResponse
@@ -103,6 +104,14 @@ def get_aircraft_weight_balance_data(
         } for profile in weight_balance_profiles]
     }
 
+    # Sort weight and balance profiles
+    data["weight_balance_profiles"] = sorted(
+        data["weight_balance_profiles"],
+        key=lambda i: math.sqrt((max(i["limits"], key=lambda i: i["cg_location_in"])["cg_location_in"])
+                                ** 2 + (max(i["limits"], key=lambda i: i["weight_lb"])["weight_lb"])**2),
+        reverse=True
+    )
+
     return data
 
 
@@ -173,7 +182,7 @@ async def get_aircraft_weight_and_balance_graph(
         weight_balance_profiles.append(weight_balance_profile)
 
     weight_balance_profiles.sort(
-        key=lambda i: max(i["limits"][1]), reverse=True)
+        key=lambda i: math.sqrt(max(i["limits"][0])**2 + max(i["limits"][1])**2), reverse=True)
 
     # Create plot limits
     plot_limits = {
@@ -339,7 +348,9 @@ def post_new_weight_and_balance_profile(
 
     return {
         **weight_balance_profile.__dict__,
-        "limits": [limit.__dict__ for limit in limits]
+        "limits": [limit.__dict__ for limit in limits],
+        "created_at_utc": pytz.timezone('UTC').localize(weight_balance_profile.created_at),
+        "last_updated_utc": pytz.timezone('UTC').localize(weight_balance_profile.last_updated),
     }
 
 
@@ -504,7 +515,9 @@ def edit_weight_and_balance_profile(
 
     return {
         **weight_balance_profile.__dict__,
-        "limits": [limit.__dict__ for limit in limits]
+        "limits": [limit.__dict__ for limit in limits],
+        "created_at_utc": pytz.timezone('UTC').localize(weight_balance_profile.created_at),
+        "last_updated_utc": pytz.timezone('UTC').localize(weight_balance_profile.last_updated),
     }
 
 

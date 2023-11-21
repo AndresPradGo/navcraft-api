@@ -381,7 +381,7 @@ class WeightBalanceData(BaseModel):
         return clean_string(value)
 
 
-class WeightBalanceReturn(WeightBalanceData):
+class WeightBalanceReturn(BaseModel):
     """
     This class defines the data-structure required to return a weight and balance profile.
     """
