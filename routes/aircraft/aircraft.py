@@ -36,6 +36,7 @@ router = APIRouter(tags=["Aircraft"])
 )
 def get_aircraft_list(
     aircraft_id: Optional[int] = 0,
+    complete_only: bool = False,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
@@ -44,6 +45,7 @@ def get_aircraft_list(
 
     Parameters: 
     - aircraft_id (int optional): If provided, only 1 aircraft will be returned.
+    - complete_only (bool): If true, only return aircraft with a preferred profile.
 
     Returns: 
     - List: list of dictionaries with aircraft data.
@@ -100,7 +102,14 @@ def get_aircraft_list(
             detail=error.errors()
         )
 
-    return aircraft_list
+    # Filter Aircraft
+    if complete_only:
+        filtered_aircraft = [a for a in aircraft_list if any(
+            {p.is_preferred for p in a.profiles})]
+    else:
+        filtered_aircraft = aircraft_list
+
+    return filtered_aircraft
 
 
 @router.post(
