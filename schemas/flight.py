@@ -234,7 +234,7 @@ class UpdateFlightData(BaseModel):
     client to update the general flight data.
     """
     departure_time: AwareDatetime
-    bhp_percent: conint(ge=45, le=75)
+    bhp_percent: conint(ge=20, le=100)
     added_enroute_time_hours: confloat(allow_inf_nan=False, ge=0, le=99.94)
     reserve_fuel_hours: confloat(allow_inf_nan=False, ge=0, le=99.94)
     contingency_fuel_hours: confloat(allow_inf_nan=False, ge=0, le=99.94)
