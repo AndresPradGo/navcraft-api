@@ -326,6 +326,36 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
             "arrival_aerodrome_id": arrival[1].id if arrival is not None else None,
             "arrival_aerodrome_is_private": arrival[1].user_waypoint is not None
             if arrival is not None else None,
+            "departure_weather": {
+                "temperature_c": departure[0].temperature_c,
+                "altimeter_inhg": departure[0].altimeter_inhg,
+                "wind_direction": departure[0].wind_direction,
+                "wind_magnitude_knot": departure[0].wind_magnitude_knot,
+                "temperature_last_updated": pytz.timezone('UTC').localize(
+                    (departure[0].temperature_last_updated)
+                ) if departure[0].temperature_last_updated is not None else None,
+                "wind_last_updated": pytz.timezone('UTC').localize(
+                    (departure[0].wind_last_updated)
+                ) if departure[0].wind_last_updated is not None else None,
+                "altimeter_last_updated": pytz.timezone('UTC').localize(
+                    (departure[0].altimeter_last_updated)
+                ) if departure[0].altimeter_last_updated is not None else None,
+            },
+            "arrival_weather": {
+                "temperature_c": arrival[0].temperature_c,
+                "altimeter_inhg": arrival[0].altimeter_inhg,
+                "wind_direction": arrival[0].wind_direction,
+                "wind_magnitude_knot": arrival[0].wind_magnitude_knot,
+                "temperature_last_updated": pytz.timezone('UTC').localize(
+                    (arrival[0].temperature_last_updated)
+                ) if arrival[0].temperature_last_updated is not None else None,
+                "wind_last_updated": pytz.timezone('UTC').localize(
+                    (arrival[0].wind_last_updated)
+                ) if arrival[0].wind_last_updated is not None else None,
+                "altimeter_last_updated": pytz.timezone('UTC').localize(
+                    (arrival[0].altimeter_last_updated)
+                ) if arrival[0].altimeter_last_updated is not None else None,
+            },
             "bhp_percent": flight.bhp_percent,
             "added_enroute_time_hours": flight.added_enroute_time_hours,
             "reserve_fuel_hours": flight.reserve_fuel_hours,

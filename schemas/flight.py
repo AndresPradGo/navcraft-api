@@ -261,6 +261,8 @@ class NewFlightReturn(NewFlightData, UpdateFlightData):
     departure_aerodrome_is_private: Optional[bool] = None
     arrival_aerodrome_is_private: Optional[bool] = None
     legs: List[NewLegReturn]
+    departure_weather: LegWeatherData
+    arrival_weather: LegWeatherData
 
 
 class UpdateDepartureArrivalData(BaseModel):
@@ -300,14 +302,6 @@ class UpdateDepartureArrivalData(BaseModel):
         Classmethod to round altimeter_inhg input value to 2 decimal place.
         '''
         return round(value, 2)
-
-
-class UpdateDepartureArrivalReturn(UpdateDepartureArrivalData):
-    """
-    This class defines the departure/arrival data returned 
-    to the client after an update.
-    """
-    flight_id: conint(gt=0)
 
 
 class WaypointsNotUpdatedReturn(BaseModel):

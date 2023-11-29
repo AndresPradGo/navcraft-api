@@ -394,7 +394,7 @@ def change_aircraft(
 @router.put(
     "/departure-arrival/{flight_id}",
     status_code=status.HTTP_200_OK,
-    response_model=schemas.UpdateDepartureArrivalReturn
+    response_model=schemas.NewFlightReturn
 )
 def edit_departure_arrival(
     flight_id: int,
@@ -467,17 +467,11 @@ def edit_departure_arrival(
 
     db_session.commit()
 
-    updated_row = db_session.query(model).filter_by(
-        flight_id=flight_id).first().__dict__
-
-    updated_row["temperature_last_updated"] = pytz.timezone(
-        'UTC').localize(updated_row["temperature_last_updated"])
-    updated_row["wind_last_updated"] = pytz.timezone(
-        'UTC').localize(updated_row["wind_last_updated"])
-    updated_row["altimeter_last_updated"] = pytz.timezone(
-        'UTC').localize(updated_row["altimeter_last_updated"])
-
-    return updated_row
+    return get_basic_flight_data_for_return(
+        flight_ids=[flight_id],
+        db_session=db_session,
+        user_id=user_id
+    )[0]
 
 
 @router.delete("/{flight_id}", status_code=status.HTTP_204_NO_CONTENT)
