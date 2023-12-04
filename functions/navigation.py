@@ -460,6 +460,7 @@ def calculate_nav_log(
             bhp_percent=bhp_percent,
             db_session=db_session
         )
+        leg_nav_log_data["leg_id"] = leg.id
         nav_log_data.append(leg_nav_log_data)
 
         initial_pressure_alt = pressure_altitude_converter(

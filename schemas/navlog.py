@@ -41,7 +41,7 @@ class NavigationLogLegResults(BaseModel):
     This class defines the data-structure to return 
     navlog calculation results for one flight leg.
     """
-
+    leg_id: int
     from_waypoint: WaypointInNavLog
     to_waypoint: WaypointInNavLog
     desired_altitude_ft: conint(ge=0)
