@@ -291,3 +291,12 @@ class AerodromeStatusReturn(BaseModel):
     """
     id: int
     status: str
+
+
+class NearbyWaypointReturn(WaypointBase):
+    """
+    This class defines the data return to the client, from waypoints nearby a coordinate. 
+    """
+    id: int
+    type: str
+    distance: float

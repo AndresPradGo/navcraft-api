@@ -97,8 +97,8 @@ class Waypoint(BaseModel):
         to a given latitude and longitude, in nautical miles.
 
         Parameters: 
-        to_lat (float): latitude of destination.
-        to_lon (float): latitude of destination.
+        to_lat (float): latitude of destination in radians.
+        to_lon (float): longitude of destination in radians.
 
         Returns: 
         - float: great arc distance in nautical miles.

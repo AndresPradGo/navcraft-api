@@ -186,10 +186,8 @@ def post_new_flight(
     new_flight_data = {**new_flight.__dict__}
 
     # Post fuel tanks
-    print(aircraft[0].id)
     tank_ids = [tank.id for tank in db_session.query(models.FuelTank).filter_by(
         performance_profile_id=aircraft[0].id).all()]
-    print(tank_ids)
     for tank_id in tank_ids:
         db_session.add(models.Fuel(
             flight_id=new_flight_data["id"],

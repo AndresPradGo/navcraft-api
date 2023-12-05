@@ -6,7 +6,7 @@ Usage:
 """
 
 import math
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Union
 
 from fastapi import HTTPException, status
 from sqlalchemy import and_
@@ -489,3 +489,38 @@ def calculate_nav_log(
     }
 
     return nav_log_data, fuel_data
+
+
+def location_coordinate(lat_deg: float, lon_deg: float) -> Dict[str, Union[int, str]]:
+    """
+    This function receives the latitude and longitude of a location, 
+    and returns a dictionary with the latitude and longitude in degree, 
+    minutes, secodns and direction ("N", "S", "E", "W").
+    """
+
+    location = {
+        "lat_degrees": 0,
+        "lat_minutes": 0,
+        "lat_seconds": 0,
+        "lat_direction": "N",
+        "lon_degrees": 0,
+        "lon_minutes": 0,
+        "lon_seconds": 0,
+        "lon_direction": "W",
+    }
+
+    location["lat_direction"] = "N" if lat_deg >= 0 else "S"
+    location["lat_degrees"] = int(math.floor(abs(lat_deg)))
+    lat_min_residual = (abs(lat_deg) - location["lat_degrees"]) * 60
+    location["lat_minutes"] = int(math.floor(lat_min_residual))
+    location["lat_seconds"] = int(round(
+        (lat_min_residual - location["lat_minutes"]) * 60))
+
+    location["lon_direction"] = "E" if lon_deg >= 0 else "W"
+    location["lon_degrees"] = int(math.floor(abs(lon_deg)))
+    lon_min_residual = (abs(lon_deg) - location["lon_degrees"]) * 60
+    location["lon_minutes"] = int(math.floor(lon_min_residual))
+    location["lon_seconds"] = int(round(
+        (lon_min_residual - location["lon_minutes"]) * 60))
+
+    return location

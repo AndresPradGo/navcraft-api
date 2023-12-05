@@ -30,7 +30,7 @@ class NewFlightWaypointData(BaseModel):
         to_upper=True,
         min_length=2,
         max_length=50,
-        pattern="^['-a-zA-Z0-9]+$",
+        pattern="^[-A-Za-z0-9']+$",
     )
     name: constr(min_length=2, max_length=255)
     lat_degrees: conint(ge=0, le=90)

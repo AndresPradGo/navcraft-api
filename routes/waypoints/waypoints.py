@@ -8,9 +8,11 @@ Usage:
 
 """
 
+import math
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException
+from pydantic import ValidationError
 import pytz
 from sqlalchemy import and_, or_, not_
 from sqlalchemy.orm import Session
@@ -21,7 +23,7 @@ import schemas
 from utils import common_responses
 from utils.db import get_db
 from functions.data_processing import get_user_id_from_email
-from functions.navigation import get_magnetic_variation_for_waypoint
+from functions.navigation import get_magnetic_variation_for_waypoint, location_coordinate
 
 router = APIRouter(tags=["Waypoints"])
 
@@ -146,6 +148,109 @@ def get_all_vfr_waypoints(
         "created_at_utc": pytz.timezone('UTC').localize((v.created_at)),
         "last_updated_utc": pytz.timezone('UTC').localize((v.last_updated))
     } for w, v in query_results[start: start + limit]]
+
+
+@router.get(
+    "/{lat}/{lon}",
+    status_code=status.HTTP_200_OK,
+    response_model=List[schemas.NearbyWaypointReturn]
+)
+def get_all_nearby_waypoints(
+    lat: float,
+    lon: float,
+    distance: Optional[int] = 3,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Get All Waypoints Near a Given Coordinate Endpoint.
+
+    Parameters: 
+    - lat (float): latitude of the coordinate.
+    - lon (float): longitude of the coordinate.
+    - distance (int): radius around the coordinate in nautical miles.
+
+    Returns: 
+    - list: list of dictionaries, of all waypoints within a radius of the coordinate.
+
+    Raise:
+    - HTTPException (400): if values are wrong. 
+    - HTTPException (500): if there is a server error. 
+    """
+    # Check coordinate
+    try:
+        schemas.UserWaypointData(
+            **location_coordinate(lat, lon),
+            code="abc",
+            name="dummy waypoint"
+        )
+    except ValidationError as error:
+        # pylint: disable=raise-missing-from
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error.errors()
+        )
+
+    # Get all waypoints
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
+    lat_radians = math.radians(lat)
+    lon_radians = math.radians(lon)
+
+    a = models.Aerodrome
+    v = models.VfrWaypoint
+    u = models.UserWaypoint
+    w = models.Waypoint
+
+    waypoints_query = db_session.query(w, v, u, a)\
+        .filter(and_(
+            or_(
+                v.waypoint_id.is_(None),
+                not_(v.hidden),
+            ),
+            or_(
+                u.waypoint_id.is_(None),
+                u.creator_id == user_id
+            ),
+            or_(
+                not_(u.waypoint_id.is_(None)),
+                not_(v.waypoint_id.is_(None))
+            ),
+
+        ))\
+        .outerjoin(v, w.id == v.waypoint_id)\
+        .outerjoin(u, w.id == u.waypoint_id)\
+        .outerjoin(a, or_(v.waypoint_id == a.vfr_waypoint_id, u.waypoint_id == a.user_waypoint_id))\
+        .all()
+
+    # Return waypoints
+    waypoints_list = []
+    for waypoint_query in waypoints_query:
+        is_user = waypoint_query[2] is not None
+        is_aerodrome = waypoint_query[3] is not None
+
+        if waypoint_query[0].great_arc_to(to_lat=lat_radians, to_lon=lon_radians) <= distance:
+            waypoints_list.append({
+                "id": waypoint_query[0].id,
+                "type": "user aerodrome" if is_aerodrome and is_user
+                else "aerodrome" if is_aerodrome
+                else "user waypoint" if is_user
+                else "waypoint",
+                # pylint: disable=no-value-for-parameter
+                "distance": waypoint_query[0].great_arc_to(to_lat=lat_radians, to_lon=lon_radians),
+                "code": waypoint_query[2].code if is_user else waypoint_query[1].code,
+                "name": waypoint_query[2].name if is_user else waypoint_query[1].name,
+                "lat_degrees": waypoint_query[0].lat_degrees,
+                "lat_minutes": waypoint_query[0].lat_minutes,
+                "lat_seconds": waypoint_query[0].lat_seconds,
+                "lat_direction": waypoint_query[0].lat_direction,
+                "lon_degrees": waypoint_query[0].lon_degrees,
+                "lon_minutes": waypoint_query[0].lon_minutes,
+                "lon_seconds": waypoint_query[0].lon_seconds,
+                "lon_direction": waypoint_query[0].lon_direction,
+            })
+
+    return sorted(waypoints_list, key=lambda x: x["distance"])
 
 
 @router.get(

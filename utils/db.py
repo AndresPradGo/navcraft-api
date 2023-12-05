@@ -57,6 +57,7 @@ def get_db():
         logger.exception(
             "An error occurred while handling the database session: %s", error)
         database.rollback()
+        print(error)
         raise common_responses.internal_server_error()
     finally:
         database.close()
