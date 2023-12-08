@@ -19,6 +19,8 @@ from sqlalchemy.orm import Session
 import auth
 import models
 import schemas
+from utils import csv_tools as csv
+from utils.config import get_table_header
 from utils.db import get_db
 from functions import navigation
 from functions.aircraft_performance import get_landing_takeoff_data
@@ -571,6 +573,96 @@ def navigation_log(
     )
 
     return nav_log_data
+
+
+@router.get(
+    "/nav-log/csv/{flight_id}",
+    status_code=status.HTTP_200_OK
+)
+def download_navigation_log_csv_file(
+    flight_id: int,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Get Navigation Log CSV File Endpoint.
+
+    Parameters:
+    - flight_id (int): flight id.
+
+    Returns: 
+    - CSV file: csv file with with the nav-log data per leg.
+
+    Raise:
+    - HTTPException (400): if flight doesn't exist.
+    - HTTPException (401): if user is not authenticated.
+    - HTTPException (500): if there is a server error. 
+    """
+
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
+    nav_log_data, _ = get_nav_log_and_fuel_calculations(
+        flight_id=flight_id,
+        db_session=db_session,
+        user_id=user_id
+    )
+
+    table_name = f'navLog_{nav_log_data[0]["from_waypoint"]["code"]}_{nav_log_data[-1]["to_waypoint"]["code"]}'
+    headers = get_table_header("nav_log")
+
+    table_data = [{
+        headers["from_waypoint"]: leg["from_waypoint"]["code"],
+        headers["to_waypoint"]: leg["to_waypoint"]["code"],
+        headers["actual_altitud_ft"]: leg["actual_altitud_ft"],
+        headers["rpm"]: leg["rpm"],
+        headers["temperature_c"]: leg["temperature_c"],
+        headers["ktas"]: leg["ktas"],
+        headers["kcas"]: leg["kcas"],
+        headers["true_track"]: leg["true_track"],
+        headers["wind"]: f"{'0' if leg['wind_direction'] < 100 else ''}{leg['wind_direction']}/{leg['wind_magnitude_knot']}" if leg['wind_direction'] is not None and leg['wind_magnitude_knot'] > 0 else "-",
+        headers["true_heading"]: leg["true_heading"],
+        headers["magnetic_variation"]: leg["magnetic_variation"],
+        headers["magnetic_heading"]: leg["magnetic_heading"],
+        headers["ground_speed"]: leg["ground_speed"],
+        headers["distance_to_climb"]: leg["distance_to_climb"],
+        headers["distance_enroute"]: leg["distance_enroute"],
+        headers["total_distance"]: leg["total_distance"],
+        headers["time_to_climb_min"]: leg["time_to_climb_min"],
+        headers["time_enroute_min"]: leg["time_enroute_min"],
+        headers["total_time"]: leg["time_to_climb_min"] + leg["time_enroute_min"],
+    } for leg in nav_log_data] if len(nav_log_data) > 0 else [{
+        headers["from_waypoint"]: "",
+        headers["to_waypoint"]: "",
+        headers["actual_altitud_ft"]: "",
+        headers["rpm"]: "",
+        headers["temperature_c"]: "",
+        headers["ktas"]: "",
+        headers["kcas"]: "",
+        headers["true_track"]: "",
+        headers["wind"]: "",
+        headers["true_heading"]: "",
+        headers["magnetic_variation"]: "",
+        headers["magnetic_heading"]: "",
+        headers["ground_speed"]: "",
+        headers["distance_to_climb"]: "",
+        headers["distance_enroute"]: "",
+        headers["total_distance"]: "",
+        headers["time_to_climb_min"]: "",
+        headers["time_enroute_min"]: "",
+        headers["total_time"]: "",
+    }]
+
+    buffer = csv.list_to_buffer(data=table_data)
+
+    # Prepare and return response
+    csv_response = StreamingResponse(
+        iter([buffer.getvalue()]),
+        media_type="text/csv",
+    )
+    csv_response.headers["Content-Disposition"] = f'attachment; filename="{table_name}.csv"'
+    csv_response.headers["filename"] = f'{table_name}.csv'
+
+    return csv_response
 
 
 @router.get(

@@ -90,7 +90,7 @@ def get_takeoff_landing_performance_csv_file(
         headers["temperature_c"]: row.temperature_c,
         headers["groundroll_ft"]: row.groundroll_ft,
         headers["obstacle_clearance_ft"]: row.obstacle_clearance_ft
-    } for row in table_data_models] if len(table_data_models) else [
+    } for row in table_data_models] if len(table_data_models) > 0 else [
         {
             headers["weight_lb"]: "",
             headers["pressure_alt_ft"]: "",
@@ -166,7 +166,7 @@ def get_climb_performance_csv_file(
         headers["time_min"]: row.time_min,
         headers["fuel_gal"]: row.fuel_gal,
         headers["distance_nm"]: row.distance_nm
-    } for row in table_data_models] if len(table_data_models) else [
+    } for row in table_data_models] if len(table_data_models) > 0 else [
         {
             headers["weight_lb"]: "",
             headers["pressure_alt_ft"]: "",
@@ -245,7 +245,7 @@ def get_cruise_performance_csv_file(
         headers["bhp_percent"]: row.bhp_percent,
         headers["ktas"]: row.ktas,
         headers["gph"]: row.gph
-    } for row in table_data_models] if len(table_data_models) else [
+    } for row in table_data_models] if len(table_data_models) > 0 else [
         {
             headers["weight_lb"]: "",
             headers["pressure_alt_ft"]: "",
@@ -350,7 +350,7 @@ def get_takeoff_landing_performance_data(
             "temperature_c": row.temperature_c,
             "groundroll_ft": row.groundroll_ft,
             "obstacle_clearance_ft": row.obstacle_clearance_ft
-        } for row in performance_data_models] if len(performance_data_models) else [
+        } for row in performance_data_models] if len(performance_data_models) > 0 else [
             {
                 "weight_lb": 0,
                 "pressure_alt_ft": 0,
@@ -424,7 +424,7 @@ def get_climb_performance_data(
             "distance_nm": row.distance_nm,
             "kias": row.kias,
             "fpm": row.fpm
-        } for row in performance_data_models] if len(performance_data_models) else [
+        } for row in performance_data_models] if len(performance_data_models) > 0 else [
             {
                 "weight_lb": 0,
                 "pressure_alt_ft": 0,
@@ -496,7 +496,7 @@ def get_cruise_performance_data(
             "bhp_percent": row.bhp_percent,
             "ktas": row.ktas,
             "gph": row.gph
-        } for row in performance_data_models] if len(performance_data_models) else [
+        } for row in performance_data_models] if len(performance_data_models) > 0 else [
             {
                 "weight_lb": 0,
                 "pressure_alt_ft": 0,
