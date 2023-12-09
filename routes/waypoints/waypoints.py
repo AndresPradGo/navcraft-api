@@ -180,7 +180,7 @@ def get_all_nearby_waypoints(
     # Check coordinate
     try:
         schemas.UserWaypointData(
-            **location_coordinate(lat, lon),
+            **location_coordinate(lat, lon, True),
             code="abc",
             name="dummy waypoint"
         )
