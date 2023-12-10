@@ -376,7 +376,9 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
                     "lon_minutes": wp.lon_minutes,
                     "lon_seconds": wp.lon_seconds,
                     "lon_direction": wp.lon_direction,
-                    "magnetic_variation": wp.magnetic_variation
+                    "magnetic_variation": wp.magnetic_variation,
+                    "from_user_waypoint": flight_wp.from_user_waypoint,
+                    "from_vfr_waypoint": flight_wp.from_vfr_waypoint
                 } if flight_wp is not None else None,
                 "altitude_ft": leg.altitude_ft,
                 "altimeter_inhg": leg.altimeter_inhg,

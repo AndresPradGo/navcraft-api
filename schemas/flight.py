@@ -119,6 +119,8 @@ class NewFlightWaypointReturn(NewFlightWaypointData):
     the client after posting new flight waypoints.
     """
     id: conint(ge=0)
+    from_user_waypoint: bool
+    from_vfr_waypoint: bool
 
 
 class LegWaypointData(BaseModel):
