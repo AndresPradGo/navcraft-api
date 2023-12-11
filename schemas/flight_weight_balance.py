@@ -27,6 +27,7 @@ class PersonOnBoardData(BaseModel):
     """
 
     seat_row_id: conint(gt=0)
+    seat_number: conint(gt=0)
     name: Optional[constr(
         strip_whitespace=True,
         strict=True,
@@ -83,6 +84,7 @@ class PersonOnBoardReturn(BaseModel):
     """
     id: conint(gt=0)
     seat_row_id: conint(gt=0)
+    seat_number: conint(gt=0)
     name: constr(
         strip_whitespace=True,
         strict=True,

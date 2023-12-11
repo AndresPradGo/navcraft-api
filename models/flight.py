@@ -210,6 +210,7 @@ class PersonOnBoard(BaseModel):
     __tablename__ = "persons_on_board"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    seat_number = Column(Integer, nullable=False)
     name = Column(String(255))
     weight_lb = Column(DECIMAL(5, 2))
     flight_id = Column(

@@ -75,6 +75,7 @@ def get_all_persons_on_board(
                 id=person_on_board.user_id).first()
             pob_list.append({
                 "id": person_on_board.id,
+                "seat_number": person_on_board.seat_number,
                 "seat_row_id": person_on_board.seat_row_id,
                 "name": user.name,
                 "weight_lb": user.weight_lb,
@@ -89,6 +90,7 @@ def get_all_persons_on_board(
                 id=person_on_board.user_id).first()
             pob_list.append({
                 "id": person_on_board.id,
+                "seat_number": person_on_board.seat_number,
                 "seat_row_id": person_on_board.seat_row_id,
                 "name": passenger.name,
                 "weight_lb": passenger.weight_lb,
@@ -97,6 +99,7 @@ def get_all_persons_on_board(
         else:
             pob_list.append({
                 "id": person_on_board.id,
+                "seat_number": person_on_board.seat_number,
                 "seat_row_id": person_on_board.seat_row_id,
                 "name": person_on_board.name,
                 "weight_lb": person_on_board.weight_lb,
@@ -286,6 +289,12 @@ def add_person_on_board(
             detail="Seat row not found."
         )
 
+    if seat_row.number_of_seats < data.seat_number:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Seat not found."
+        )
+
     # Process data
     if data.name is not None:
         pob_exists = db_session.query(models.PersonOnBoard).filter(and_(
@@ -301,6 +310,7 @@ def add_person_on_board(
 
         new_person_on_board = models.PersonOnBoard(
             flight_id=flight_id,
+            seat_number=data.seat_number,
             seat_row_id=data.seat_row_id,
             name=data.name,
             weight_lb=data.weight_lb
@@ -322,6 +332,7 @@ def add_person_on_board(
 
         new_person_on_board = models.PersonOnBoard(
             flight_id=flight_id,
+            seat_number=data.seat_number,
             seat_row_id=data.seat_row_id,
             user_id=user_id
         )
@@ -351,6 +362,7 @@ def add_person_on_board(
 
         new_person_on_board = models.PersonOnBoard(
             flight_id=flight_id,
+            seat_number=data.seat_number,
             seat_row_id=data.seat_row_id,
             passenger_profile_id=passenger.id
         )
@@ -366,6 +378,7 @@ def add_person_on_board(
         return {
             "id": new_person_on_board_dict["id"],
             "seat_row_id": new_person_on_board_dict["seat_row_id"],
+            "seat_number": new_person_on_board_dict["seat_number"],
             "name": user.name,
             "weight_lb": user.weight_lb,
             "user_id": new_person_on_board_dict["user_id"],
@@ -379,6 +392,7 @@ def add_person_on_board(
         return {
             "id": new_person_on_board_dict["id"],
             "seat_row_id": new_person_on_board_dict["seat_row_id"],
+            "seat_number": new_person_on_board_dict["seat_number"],
             "name": passenger.name,
             "weight_lb": passenger.weight_lb,
             "passenger_profile_id": new_person_on_board_dict["passenger_profile_id"],
@@ -551,6 +565,12 @@ def edit_person_on_board(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Seat row not found."
         )
+
+    if seat_row.number_of_seats < data.seat_number:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Seat not found."
+        )
     # Process data
     if data.name is not None:
         pob_exists = db_session.query(models.PersonOnBoard).filter(and_(
@@ -566,6 +586,7 @@ def edit_person_on_board(
             )
         person_on_board_data = {
             "seat_row_id": data.seat_row_id,
+            "seat_number": data.seat_number,
             "name": data.name,
             "weight_lb": data.weight_lb,
             "user_id": None,
@@ -589,6 +610,7 @@ def edit_person_on_board(
             )
         person_on_board_data = {
             "seat_row_id": data.seat_row_id,
+            "seat_number": data.seat_number,
             "user_id": user_id,
             "name": None,
             "weight_lb": None
@@ -620,6 +642,7 @@ def edit_person_on_board(
             )
         person_on_board_data = {
             "seat_row_id": data.seat_row_id,
+            "seat_number": data.seat_number,
             "passenger_profile_id": passenger.id,
             "name": None,
             "weight_lb": None
@@ -636,6 +659,7 @@ def edit_person_on_board(
         return {
             "id": new_person_on_board_dict["id"],
             "seat_row_id": new_person_on_board_dict["seat_row_id"],
+            "seat_number": new_person_on_board_dict["seat_number"],
             "name": user.name,
             "weight_lb": user.weight_lb,
             "user_id": new_person_on_board_dict["user_id"],
@@ -649,6 +673,7 @@ def edit_person_on_board(
         return {
             "id": new_person_on_board_dict["id"],
             "seat_row_id": new_person_on_board_dict["seat_row_id"],
+            "seat_number": new_person_on_board_dict["seat_number"],
             "name": passenger.name,
             "weight_lb": passenger.weight_lb,
             "passenger_profile_id": new_person_on_board_dict["passenger_profile_id"],
