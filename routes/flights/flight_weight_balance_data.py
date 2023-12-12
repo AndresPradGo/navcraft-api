@@ -203,6 +203,21 @@ def get_all_flight_fuel(
             detail="Flight not found."
         )
 
+    # Get fuel density
+    fuel_type = db_session.query(
+        models.Flight,
+        models.Aircraft,
+        models.PerformanceProfile,
+        models.FuelType
+    )\
+        .join(models.Aircraft, models.Flight.aircraft_id == models.Aircraft.id)\
+        .join(models.PerformanceProfile, models.Aircraft.id == models.PerformanceProfile.aircraft_id)\
+        .join(models.FuelType, models.PerformanceProfile.fuel_type_id == models.FuelType.id)\
+        .filter(and_(
+            models.Flight.id == flight_id,
+            models.PerformanceProfile.is_preferred.is_(True)
+        )).first()
+
     # Get fuel
     fuel_tanks = db_session.query(models.Fuel).filter(
         models.Fuel.flight_id == flight_id
@@ -220,6 +235,7 @@ def get_all_flight_fuel(
             "id": fuel.id,
             "fuel_tank_id": fuel.fuel_tank_id,
             "gallons": fuel.gallons,
+            "weight_lb": fuel_type[3].density_lb_gal * fuel.gallons
         })
 
     return fuel_list
@@ -788,7 +804,7 @@ def edit_flight_baggage(
 )
 def edit_flight_fuel(
     fuel_id: int,
-    gallons: float,
+    data: schemas.FuelData,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
@@ -797,7 +813,7 @@ def edit_flight_fuel(
 
     Parameters: 
     - fuel_id (int): fuel id.
-    - gallons (float): gallons of fuel in tank
+    - data (dict): dict with gallons of fuel in tank
 
     Returns: 
     - dict: fuel data and id.
@@ -824,18 +840,24 @@ def edit_flight_fuel(
     flight = db_session.query(
         models.Flight,
         models.Aircraft,
-        models.PerformanceProfile
+        models.PerformanceProfile,
+        models.FuelType
     ).join(
         models.Aircraft,
         models.Flight.aircraft_id == models.Aircraft.id
     ).join(
         models.PerformanceProfile,
         models.Aircraft.id == models.PerformanceProfile.aircraft_id
+    ).join(
+        models.FuelType,
+        models.PerformanceProfile.fuel_type_id == models.FuelType.id
     ).filter(and_(
         models.Flight.pilot_id == user_id,
         models.Flight.id == flight_id,
         models.PerformanceProfile.is_preferred.is_(True)
     )).first()
+
+    fuel_type = flight[3].density_lb_gal
 
     if flight is None:
         raise HTTPException(
@@ -848,17 +870,24 @@ def edit_flight_fuel(
     fuel_tank = db_session.query(
         models.FuelTank).filter_by(id=fuel_tank_id).first()
     total_capacity = fuel_tank.fuel_capacity_gallons + fuel_tank.unusable_fuel_gallons
-    if total_capacity < gallons:
+    if total_capacity < data.gallons:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Total capacity of {fuel_tank.name} is {total_capacity} gallons."
         )
     # Edit and return data
-    fuel_query.update({"gallons": gallons})
+    fuel_query.update({"gallons": data.gallons})
 
     db_session.commit()
 
-    return fuel_query.first().__dict__
+    fuel = fuel_query.first().__dict__
+
+    return {
+        "id": fuel.id,
+        "fuel_tank_id": fuel.fuel_tank_id,
+        "gallons": fuel.gallons,
+        "weight_lb": fuel_type[3].density_lb_gal * fuel.gallons
+    }
 
 
 @router.delete(

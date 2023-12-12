@@ -144,3 +144,12 @@ class FlightFuelReturn(BaseModel):
     id: conint(gt=0)
     fuel_tank_id: conint(gt=0)
     gallons: confloat(allow_inf_nan=False, ge=0, le=999.94)
+    weight_lb: float
+
+
+class FuelData(BaseModel):
+    """"
+    This class defines the data structure required to add fuel.
+    """
+
+    gallons: conint(gt=0)
