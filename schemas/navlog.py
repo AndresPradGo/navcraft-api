@@ -248,6 +248,7 @@ class WeightAndBalanceReport(BaseModel):
     fuel_on_board: List[WeightAndBalanceFuelTankReturn]
     fuel_burned_pre_takeoff: WeightAndBalanceFuelReturn
     fuel_burned: List[WeightAndBalanceFuelTankReturn]
+    empty_weight: BaseWeightAndBalanceReportReturn
     zero_fuel_weight: BaseWeightAndBalanceReportReturn
     ramp_weight: BaseWeightAndBalanceReportReturn
     takeoff_weight: BaseWeightAndBalanceReportReturn

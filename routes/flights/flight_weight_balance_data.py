@@ -857,7 +857,7 @@ def edit_flight_fuel(
         models.PerformanceProfile.is_preferred.is_(True)
     )).first()
 
-    fuel_type = flight[3].density_lb_gal
+    fuel_density = flight[3].density_lb_gal
 
     if flight is None:
         raise HTTPException(
@@ -883,10 +883,10 @@ def edit_flight_fuel(
     fuel = fuel_query.first().__dict__
 
     return {
-        "id": fuel.id,
-        "fuel_tank_id": fuel.fuel_tank_id,
-        "gallons": fuel.gallons,
-        "weight_lb": fuel_type[3].density_lb_gal * fuel.gallons
+        "id": fuel["id"],
+        "fuel_tank_id": fuel["fuel_tank_id"],
+        "gallons": fuel["gallons"],
+        "weight_lb": fuel_density * fuel["gallons"]
     }
 
 

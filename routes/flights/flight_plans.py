@@ -7,7 +7,7 @@ Usage:
 - Import the router to add it to the FastAPI app.
 
 """
-from typing import List
+from typing import List, Dict
 import io
 
 from fastapi import APIRouter, Depends, status, HTTPException
@@ -357,7 +357,8 @@ def get_weight_balance_calculations(
     )
 
     pre_takeoff_fuel_gallons = float(fuel_data["pre_takeoff_gallons"])
-    pre_takeoff_fuel_weight = round(pre_takeoff_fuel_gallons * fuel_density, 2)
+    pre_takeoff_fuel_weight = - \
+        round(pre_takeoff_fuel_gallons * fuel_density, 2)
     pre_takeoff_fuel_arm = float(fuel_on_board[0]["arm_in"])
     fuel_burned_pre_takeoff = {
         "gallons": pre_takeoff_fuel_gallons,
@@ -390,6 +391,7 @@ def get_weight_balance_calculations(
             {"sequence": seq, "fuel_tanks": tanks})
 
     # Remove fuel burned before takeoff (assumes there is enough fuel in tanks for takeoff)
+
     num_tanks_with_sequence = len(tanks_grouped_by_sequence[0]["fuel_tanks"])
     fuel_burned_per_tank = pre_takeoff_fuel_gallons / num_tanks_with_sequence
     for idx in range(len(tanks_grouped_by_sequence[0]["fuel_tanks"])):
@@ -413,7 +415,15 @@ def get_weight_balance_calculations(
         enough_fuel_in_tanks = gallons_burned <= total_gallons_in_tanks
         if not enough_fuel_in_tanks:
             for tank_with_seq in tanks_with_sequence['fuel_tanks']:
-                fuel_burned.append(tank_with_seq)
+
+                fuel_burned.append({
+                    "weight_lb": tank_with_seq["weight_lb"] * (1 if tank_with_seq["weight_lb"] < 0 else -1),
+                    "arm_in": tank_with_seq["arm_in"],
+                    "moment_lb_in": tank_with_seq["moment_lb_in"] * (1 if tank_with_seq["moment_lb_in"] < 0 else -1),
+                    "gallons": tank_with_seq["gallons"],
+                    "fuel_tank_id": tank_with_seq["fuel_tank_id"],
+                    "fuel_tank_name": tank_with_seq["fuel_tank_name"]
+                })
                 gallons_burned -= total_gallons_in_tanks
         else:
             sub_idx = 0
@@ -443,9 +453,9 @@ def get_weight_balance_calculations(
                     (tank_with_seq["arm_in"])
                 fuel_burned.append(
                     {
-                        "weight_lb": weight_burned_in_tank,
+                        "weight_lb": weight_burned_in_tank * (1 if weight_burned_in_tank < 0 else -1),
                         "arm_in": tank_with_seq["arm_in"],
-                        "moment_lb_in": moment_of_fuel_burned,
+                        "moment_lb_in": moment_of_fuel_burned * (1 if moment_of_fuel_burned < 0 else -1),
                         "gallons": gallons_burned_in_tank,
                         "fuel_tank_id": tank_with_seq["fuel_tank_id"],
                         "fuel_tank_name": tank_with_seq["fuel_tank_name"]
@@ -453,6 +463,14 @@ def get_weight_balance_calculations(
                 )
 
         idx += 1
+
+    # Prepare empty weight
+    empty_weight = {
+        "weight_lb":  float(performance_profile[0].empty_weight_lb),
+        "arm_in": float(performance_profile[0].center_of_gravity_in),
+        "moment_lb_in": float(performance_profile[0].empty_weight_lb) *
+        float(performance_profile[0].center_of_gravity_in),
+    }
 
     # Prepare zero-fuel weight data
     zero_fuel_weight_lbs = sum((
@@ -490,8 +508,8 @@ def get_weight_balance_calculations(
         )
 
     # Prepare takeoff weight data
-    takeoff_weight_lbs = ramp_weight_lbs - fuel_burned_pre_takeoff["weight_lb"]
-    takeoff_weight_moment = ramp_weight_moment - \
+    takeoff_weight_lbs = ramp_weight_lbs + fuel_burned_pre_takeoff["weight_lb"]
+    takeoff_weight_moment = ramp_weight_moment + \
         fuel_burned_pre_takeoff["moment_lb_in"]
     takeoff_weight = {
         "weight_lb": takeoff_weight_lbs,
@@ -506,9 +524,9 @@ def get_weight_balance_calculations(
         )
 
     # Prepare Landing weight data
-    landing_weight_lbs = takeoff_weight_lbs - \
+    landing_weight_lbs = takeoff_weight_lbs + \
         sum((fuel["weight_lb"] for fuel in fuel_burned))
-    landing_weight_moment = takeoff_weight_moment - \
+    landing_weight_moment = takeoff_weight_moment + \
         sum((fuel["moment_lb_in"] for fuel in fuel_burned))
     landing_weight = {
         "weight_lb": landing_weight_lbs,
@@ -522,6 +540,47 @@ def get_weight_balance_calculations(
             f"Maximum landing weight of {performance_profile[0].max_landing_weight_lb} lbs exceeded!!!"
         )
 
+    # Prepare W&B-limits warnings
+    weight_balance_profile_limits = db_session.query(
+        models.WeightBalanceProfile,
+        models.WeightBalanceLimit
+    ).join(
+        models.WeightBalanceLimit,
+        models.WeightBalanceProfile.id == models.WeightBalanceLimit.weight_balance_profile_id
+    ).filter(
+        models.WeightBalanceProfile.performance_profile_id == performance_profile[0].id
+    ).order_by(
+        models.WeightBalanceProfile.id,
+        models.WeightBalanceLimit.sequence
+    ).all()
+
+    wb_profile_names = {p.name for p, _ in weight_balance_profile_limits}
+
+    def is_point_under_graph(
+        graph_points: List[models.WeightBalanceLimit],
+        test_point: Dict[str, float]
+    ):
+        for i in range(len(graph_points) - 1):
+            x1, y1 = float(graph_points[i].cg_location_in), float(
+                graph_points[i].weight_lb)
+            x2, y2 = float(
+                graph_points[i + 1].cg_location_in), float(graph_points[i + 1].weight_lb)
+            if (x1 <= float(test_point["arm_in"]) <= x2 or
+                    x2 <= float(test_point["arm_in"]) <= x1) and \
+                    float(test_point["weight_lb"]) < ((y2 - y1) / (x2 - x1))\
+                * (float(test_point["arm_in"]) - x1) + y1:
+                return True
+        return False
+
+    for wb_profile in wb_profile_names:
+        limits = [
+            l for p, l in weight_balance_profile_limits if p.name == wb_profile]
+
+        if (not is_point_under_graph(limits, landing_weight)):
+            warnings.append(f"Landing Weight exceeds the {wb_profile} limits.")
+        if (not is_point_under_graph(limits, takeoff_weight)):
+            warnings.append(f"Takeoff Weight exceeds the {wb_profile} limits.")
+
     # Organize return data
     return {
         "warnings": warnings,
@@ -530,6 +589,7 @@ def get_weight_balance_calculations(
         "fuel_on_board": fuel_on_board,
         "fuel_burned_pre_takeoff": fuel_burned_pre_takeoff,
         "fuel_burned": fuel_burned,
+        "empty_weight": empty_weight,
         "zero_fuel_weight": zero_fuel_weight,
         "ramp_weight": ramp_weight,
         "takeoff_weight": takeoff_weight,
