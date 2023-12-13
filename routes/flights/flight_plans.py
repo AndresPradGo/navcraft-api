@@ -1136,7 +1136,7 @@ async def weight_and_balance_graph(
         color='#ff6206',
         linestyle='-',
         marker='X',
-        linewidth=3,
+        linewidth=2,
         markeredgecolor='k',
         markersize=9
     )
@@ -1167,6 +1167,7 @@ async def weight_and_balance_graph(
     # Return the plot as a streaming response
     graph_response = StreamingResponse(
         io.BytesIO(buffer.read()), media_type="image/png")
-    graph_response.headers[
-        "Content-Disposition"] = 'attachment; filename="weight_and_balance_graph.png"'
+    graph_response.headers["Content-Disposition"] = 'attachment; filename="weight_and_balance_graph.png"'
+    graph_response.headers["filename"] = "weight_and_balance_graph.png"
+
     return graph_response
