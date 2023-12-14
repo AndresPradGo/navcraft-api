@@ -143,6 +143,8 @@ class TakeoffLandingDistancesResults(BaseModel):
     x_wind_knot: int
     ground_roll_ft: conint(ge=0)
     obstacle_clearance_ft: conint(ge=0)
+    adjusted_ground_roll_ft: conint(ge=0)
+    adjusted_obstacle_clearance_ft: conint(ge=0)
 
 
 class TakeoffAndLandingDistances(BaseModel):

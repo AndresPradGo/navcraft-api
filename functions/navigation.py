@@ -147,13 +147,18 @@ def runway_wind_direction(
     """
     This function calculates and returns the runway headwind and cross-wind in knots.
     """
+    if (wind_direction_true is not None):
+        runway_direction = runway_number * 10 - magnetic_variation
+        wind_angle = math.radians(wind_direction_true - runway_direction)
 
-    runway_direction = runway_number * 10 - magnetic_variation
-    wind_angle = math.radians(wind_direction_true - runway_direction)
+        return {
+            "headwind": int(round(wind_magnitude_knot * math.cos(wind_angle), 0)),
+            "crosswind": int(round(wind_magnitude_knot * math.sin(wind_angle), 0))
+        }
 
     return {
-        "headwind": int(round(wind_magnitude_knot * math.cos(wind_angle), 0)),
-        "crosswind": int(round(wind_magnitude_knot * math.sin(wind_angle), 0))
+        "headwind": 0,
+        "crosswind": 0
     }
 
 

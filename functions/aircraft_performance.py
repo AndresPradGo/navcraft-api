@@ -206,22 +206,27 @@ def get_landing_takeoff_data(
     result = result[0]
 
     # Apply wind corrections
-    result["groundroll_ft"] = result["groundroll_ft"] - \
+    result["adjusted_groundroll_ft"] = result["groundroll_ft"] - \
         head_wind * wind_correction * result["groundroll_ft"] / 100
-    result["obstacle_clearance_ft"] = result["obstacle_clearance_ft"] - \
+    result["adjusted_obstacle_clearance_ft"] = result["obstacle_clearance_ft"] - \
         head_wind * wind_correction * \
         result["obstacle_clearance_ft"] / 100
 
     # Apply runway surface corrections
-    result["obstacle_clearance_ft"] = result["obstacle_clearance_ft"] + \
+    result["adjusted_obstacle_clearance_ft"] = result["obstacle_clearance_ft"] + \
         surface_correction * result["groundroll_ft"] / 100
-    result["groundroll_ft"] = result["groundroll_ft"] + \
+    result["adjusted_groundroll_ft"] = result["groundroll_ft"] + \
         surface_correction * result["groundroll_ft"] / 100
 
     # Pre-process results and return
     result["groundroll_ft"] = int(round(result["groundroll_ft"], 0))
     result["obstacle_clearance_ft"] = int(
         round(result["obstacle_clearance_ft"], 0))
+
+    result["adjusted_groundroll_ft"] = int(
+        round(result["adjusted_groundroll_ft"], 0))
+    result["adjusted_obstacle_clearance_ft"] = int(
+        round(result["adjusted_obstacle_clearance_ft"], 0))
 
     new_input_targets = {
         value: adjusted_targets[i] for i, value in enumerate(inputs)}

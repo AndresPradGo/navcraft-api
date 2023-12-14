@@ -961,6 +961,8 @@ def takeoff_and_landing_distances(
                 "x_wind_knot": wind_components["crosswind"],
                 "ground_roll_ft": performance_data["groundroll_ft"],
                 "obstacle_clearance_ft": performance_data["obstacle_clearance_ft"],
+                "adjusted_ground_roll_ft": performance_data["adjusted_groundroll_ft"],
+                "adjusted_obstacle_clearance_ft": performance_data["adjusted_obstacle_clearance_ft"],
             })
 
         takeoff_landing_result[key] = results_per_runway
