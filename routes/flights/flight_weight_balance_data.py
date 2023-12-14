@@ -869,7 +869,7 @@ def edit_flight_fuel(
     fuel_tank_id = fuel_query.first().fuel_tank_id
     fuel_tank = db_session.query(
         models.FuelTank).filter_by(id=fuel_tank_id).first()
-    total_capacity = fuel_tank.fuel_capacity_gallons + fuel_tank.unusable_fuel_gallons
+    total_capacity = fuel_tank.fuel_capacity_gallons
     if total_capacity < data.gallons:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

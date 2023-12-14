@@ -50,14 +50,14 @@
         {
             "name": "Right Tank",
             "arm_in": 48.0,
-            "fuel_capacity_gallons": 21.0,
+            "fuel_capacity_gallons": 18.0,
             "unusable_fuel_gallons": 2.0,
             "burn_sequence": 1
         },
         {
             "name": "Left Tank",
             "arm_in": 48.0,
-            "fuel_capacity_gallons": 21.0,
+            "fuel_capacity_gallons": 18.0,
             "unusable_fuel_gallons": 2.0,
             "burn_sequence": 1
         }
