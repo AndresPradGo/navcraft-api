@@ -438,6 +438,10 @@ def post_new_aircraft_performance_profile_from_model(
     ])
 
     db_session.commit()
+    create_empty_tanks(
+        profile_id=new_profile_id,
+        db_session=db_session
+    )
 
     # Return profile data
     fuel_tanks = db_session.query(models.FuelTank).filter_by(
@@ -736,30 +740,56 @@ def delete_aircraft_performance_profile(
     # Check if performance profile exists and user has permission.
     user_id = get_user_id_from_email(
         email=current_user.email, db_session=db_session)
-    profile_query = db_session.query(models.PerformanceProfile).filter(and_(
+    profile = db_session.query(models.PerformanceProfile).filter(and_(
         models.PerformanceProfile.id == profile_id,
         models.PerformanceProfile.aircraft_id.isnot(None)
-    ))
-    if profile_query.first() is None:
+    )).first()
+
+    if profile is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Performance profile with id {profile_id} not found."
         )
-    user_is_aircraft_owner = db_session.query(models.Aircraft).filter(and_(
-        models.Aircraft.id == profile_query.first().aircraft_id,
+    profile_was_preferred = profile.is_preferred
+
+    # Find aircraft linked to user
+    aircraft = db_session.query(models.Aircraft).filter(and_(
+        models.Aircraft.id == profile.aircraft_id,
         models.Aircraft.owner_id == user_id
     )).first()
-    if user_is_aircraft_owner is None:
+    if aircraft is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Aircraft with performance profile not found."
         )
 
+    aircraft_id = aircraft.id
+
     # Delete profile
-    deleted = profile_query.delete(synchronize_session=False)
+    deleted = db_session.query(models.PerformanceProfile).filter(and_(
+        models.PerformanceProfile.id == profile_id,
+        models.PerformanceProfile.aircraft_id.isnot(None)
+    )).delete()
+
     if not deleted:
         raise common_responses.internal_server_error()
     db_session.commit()
+
+    if profile_was_preferred:
+        complete_profile = db_session.query(models.PerformanceProfile).filter(and_(
+            models.PerformanceProfile.aircraft_id == aircraft_id,
+            models.PerformanceProfile.is_complete.is_(True)
+        )).first()
+        if complete_profile is not None:
+            complete_profile_id = complete_profile.id
+            create_empty_tanks(
+                profile_id=complete_profile_id, db_session=db_session
+            )
+            db_session.query(models.PerformanceProfile).filter(
+                models.PerformanceProfile.id == complete_profile_id
+            ).update({"is_preferred": True})
+
+            db_session.commit()
 
 
 @router.delete("/{aircraft_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -67,7 +67,7 @@ def get_nav_log_and_fuel_calculations(
     if aircraft is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Aircraft does not have a preferred performance profile."
+            detail="The flight's aircraft doesn't have preferred performance profile."
         )
 
     performance_profile = aircraft[0]
@@ -840,7 +840,7 @@ def takeoff_and_landing_distances(
     if aircraft is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Aircraft does not have a preferred performance profile."
+            detail="The flight's aircraft doesn't have preferred performance profile."
         )
 
     performance_profile = aircraft[0]

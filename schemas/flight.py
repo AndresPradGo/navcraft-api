@@ -225,7 +225,7 @@ class NewFlightData(BaseModel):
     This class defines the flight data requiered to post a new flight.
     """
     departure_time: AwareDatetime
-    aircraft_id: conint(gt=0)
+    aircraft_id: Optional[conint(gt=0)] = None
     departure_aerodrome_id: Optional[conint(gt=0)] = None
     arrival_aerodrome_id: Optional[conint(gt=0)] = None
 

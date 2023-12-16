@@ -263,14 +263,17 @@ def post_new_fuel_tank(
     """
 
     # Check performance profile and permissions.
-    _ = check_performance_profile_and_permissions(
+    profile = check_performance_profile_and_permissions(
         db_session=db_session,
         user_id=get_user_id_from_email(
             email=current_user.email, db_session=db_session
         ),
         user_is_active_admin=current_user.is_active and current_user.is_admin,
         profile_id=profile_id
-    )
+    ).first()
+
+    profile_was_preferred = profile.is_preferred
+    aircraft_id = profile.aircraft_id
 
     # Check fuel tank name is not repeated
     fuel_tanks = db_session.query(models.FuelTank).filter(
@@ -316,11 +319,22 @@ def post_new_fuel_tank(
     db_session.refresh(new_fuel_tank)
     new_fuel_tank_dict = {**new_fuel_tank.__dict__}
 
-    # Check completeness
-    check_completeness_and_make_preferred_if_complete(
-        profile_id=profile_id,
-        db_session=db_session
-    )
+    # Check completeness and create fuel for existing flights
+    if profile_was_preferred:
+        flights = db_session.query(models.Flight).filter_by(
+            aircraft_id=aircraft_id).all()
+
+        for flight in flights:
+            db_session.add(models.Fuel(
+                flight_id=flight.id,
+                fuel_tank_id=new_fuel_tank_dict["id"]
+            ))
+        db_session.commit()
+    else:
+        check_completeness_and_make_preferred_if_complete(
+            profile_id=profile_id,
+            db_session=db_session
+        )
 
     return new_fuel_tank_dict
 
