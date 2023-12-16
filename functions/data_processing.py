@@ -295,17 +295,15 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
         )).first()
 
         departure = db_session.query(models.Departure, models.Aerodrome)\
-            .join(models.Aerodrome, models.Departure.aerodrome_id == models.Aerodrome.id)\
+            .outerjoin(models.Aerodrome, models.Departure.aerodrome_id == models.Aerodrome.id)\
             .filter(and_(
                 models.Departure.flight_id == flight_id,
-                models.Departure.aerodrome_id.isnot(None)
             )).first()
 
         arrival = db_session.query(models.Arrival, models.Aerodrome)\
-            .join(models.Aerodrome, models.Arrival.aerodrome_id == models.Aerodrome.id)\
+            .outerjoin(models.Aerodrome, models.Arrival.aerodrome_id == models.Aerodrome.id)\
             .filter(and_(
                 models.Arrival.flight_id == flight_id,
-                models.Arrival.aerodrome_id.isnot(None)
             )).first()
 
         legs = db_session.query(models.Leg, models.FlightWaypoint, models.Waypoint)\
@@ -320,12 +318,12 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
             "id": flight.id,
             "departure_time": pytz.timezone('UTC').localize((flight.departure_time)),
             "aircraft_id": flight.aircraft_id,
-            "departure_aerodrome_id": departure[1].id if departure is not None else None,
+            "departure_aerodrome_id": departure[1].id if departure[1] is not None else None,
             "departure_aerodrome_is_private": departure[1].user_waypoint is not None
-            if departure is not None else None,
-            "arrival_aerodrome_id": arrival[1].id if arrival is not None else None,
+            if departure[1] is not None else None,
+            "arrival_aerodrome_id": arrival[1].id if arrival[1] is not None else None,
             "arrival_aerodrome_is_private": arrival[1].user_waypoint is not None
-            if arrival is not None else None,
+            if arrival[1] is not None else None,
             "departure_weather": {
                 "temperature_c": departure[0].temperature_c,
                 "altimeter_inhg": departure[0].altimeter_inhg,
