@@ -343,7 +343,7 @@ class FlightWaypoint(BaseModel):
         Integer,
         ForeignKey(
             "waypoints.id",
-            ondelete="CASCADE",
+            ondelete="RESTRICT",
             onupdate="CASCADE"
         ),
         primary_key=True,
