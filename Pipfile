@@ -15,6 +15,7 @@ python-multipart = "*"
 pytz = "*"
 numpy = "*"
 matplotlib = "*"
+sentry-sdk = {extras = ["fastapi"], version = "*"}
 
 [dev-packages]
 

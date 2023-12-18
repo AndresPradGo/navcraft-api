@@ -568,7 +568,7 @@ def get_weight_balance_calculations(
             if (x1 <= float(test_point["arm_in"]) <= x2 or
                     x2 <= float(test_point["arm_in"]) <= x1) and \
                     float(test_point["weight_lb"]) < ((y2 - y1) / (x2 - x1))\
-                * (float(test_point["arm_in"]) - x1) + y1:
+            * (float(test_point["arm_in"]) - x1) + y1:
                 return True
         return False
 

@@ -10,7 +10,6 @@ Usage:
 - Import this module whenever you need to connect to the API's database.
 
 """
-import logging
 
 
 from sqlalchemy import create_engine
@@ -22,7 +21,7 @@ from sqlalchemy.exc import (
 )
 from sqlalchemy.orm import sessionmaker
 
-from utils import common_responses, environ_variable_tools as environ
+from utils import environ_variable_tools as environ
 
 DB_NAME = environ.get('db_name')
 DB_USER = environ.get('db_user')
@@ -38,8 +37,6 @@ Session = sessionmaker(
     bind=engine
 )
 
-logger = logging.getLogger(__name__)
-
 
 def get_db():
     """
@@ -52,12 +49,8 @@ def get_db():
     try:
         yield database
 
-    except (IntegrityError, SqlalchemyTimeoutError, OperationalError, InterfaceError) as error:
-        # pylint: disable=raise-missing-from
-        logger.exception(
-            "An error occurred while handling the database session: %s", error)
+    except (IntegrityError, SqlalchemyTimeoutError, OperationalError, InterfaceError):
         database.rollback()
-        print(error)
-        raise common_responses.internal_server_error()
+        raise
     finally:
         database.close()
