@@ -17,6 +17,7 @@ from startup import error_logger
 from startup.set_up_dp import set_up_database
 from startup.routes import link_routes
 
+
 error_logger.init_logger()
 
 app = FastAPI()

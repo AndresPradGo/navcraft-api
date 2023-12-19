@@ -80,6 +80,9 @@ def get_user_profile_data(
     user = db_session.query(models.User).filter(
         models.User.email == current_user.email).first()
 
+    if user is None:
+        raise common_responses.invalid_credentials()
+
     return user
 
 
