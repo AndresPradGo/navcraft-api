@@ -14,3 +14,4 @@ from models.aircraft import *
 from models.flight import *
 from models.user import *
 from models.waypoint import *
+from models.weather import *

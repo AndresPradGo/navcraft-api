@@ -433,6 +433,24 @@ class Aerodrome(BaseModel):
         passive_updates=True,
         foreign_keys="Arrival.aerodrome_id"
     )
+    tafs = Relationship(
+        "TafForecast",
+        back_populates="aerodrome",
+        passive_deletes=True,
+        passive_updates=True,
+    )
+    metars = Relationship(
+        "MetarReport",
+        back_populates="aerodrome",
+        passive_deletes=True,
+        passive_updates=True,
+    )
+    fds = Relationship(
+        "FdForecast",
+        back_populates="aerodrome",
+        passive_deletes=True,
+        passive_updates=True,
+    )
 
 
 class Runway(BaseModel):

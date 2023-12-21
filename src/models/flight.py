@@ -156,6 +156,14 @@ class Departure(DepartureAndArrival):
     flight = Relationship("Flight", back_populates="departure")
     aerodrome = Relationship("Aerodrome", back_populates="departures")
 
+    official_weather = Relationship(
+        "AerodromeWeatherReport",
+        back_populates="departure",
+        passive_deletes=True,
+        passive_updates=True,
+        uselist=False
+    )
+
 
 class Arrival(DepartureAndArrival):
     """
@@ -166,6 +174,14 @@ class Arrival(DepartureAndArrival):
 
     flight = Relationship("Flight", back_populates="arrival")
     aerodrome = Relationship("Aerodrome", back_populates="arrivals")
+
+    official_weather = Relationship(
+        "AerodromeWeatherReport",
+        back_populates="arrival",
+        passive_deletes=True,
+        passive_updates=True,
+        uselist=False
+    )
 
 
 class Leg(BaseModel):
@@ -202,6 +218,13 @@ class Leg(BaseModel):
         uselist=False,
         passive_deletes=True,
         passive_updates=True
+    )
+    official_weather = Relationship(
+        "EnrouteWeatherReport",
+        back_populates="leg",
+        passive_deletes=True,
+        passive_updates=True,
+        uselist=False
     )
 
 
