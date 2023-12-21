@@ -324,6 +324,8 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
             "arrival_aerodrome_id": arrival[1].id if arrival[1] is not None else None,
             "arrival_aerodrome_is_private": arrival[1].user_waypoint is not None
             if arrival[1] is not None else None,
+            "briefing_radius_nm": flight.briefing_radius_nm,
+            "diversion_radius_nm": flight.diversion_radius_nm,
             "departure_weather": {
                 "temperature_c": departure[0].temperature_c,
                 "altimeter_inhg": departure[0].altimeter_inhg,

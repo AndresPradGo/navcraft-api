@@ -240,6 +240,8 @@ class UpdateFlightData(BaseModel):
     added_enroute_time_hours: confloat(allow_inf_nan=False, ge=0, le=99.94)
     reserve_fuel_hours: confloat(allow_inf_nan=False, ge=0, le=99.94)
     contingency_fuel_hours: confloat(allow_inf_nan=False, ge=0, le=99.94)
+    briefing_radius_nm: conint(ge=0)
+    diversion_radius_nm: conint(ge=0)
 
     @model_validator(mode='after')
     @classmethod
@@ -265,6 +267,8 @@ class NewFlightReturn(NewFlightData, UpdateFlightData):
     legs: List[NewLegReturn]
     departure_weather: LegWeatherData
     arrival_weather: LegWeatherData
+    briefing_radius_nm: conint(ge=0)
+    diversion_radius_nm: conint(ge=0)
 
 
 class UpdateDepartureArrivalData(BaseModel):

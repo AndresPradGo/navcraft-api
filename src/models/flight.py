@@ -47,6 +47,9 @@ class Flight(BaseModel):
         default=0.0
     )
 
+    briefing_radius_nm = Column(Integer, nullable=False, default=5)
+    diversion_radius_nm = Column(Integer, nullable=False, default=10)
+
     aircraft_id = Column(
         Integer,
         ForeignKey(
