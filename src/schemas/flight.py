@@ -269,6 +269,8 @@ class NewFlightReturn(NewFlightData, UpdateFlightData):
     arrival_weather: LegWeatherData
     briefing_radius_nm: conint(ge=0)
     diversion_radius_nm: conint(ge=0)
+    all_weather_is_official: bool
+    weather_hours_from_etd: conint(ge=-1)
 
 
 class UpdateDepartureArrivalData(BaseModel):

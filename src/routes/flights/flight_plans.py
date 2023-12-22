@@ -576,10 +576,10 @@ def get_weight_balance_calculations(
         limits = [
             l for p, l in weight_balance_profile_limits if p.name == wb_profile]
 
-        if (not is_point_under_graph(limits, landing_weight)):
-            warnings.append(f"Landing Weight exceeds the {wb_profile} limits.")
         if (not is_point_under_graph(limits, takeoff_weight)):
             warnings.append(f"Takeoff Weight exceeds the {wb_profile} limits.")
+        if (not is_point_under_graph(limits, landing_weight)):
+            warnings.append(f"Landing Weight exceeds the {wb_profile} limits.")
 
     # Organize return data
     return {

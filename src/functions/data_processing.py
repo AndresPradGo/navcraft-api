@@ -4,7 +4,8 @@ Useful Reusable Functions for Data Extaction, Checking and Processing.
 Usage: 
 - Import the required function and call it.
 """
-
+from datetime import datetime
+import math
 from typing import List, Any
 
 from fastapi import HTTPException, status
@@ -294,29 +295,103 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
             models.Flight.pilot_id == user_id
         )).first()
 
-        departure = db_session.query(models.Departure, models.Aerodrome)\
+        departure = db_session.query(models.Departure, models.Aerodrome, models.AerodromeWeatherReport)\
             .outerjoin(models.Aerodrome, models.Departure.aerodrome_id == models.Aerodrome.id)\
-            .filter(and_(
-                models.Departure.flight_id == flight_id,
-            )).first()
+            .outerjoin(models.AerodromeWeatherReport, models.Departure.flight_id == models.AerodromeWeatherReport.departure_id)\
+            .filter(models.Departure.flight_id == flight_id).first()
 
-        arrival = db_session.query(models.Arrival, models.Aerodrome)\
+        arrival = db_session.query(models.Arrival, models.Aerodrome, models.AerodromeWeatherReport)\
             .outerjoin(models.Aerodrome, models.Arrival.aerodrome_id == models.Aerodrome.id)\
-            .filter(and_(
-                models.Arrival.flight_id == flight_id,
-            )).first()
+            .outerjoin(models.AerodromeWeatherReport, models.Arrival.flight_id == models.AerodromeWeatherReport.arrival_id)\
+            .filter(models.Arrival.flight_id == flight_id).first()
 
-        legs = db_session.query(models.Leg, models.FlightWaypoint, models.Waypoint)\
+        legs = db_session.query(models.Leg, models.FlightWaypoint, models.Waypoint, models.EnrouteWeatherReport)\
             .outerjoin(models.FlightWaypoint, models.Leg.id == models.FlightWaypoint.leg_id)\
             .outerjoin(models.Waypoint, models.FlightWaypoint.waypoint_id == models.Waypoint.id)\
+            .outerjoin(models.EnrouteWeatherReport, models.Leg.id == models.EnrouteWeatherReport.leg_id)\
             .filter(models.Leg.flight_id == flight_id).order_by(models.Leg.sequence).all()
 
         fuel_tanks = db_session.query(models.Fuel).filter_by(
             flight_id=flight_id).all()
 
+        dates = [{
+            "official": departure[2].date if departure[2] is not None else None,
+            "wind": departure[0].wind_last_updated
+            if departure[0].wind_last_updated is not None
+            else datetime(year=1, month=1, day=1),
+            "temperature": departure[0].temperature_last_updated
+            if departure[0].temperature_last_updated is not None
+            else datetime(year=1, month=1, day=1),
+            "altimeter": departure[0].altimeter_last_updated
+            if departure[0].altimeter_last_updated is not None
+            else datetime(year=1, month=1, day=1)
+        }] + [{
+            "official": w.date if w is not None else None,
+            "wind": l.wind_last_updated
+            if l.wind_last_updated is not None
+            else datetime(year=1, month=1, day=1),
+            "temperature": l.temperature_last_updated
+            if l.temperature_last_updated is not None
+            else datetime(year=1, month=1, day=1),
+            "altimeter": l.altimeter_last_updated
+            if l.altimeter_last_updated is not None
+            else datetime(year=1, month=1, day=1)
+        } for l, _, _, w in legs] + [
+            {
+                "official": arrival[2].date if arrival[2] is not None else None,
+                "wind": arrival[0].wind_last_updated
+                if arrival[0].wind_last_updated is not None
+                else datetime(year=1, month=1, day=1),
+                "temperature": arrival[0].temperature_last_updated
+                if arrival[0].temperature_last_updated is not None
+                else datetime(year=1, month=1, day=1),
+                "altimeter": arrival[0].altimeter_last_updated
+                if arrival[0].altimeter_last_updated is not None
+                else datetime(year=1, month=1, day=1)
+            }
+        ]
+        all_weather_is_official = True
+        weather_hours_from_etd = 0 if flight.departure_time >= datetime.utcnow() else -1
+        for date in dates:
+            wind_not_official = date["official"] is None\
+                or date["wind"] > date["official"]
+            temperature_not_official = date["official"] is None\
+                or date["temperature"] > date["official"]
+            altimeter_not_official = date["official"] is None\
+                or date["altimeter"] > date["official"]
+
+            any_weather_is_not_official = wind_not_official\
+                or temperature_not_official\
+                or altimeter_not_official
+
+            all__weather_is_not_official = wind_not_official\
+                and temperature_not_official\
+                and altimeter_not_official
+
+            if any_weather_is_not_official:
+                all_weather_is_official = False
+
+            if weather_hours_from_etd > -1:
+                if all__weather_is_not_official:
+                    date_list = [
+                        date["wind"],
+                        date["temperature"],
+                        date["altimeter"]
+                    ]
+                    this_weather_time_from_etd = flight.departure_time - \
+                        min(date_list, key=lambda x: x)
+                else:
+                    this_weather_time_from_etd = flight.departure_time - \
+                        date["official"]
+
+                weather_hours_from_etd = max([
+                    round(this_weather_time_from_etd.total_seconds() / 3600, 0),
+                    weather_hours_from_etd
+                ])
+
         flight_list.append({
             "id": flight.id,
-            "departure_time": pytz.timezone('UTC').localize((flight.departure_time)),
+            "departure_time": pytz.timezone('UTC').localize(flight.departure_time),
             "aircraft_id": flight.aircraft_id,
             "departure_aerodrome_id": departure[1].id if departure[1] is not None else None,
             "departure_aerodrome_is_private": departure[1].user_waypoint is not None
@@ -326,6 +401,8 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
             if arrival[1] is not None else None,
             "briefing_radius_nm": flight.briefing_radius_nm,
             "diversion_radius_nm": flight.diversion_radius_nm,
+            "all_weather_is_official": all_weather_is_official,
+            "weather_hours_from_etd": weather_hours_from_etd,
             "departure_weather": {
                 "temperature_c": departure[0].temperature_c,
                 "altimeter_inhg": departure[0].altimeter_inhg,
@@ -391,7 +468,7 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
                 if leg.wind_last_updated is not None else None,
                 "altimeter_last_updated": pytz.timezone('UTC').localize((leg.altimeter_last_updated))
                 if leg.altimeter_last_updated is not None else None
-            } for leg, flight_wp, wp in legs]
+            } for leg, flight_wp, wp, _ in legs]
         })
 
     return flight_list
