@@ -7,7 +7,7 @@ Usage:
 - Import the required schema class to validate data at the API endpoints.
 """
 
-from typing import Optional, List
+from typing import List, Optional
 
 from pydantic import (
     BaseModel,
@@ -190,6 +190,15 @@ class LegWeatherData(BaseModel):
         return values
 
 
+class BaseWeatherReportRequestData(BaseModel):
+    """
+    This class defines the aerodrome data required by the client, to get weather data 
+    reports from nerby aerodromes, for flight planing and briefing purposes.
+    """
+    code: str
+    distance_from_target_nm: int
+
+
 class NewLegReturn(LegWeatherData):
     """
     This class defines the data returned to the client, after posting new flight-legs.
@@ -198,6 +207,9 @@ class NewLegReturn(LegWeatherData):
     sequence: conint(ge=1)
     waypoint: Optional[NewFlightWaypointReturn] = None
     altitude_ft: conint(ge=500)
+    upper_wind_aerodromes: List[BaseWeatherReportRequestData] = []
+    metar_aerodromes: List[BaseWeatherReportRequestData] = []
+    briefing_aerodromes: List[BaseWeatherReportRequestData] = []
 
 
 class UpdateLegData(LegWeatherData, LegWaypointData):
@@ -263,14 +275,19 @@ class NewFlightReturn(NewFlightData, UpdateFlightData):
     """
     id: conint(gt=0)
     departure_aerodrome_is_private: Optional[bool] = None
-    arrival_aerodrome_is_private: Optional[bool] = None
-    legs: List[NewLegReturn]
+    departure_taf_aerodromes: List[BaseWeatherReportRequestData] = []
+    departure_metar_aerodromes: List[BaseWeatherReportRequestData] = []
     departure_weather: LegWeatherData
+    arrival_aerodrome_is_private: Optional[bool] = None
+    arrival_taf_aerodromes: List[BaseWeatherReportRequestData] = []
+    arrival_metar_aerodromes: List[BaseWeatherReportRequestData] = []
     arrival_weather: LegWeatherData
+    legs: List[NewLegReturn] = []
     briefing_radius_nm: conint(ge=0)
     diversion_radius_nm: conint(ge=0)
     all_weather_is_official: bool
     weather_hours_from_etd: conint(ge=-1)
+    diversion_options: List[BaseWeatherReportRequestData] = []
 
 
 class UpdateDepartureArrivalData(BaseModel):

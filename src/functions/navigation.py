@@ -6,10 +6,10 @@ Usage:
 """
 
 import math
-from typing import List, Dict, Tuple, Union
+from typing import List, Dict, Tuple, Union, Literal
 
 from fastapi import HTTPException, status
-from sqlalchemy import and_
+from sqlalchemy import and_, or_, not_
 from sqlalchemy.orm import Session
 
 from functions import aircraft_performance
@@ -531,3 +531,82 @@ def location_coordinate(lat_deg: float, lon_deg: float, strict: bool = False) ->
             (lon_min_residual - location["lon_minutes"]) * 60))
 
     return location
+
+
+def find_nearby_aerodromes_with_weather_report(
+    db_session: Session,
+    lat: float,
+    lon: float,
+    weather_report: Literal['TAF', 'METAR', 'Upper Wind'],
+    number: int = 1
+) -> List[Dict[str, Union[str, int]]]:
+    """
+    This function finds the aerodrome(s) closest to the waypoint 
+    provided, which has the weather report passed as an argument, 
+    and returns the list of codes.
+    """
+
+    a = models.Aerodrome
+    v = models.VfrWaypoint
+    w = models.Waypoint
+
+    aerodromes_query = db_session.query(a, v, w)\
+        .filter(and_(
+            not_(v.hidden),
+            a.user_waypoint_id.is_(None),
+            or_(
+                not_(weather_report == 'TAF'),
+                a.has_taf
+            ),
+            or_(
+                not_(weather_report == 'METAR'),
+                a.has_metar
+            ),
+            or_(
+                not_(weather_report == 'Upper Wind'),
+                a.has_fds
+            )
+        ))\
+        .join(v, a.vfr_waypoint_id == v.waypoint_id)\
+        .join(w, v.waypoint_id == w.id).all()
+
+    aerodromes = [{
+        "code": v.code,
+        "distance_from_target_nm": round(w.great_arc_to(to_lat=lat, to_lon=lon))
+    } for _, v, w in aerodromes_query]
+
+    return aerodromes[0:number]
+
+
+def find_aerodromes_within_radius(
+    db_session: Session,
+    lat: float,
+    lon: float,
+    radius: int
+) -> List[Dict[str, Union[str, int]]]:
+    """
+    This function finds the aerodromes within a given radius away 
+    from a given lat/lon coordinate.
+    """
+
+    a = models.Aerodrome
+    v = models.VfrWaypoint
+    w = models.Waypoint
+
+    aerodromes_query = db_session.query(a, v, w)\
+        .filter(and_(
+            not_(v.hidden),
+            a.user_waypoint_id.is_(None),
+        ))\
+        .join(v, a.vfr_waypoint_id == v.waypoint_id)\
+        .join(w, v.waypoint_id == w.id).all()
+
+    all_aerodromes = [{
+        "code": v.code,
+        "distance_from_target_nm": round(w.great_arc_to(to_lat=lat, to_lon=lon))
+    } for _, v, w in aerodromes_query]
+
+    aerodromes = (
+        a for a in all_aerodromes if a["distance_from_target_nm"] <= radius)
+
+    return list(aerodromes)

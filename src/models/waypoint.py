@@ -9,6 +9,7 @@ Usage:
 """
 
 import math
+from typing import Union, List
 
 import numpy as np
 from sqlalchemy import Column, Integer, DECIMAL, String, Boolean, ForeignKey
@@ -62,11 +63,6 @@ class Waypoint(BaseModel):
     def lat(self) -> float:
         """
         This method returns the latitude of the waypoint in radians.
-
-        Parameters: None
-
-        Returns: 
-        - float: Latitude in radians.
         """
         direction = {"N": 1, "S": -1}
 
@@ -78,11 +74,6 @@ class Waypoint(BaseModel):
     def lon(self) -> float:
         """
         This method returns the longitude of the waypoint in radians.
-
-        Parameters: None
-
-        Returns: 
-        - float: longitude in radians.
         """
         direction = {"E": 1, "W": -1}
 
@@ -91,27 +82,28 @@ class Waypoint(BaseModel):
 
         return math.radians(lon_degrees)
 
+    def cartesian_coordinates_nm(self) -> List[float]:
+        """
+        This method returns the cartesian coordinates of the waypoint in nautical miles.
+        """
+
+        earth_radius = get_constant("earth_radius_ft")\
+            * get_constant("ft_to_nautical")
+
+        return [earth_radius * math.cos(self.lat()) * math.cos(self.lon()),
+                earth_radius * math.cos(self.lat()) * math.sin(self.lon()),
+                earth_radius * math.sin(self.lat())]
+
     def great_arc_to(self, to_lat: float, to_lon: float) -> float:
         """
         This method finds the distance of a great arc from self, 
         to a given latitude and longitude, in nautical miles.
-
-        Parameters: 
-        to_lat (float): latitude of destination in radians.
-        to_lon (float): longitude of destination in radians.
-
-        Returns: 
-        - float: great arc distance in nautical miles.
         """
         earth_radius = get_constant("earth_radius_ft")\
             * get_constant("ft_to_nautical")
 
         # Cartesian coordinates
-        cartesian_from = np.array([
-            earth_radius * math.cos(self.lat()) * math.cos(self.lon()),
-            earth_radius * math.cos(self.lat()) * math.sin(self.lon()),
-            earth_radius * math.sin(self.lat())
-        ])
+        cartesian_from = np.array(self.cartesian_coordinates_nm())
         cartesian_to = np.array([
             earth_radius * math.cos(to_lat) *
             math.cos(to_lon),
@@ -122,7 +114,8 @@ class Waypoint(BaseModel):
 
         distance = round(
             earth_radius *
-            math.acos(np.dot(cartesian_from, cartesian_to) / earth_radius**2),
+            np.arccos(np.clip(np.dot(cartesian_from, cartesian_to) /
+                      earth_radius**2, -1.0, 1.0)),
             0
         )
 
@@ -132,38 +125,22 @@ class Waypoint(BaseModel):
         """
         This method finds the distance of a great arc from self, 
         to another waypoint, in nautical miles.
-
-        Parameters: 
-        to_waypoint (Waypoint): destination waypoint.
-
-        Returns: 
-        - float: great arc distance in nautical miles.
         """
 
         return self.great_arc_to(to_waypoint.lat(), to_waypoint.lon())
 
-    def true_track_to(self, to_lat: float, to_lon: float) -> int:
+    def true_track_to(self, to_lat: float, to_lon: float, precise: bool = False) -> Union[int, float]:
         """
         This method finds the true track from self, 
         to a given latitude and longitude, in degrees.
-
-        Parameters: 
-        to_lat (float): latitude of destination.
-        to_lon (float): latitude of destination.
-
-        Returns: 
-        - int: true track in degrees.
+        If precise is false, it rounds it to the neares degree.
         """
 
         earth_radius = get_constant(
             "earth_radius_ft") * get_constant("ft_to_nautical")
 
         # Calculate differences in latitude and longitude
-        from_waypoint = np.array([
-            earth_radius * math.cos(self.lat()) * math.cos(self.lon()),
-            earth_radius * math.cos(self.lat()) * math.sin(self.lon()),
-            earth_radius * math.sin(self.lat())
-        ])
+        from_waypoint = np.array(self.cartesian_coordinates_nm())
         to_waypoint = np.array([
             earth_radius * math.cos(to_lat) * math.cos(to_lon),
             earth_radius * math.cos(to_lat) * math.sin(to_lon),
@@ -194,23 +171,17 @@ class Waypoint(BaseModel):
             else normal_plain2
 
         is_easterly = delta_lon > 0
-        track = math.degrees(math.acos(np.dot(n_plain1, n_plain2))) if is_easterly\
-            else 360 - math.degrees(math.acos(np.dot(n_plain1, n_plain2)))
+        track = math.degrees(np.arccos(np.clip(np.dot(n_plain1, n_plain2), -1.0, 1.0))) if is_easterly\
+            else 360 - math.degrees(np.arccos(np.clip(np.dot(n_plain1, n_plain2), -1.0, 10.)))
 
-        return int(round(track, 0))
+        return track if precise else int(round(track, 0))
 
-    def true_track_to_waypoint(self, to_waypoint: 'Waypoint') -> int:
+    def true_track_to_waypoint(self, to_waypoint: 'Waypoint', precise: bool = False) -> int:
         """
         This method finds the true track from self, 
         to another waypoint, in degrees.
-
-        Parameters: 
-        to_waypoint (Waypoint): destination waypoint.
-
-        Returns: 
-        - int: true track in degrees.
         """
-        return self.true_track_to(to_waypoint.lat(), to_waypoint.lon())
+        return self.true_track_to(to_waypoint.lat(), to_waypoint.lon(), precise)
 
     def is_equal(self, other_waypoint: 'Waypoint') -> bool:
         """
@@ -228,15 +199,9 @@ class Waypoint(BaseModel):
     def get_magnetic_var(self, other_waypoint: 'Waypoint') -> float:
         """
         This method returns the magnetic variation between 2 points:
-         - If both have magnetic variation, it returns the average.
-         - If only one has magnetic variation, it returns that one.
-         - If none have magnetic variaiton it returns 0.
-
-        Parameters: 
-        other_waypoint (Waypoint): other waypoint.
-
-        Returns: 
-        - float: magnetic variation.
+            - If both have magnetic variation, it returns the average.
+            - If only one has magnetic variation, it returns that one.
+            - If none have magnetic variaiton it returns 0.
         """
 
         if self.magnetic_variation is not None\
@@ -247,6 +212,91 @@ class Waypoint(BaseModel):
         if other_waypoint.magnetic_variation is not None:
             return float(other_waypoint.magnetic_variation)
         return 0.0
+
+    def find_rotation_matrix(self, to_waypoint: 'Waypoint'):
+        """
+        This method returns the rotation matrix to rotate from an eatch-centered coordinate system, 
+        to a coordinate system where the positive x-axis points towards the true track from waypoint_1
+        to to_waypoint.
+        """
+        rad_90 = np.radians(90)
+        angle_1 = self.lon() + rad_90
+        angle_2 = rad_90 - self.lat()
+        angle_3 = np.radians(
+            90 - self.true_track_to_waypoint(to_waypoint=to_waypoint, precise=True))
+
+        rotation_z = np.array([
+            [np.cos(angle_1), -np.sin(angle_1), 0],
+            [np.sin(angle_1), np.cos(angle_1), 0],
+            [0, 0, 1]
+        ])
+
+        rotation_x_1 = np.array([
+            [1, 0, 0],
+            [0, np.cos(angle_2), -np.sin(angle_2)],
+            [0, np.sin(angle_2), np.cos(angle_2)]
+        ])
+
+        rotation_z_2 = np.array([
+            [1, 0, 0],
+            [0, np.cos(angle_3), -np.sin(angle_3)],
+            [0, np.sin(angle_3), np.cos(angle_3)]
+        ])
+
+        rotation_total = np.dot(rotation_z_2, np.dot(rotation_x_1, rotation_z))
+        return rotation_total
+
+    def find_halfway_coordinates(self, to_waypoint: 'Waypoint') -> List[float]:
+        """
+        This method finds the coordinates of the point halfway between self and to_waypoint, 
+        in radians, and returns them in a list of [Latitude, Longitude].
+        """
+
+        R_matrix = self.find_rotation_matrix(to_waypoint)
+        distance = self.great_arc_to_waypoint(to_waypoint=to_waypoint)/2
+        cartesian = np.array(self.cartesian_coordinates_nm())
+
+        rotated_halfway_cartesian = np.dot(
+            R_matrix, cartesian) + np.array([distance, 0, 0])
+        halfway_cartesian = np.dot(np.transpose(
+            R_matrix), rotated_halfway_cartesian)
+
+        r = np.linalg.norm(halfway_cartesian)
+        longitude = np.arctan2(halfway_cartesian[1], halfway_cartesian[0])
+        latitude = np.radians(
+            90) - np.arccos(np.clip(halfway_cartesian[2] / r, -1.0, 1.0))
+
+        return [latitude, longitude]
+
+    def find_interval_coordinates(self, to_waypoint: 'Waypoint', distance_interval_nm: int) -> List[List[float]]:
+        """
+        This method finds the list of coordinates, in radians of [Latitude, Longitude], 
+        of the points over the track between self and to_waypoint, in a given intervals of separation.
+        """
+
+        R_matrix = self.find_rotation_matrix(to_waypoint)
+        R_inverse = np.transpose(R_matrix)
+        total_distance = self.great_arc_to_waypoint(to_waypoint=to_waypoint)
+        current_distance = distance_interval_nm
+        cartesian_linear_position = np.dot(
+            R_matrix, np.array(self.cartesian_coordinates_nm()))
+        coordinate_list = [[self.lat(), self.lon()]]
+
+        while current_distance < total_distance:
+            cartesian_linear_position += np.array([distance_interval_nm, 0, 0])
+
+            # Rotate back to earth-centered system
+            cartesian_position = np.dot(R_inverse, cartesian_linear_position)
+            r = np.linalg.norm(cartesian_position)
+            longitude = np.arctan2(
+                cartesian_position[1], cartesian_position[0])
+            latitude = np.radians(
+                90) - np.arccos(np.clip(cartesian_position[2] / r, -1.0, 1.0))
+            coordinate_list.append([latitude, longitude])
+
+            current_distance += distance_interval_nm
+
+        return coordinate_list
 
 
 class VfrWaypoint(BaseModel):

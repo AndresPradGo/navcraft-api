@@ -10,11 +10,12 @@ from typing import List, Any
 
 from fastapi import HTTPException, status
 import pytz
-from sqlalchemy import and_, not_
+from sqlalchemy import and_, not_, or_
 from sqlalchemy.orm import Session, Query
 
 import models
 from utils import common_responses
+from functions.navigation import find_nearby_aerodromes_with_weather_report, find_aerodromes_within_radius
 
 
 def clean_string(input_string: str) -> str:
@@ -290,20 +291,61 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
     """
     flight_list = []
     for flight_id in flight_ids:
+        # Get data from DB
         flight = db_session.query(models.Flight).filter(and_(
             models.Flight.id == flight_id,
             models.Flight.pilot_id == user_id
         )).first()
 
-        departure = db_session.query(models.Departure, models.Aerodrome, models.AerodromeWeatherReport)\
+        departure = db_session.query(
+            models.Departure,
+            models.Aerodrome,
+            models.AerodromeWeatherReport,
+            models.UserWaypoint,
+            models.VfrWaypoint,
+            models.Waypoint
+        )\
             .outerjoin(models.Aerodrome, models.Departure.aerodrome_id == models.Aerodrome.id)\
             .outerjoin(models.AerodromeWeatherReport, models.Departure.flight_id == models.AerodromeWeatherReport.departure_id)\
-            .filter(models.Departure.flight_id == flight_id).first()
+            .outerjoin(models.UserWaypoint, models.Aerodrome.user_waypoint_id == models.UserWaypoint.waypoint_id)\
+            .outerjoin(models.VfrWaypoint, models.Aerodrome.vfr_waypoint_id == models.VfrWaypoint.waypoint_id)\
+            .outerjoin(models.Waypoint, or_(
+                models.Aerodrome.user_waypoint_id == models.Waypoint.id,
+                models.Aerodrome.vfr_waypoint_id == models.Waypoint.id
+            ))\
+            .filter(and_(
+                models.Departure.flight_id == flight_id,
+                or_(models.Aerodrome.user_waypoint_id.is_(None),
+                    models.UserWaypoint.creator_id == user_id)
+            )).first()
 
-        arrival = db_session.query(models.Arrival, models.Aerodrome, models.AerodromeWeatherReport)\
+        arrival = db_session.query(
+            models.Arrival,
+            models.Aerodrome,
+            models.AerodromeWeatherReport,
+            models.UserWaypoint,
+            models.VfrWaypoint,
+            models.Waypoint
+        )\
             .outerjoin(models.Aerodrome, models.Arrival.aerodrome_id == models.Aerodrome.id)\
             .outerjoin(models.AerodromeWeatherReport, models.Arrival.flight_id == models.AerodromeWeatherReport.arrival_id)\
-            .filter(models.Arrival.flight_id == flight_id).first()
+            .outerjoin(models.UserWaypoint, models.Aerodrome.user_waypoint_id == models.UserWaypoint.waypoint_id)\
+            .outerjoin(models.VfrWaypoint, models.Aerodrome.vfr_waypoint_id == models.VfrWaypoint.waypoint_id)\
+            .outerjoin(models.Waypoint, or_(
+                models.Aerodrome.user_waypoint_id == models.Waypoint.id,
+                models.Aerodrome.vfr_waypoint_id == models.Waypoint.id
+            ))\
+            .filter(and_(
+                models.Arrival.flight_id == flight_id,
+                or_(models.Aerodrome.user_waypoint_id.is_(None),
+                    models.UserWaypoint.creator_id == user_id)
+            )).first()
+
+        if arrival is None or departure is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Flight doesn't have a departure and/or arrival aerodrome."
+            )
 
         legs = db_session.query(models.Leg, models.FlightWaypoint, models.Waypoint, models.EnrouteWeatherReport)\
             .outerjoin(models.FlightWaypoint, models.Leg.id == models.FlightWaypoint.leg_id)\
@@ -314,6 +356,7 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
         fuel_tanks = db_session.query(models.Fuel).filter_by(
             flight_id=flight_id).all()
 
+        # Find if weather is official and when was it last updated
         dates = [{
             "official": departure[2].date if departure[2] is not None else None,
             "wind": departure[0].wind_last_updated
@@ -389,6 +432,97 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
                     weather_hours_from_etd
                 ])
 
+        # Get list of diversion options
+        diversion_options = find_aerodromes_within_radius(
+            db_session=db_session,
+            lat=arrival[5].lat(),
+            lon=arrival[5].lon(),
+            radius=flight.diversion_radius_nm
+        )
+
+        # Organise list of flight legs
+        legs_list = []
+        aerodromes_in_briefing = {option["code"]
+                                  for option in diversion_options}
+        previous_waypoint = departure[5]
+        for (leg, flight_wp, wp, _) in legs:
+            current_waypoint = wp if wp is not None else arrival[5]
+
+            halfway_coordinates = previous_waypoint.find_halfway_coordinates(
+                current_waypoint)
+
+            upper_wind_aerodromes = find_nearby_aerodromes_with_weather_report(
+                db_session=db_session,
+                lat=halfway_coordinates[0],
+                lon=halfway_coordinates[1],
+                weather_report='Upper Wind',
+                number=2
+            )
+            metar_aerodromes = find_nearby_aerodromes_with_weather_report(
+                db_session=db_session,
+                lat=halfway_coordinates[0],
+                lon=halfway_coordinates[1],
+                weather_report='METAR',
+                number=3
+            )
+
+            briefing_coordinates = previous_waypoint.find_interval_coordinates(
+                current_waypoint,
+                flight.briefing_radius_nm * 2
+            )
+
+            pre_filter_briefing_aerodromes = []
+            for briefing_coordinate in briefing_coordinates:
+                pre_filter_briefing_aerodromes += find_aerodromes_within_radius(
+                    db_session=db_session,
+                    lat=briefing_coordinate[0],
+                    lon=briefing_coordinate[1],
+                    radius=flight.briefing_radius_nm
+                )
+            briefing_aerodromes = [
+                a for a in pre_filter_briefing_aerodromes if a["code"] not in aerodromes_in_briefing]
+
+            aerodromes_in_briefing = aerodromes_in_briefing.union(
+                {a["code"] for a in briefing_aerodromes})
+
+            previous_waypoint = wp if wp is not None else arrival[5]
+
+            legs_list.append({
+                "id": leg.id,
+                "sequence": leg.sequence,
+                "waypoint": {
+                    "id": wp.id,
+                    "code": flight_wp.code,
+                    "name": flight_wp.name,
+                    "lat_degrees": wp.lat_degrees,
+                    "lat_minutes": wp.lat_minutes,
+                    "lat_seconds": wp.lat_seconds,
+                    "lat_direction": wp.lat_direction,
+                    "lon_degrees": wp.lon_degrees,
+                    "lon_minutes": wp.lon_minutes,
+                    "lon_seconds": wp.lon_seconds,
+                    "lon_direction": wp.lon_direction,
+                    "magnetic_variation": wp.magnetic_variation,
+                    "from_user_waypoint": flight_wp.from_user_waypoint,
+                    "from_vfr_waypoint": flight_wp.from_vfr_waypoint
+                } if flight_wp is not None else None,
+                "upper_wind_aerodromes": upper_wind_aerodromes,
+                "metar_aerodromes": metar_aerodromes,
+                "briefing_aerodromes": briefing_aerodromes,
+                "altitude_ft": leg.altitude_ft,
+                "altimeter_inhg": leg.altimeter_inhg,
+                "temperature_c": leg.temperature_c,
+                "wind_magnitude_knot": leg.wind_magnitude_knot,
+                "wind_direction": leg.wind_direction,
+                "temperature_last_updated": pytz.timezone('UTC').localize((leg.temperature_last_updated))
+                if leg.temperature_last_updated is not None else None,
+                "wind_last_updated": pytz.timezone('UTC').localize((leg.wind_last_updated))
+                if leg.wind_last_updated is not None else None,
+                "altimeter_last_updated": pytz.timezone('UTC').localize((leg.altimeter_last_updated))
+                if leg.altimeter_last_updated is not None else None
+            })
+
+        # Append flight data
         flight_list.append({
             "id": flight.id,
             "departure_time": pytz.timezone('UTC').localize(flight.departure_time),
@@ -438,37 +572,36 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
             "reserve_fuel_hours": flight.reserve_fuel_hours,
             "contingency_fuel_hours": flight.contingency_fuel_hours,
             "fuel_on_board_gallons": sum((tank.gallons for tank in fuel_tanks)),
-            "legs": [{
-                "id": leg.id,
-                "sequence": leg.sequence,
-                "waypoint": {
-                    "id": wp.id,
-                    "code": flight_wp.code,
-                    "name": flight_wp.name,
-                    "lat_degrees": wp.lat_degrees,
-                    "lat_minutes": wp.lat_minutes,
-                    "lat_seconds": wp.lat_seconds,
-                    "lat_direction": wp.lat_direction,
-                    "lon_degrees": wp.lon_degrees,
-                    "lon_minutes": wp.lon_minutes,
-                    "lon_seconds": wp.lon_seconds,
-                    "lon_direction": wp.lon_direction,
-                    "magnetic_variation": wp.magnetic_variation,
-                    "from_user_waypoint": flight_wp.from_user_waypoint,
-                    "from_vfr_waypoint": flight_wp.from_vfr_waypoint
-                } if flight_wp is not None else None,
-                "altitude_ft": leg.altitude_ft,
-                "altimeter_inhg": leg.altimeter_inhg,
-                "temperature_c": leg.temperature_c,
-                "wind_magnitude_knot": leg.wind_magnitude_knot,
-                "wind_direction": leg.wind_direction,
-                "temperature_last_updated": pytz.timezone('UTC').localize((leg.temperature_last_updated))
-                if leg.temperature_last_updated is not None else None,
-                "wind_last_updated": pytz.timezone('UTC').localize((leg.wind_last_updated))
-                if leg.wind_last_updated is not None else None,
-                "altimeter_last_updated": pytz.timezone('UTC').localize((leg.altimeter_last_updated))
-                if leg.altimeter_last_updated is not None else None
-            } for leg, flight_wp, wp, _ in legs]
+            "legs": legs_list,
+            "departure_taf_aerodromes": find_nearby_aerodromes_with_weather_report(
+                db_session=db_session,
+                lat=departure[5].lat(),
+                lon=departure[5].lon(),
+                weather_report='TAF',
+                number=3
+            ),
+            "departure_metar_aerodromes": find_nearby_aerodromes_with_weather_report(
+                db_session=db_session,
+                lat=departure[5].lat(),
+                lon=departure[5].lon(),
+                weather_report='METAR',
+                number=3
+            ),
+            "arrival_taf_aerodromes": find_nearby_aerodromes_with_weather_report(
+                db_session=db_session,
+                lat=arrival[5].lat(),
+                lon=arrival[5].lon(),
+                weather_report='TAF',
+                number=3
+            ),
+            "arrival_metar_aerodromes": find_nearby_aerodromes_with_weather_report(
+                db_session=db_session,
+                lat=arrival[5].lat(),
+                lon=arrival[5].lon(),
+                weather_report='METAR',
+                number=3
+            ),
+            "diversion_options": diversion_options
         })
 
     return flight_list
