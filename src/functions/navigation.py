@@ -582,7 +582,8 @@ def find_aerodromes_within_radius(
     db_session: Session,
     lat: float,
     lon: float,
-    radius: int
+    radius: int,
+    exclude_list: List[str] = []
 ) -> List[Dict[str, Union[str, int]]]:
     """
     This function finds the aerodromes within a given radius away 
@@ -597,6 +598,7 @@ def find_aerodromes_within_radius(
         .filter(and_(
             not_(v.hidden),
             a.user_waypoint_id.is_(None),
+            v.code.notin_(exclude_list)
         ))\
         .join(v, a.vfr_waypoint_id == v.waypoint_id)\
         .join(w, v.waypoint_id == w.id).all()

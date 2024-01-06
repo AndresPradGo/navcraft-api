@@ -23,6 +23,7 @@ from utils import common_responses
 from utils.db import get_db
 from functions.data_processing import (
     get_user_id_from_email,
+    get_extensive_flight_data_for_return,
     get_basic_flight_data_for_return
 )
 from functions import navigation
@@ -31,11 +32,11 @@ router = APIRouter(tags=["Flights"])
 
 
 @router.get(
-    "",
+    "/",
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.NewFlightReturn]
 )
-def get_all_flights(
+def get_all_flight(
     flight_id: Optional[int] = 0,
     db_session: Session = Depends(get_db),
     current_user: schemas.TokenData = Depends(auth.validate_user)
@@ -43,13 +44,13 @@ def get_all_flights(
     """
     Get All Flights Endpoint.
 
-    Parameters: 
-    - flight_id (int): flight id.
+    Parameters: None
 
     Returns: 
-    - List: List of flights.
+    - List: List of dictionaries with basic flight data.
 
     Raise:
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
     user_id = get_user_id_from_email(
@@ -62,13 +63,51 @@ def get_all_flights(
         )
     )).all()
 
-    flight_ids = [flight.id for flight in user_flights]
-
     return get_basic_flight_data_for_return(
-        flight_ids=flight_ids,
+        flights=user_flights,
         db_session=db_session,
         user_id=user_id
     )
+
+
+@router.get(
+    "/{flight_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=schemas.ExtensiveFlightDataReturn
+)
+def get_flight(
+    flight_id: int,
+    db_session: Session = Depends(get_db),
+    current_user: schemas.TokenData = Depends(auth.validate_user)
+):
+    """
+    Get Flight Endpoint.
+
+    Parameters: 
+    - flight_id (int): flight id.
+
+    Returns: 
+    - Dict: Dictionary with detailed flight data.
+
+    Raise:
+    - HTTPException (401): if user is not authenticated.
+    - HTTPException (500): if there is a server error. 
+    """
+    user_id = get_user_id_from_email(
+        email=current_user.email, db_session=db_session)
+    flight_list = get_extensive_flight_data_for_return(
+        flight_ids=[flight_id],
+        db_session=db_session,
+        user_id=user_id
+    )
+
+    if len(flight_list) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The flight requested is not in the database."
+        )
+
+    return flight_list[0]
 
 
 @router.post(
@@ -88,7 +127,7 @@ def post_new_flight(
     - flight_data (dict): the flight data to be added.
 
     Returns: 
-    - Dic: dictionary with the flight data and id.
+    - Dic: dictionary with the summarized flight data.
 
     Raise:
     - HTTPException (400): if data is wrong.
@@ -240,8 +279,9 @@ def post_new_flight(
     db_session.refresh(new_leg)
 
     # Return flight data
+    db_session.refresh(new_flight)
     return get_basic_flight_data_for_return(
-        flight_ids=[new_flight_data["id"]],
+        flights=[new_flight],
         db_session=db_session,
         user_id=user_id
     )[0]
@@ -250,7 +290,7 @@ def post_new_flight(
 @router.put(
     "/{flight_id}",
     status_code=status.HTTP_200_OK,
-    response_model=schemas.NewFlightReturn
+    response_model=schemas.ExtensiveFlightDataReturn
 )
 def edit_flight(
     flight_id: int,
@@ -263,14 +303,14 @@ def edit_flight(
 
     Parameters: 
     - flight_id (int): flight id.
-    - data (dict): flight data.
+    - data (dict): new flight data.
 
     Returns: 
-    - dict: flight data and id.
+    - dict: detailed flight data.
 
     Raise:
     - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -292,7 +332,7 @@ def edit_flight(
     flight_query.update(data.model_dump())
     db_session.commit()
 
-    return get_basic_flight_data_for_return(
+    return get_extensive_flight_data_for_return(
         flight_ids=[flight_id],
         user_id=user_id,
         db_session=db_session
@@ -302,7 +342,7 @@ def edit_flight(
 @router.put(
     "/change-aircraft/{flight_id}/{aircraft_id}",
     status_code=status.HTTP_200_OK,
-    response_model=schemas.NewFlightReturn
+    response_model=schemas.ExtensiveFlightDataReturn
 )
 def change_aircraft(
     flight_id: int,
@@ -318,11 +358,11 @@ def change_aircraft(
     - aircraft_id (int): aircraft id.
 
     Returns: 
-    - dict: flight data and id.
+    - dict: detailed flight data.
 
     Raise:
     - HTTPException (400): if flight or aircraft doesn't exist.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
     # Get user ID
@@ -382,7 +422,7 @@ def change_aircraft(
 
     db_session.commit()
 
-    return get_basic_flight_data_for_return(
+    return get_extensive_flight_data_for_return(
         flight_ids=[flight_id],
         db_session=db_session,
         user_id=user_id
@@ -392,7 +432,7 @@ def change_aircraft(
 @router.put(
     "/departure-arrival/{flight_id}",
     status_code=status.HTTP_200_OK,
-    response_model=schemas.NewFlightReturn
+    response_model=schemas.ExtensiveFlightDataReturn
 )
 def edit_departure_arrival(
     flight_id: int,
@@ -406,15 +446,15 @@ def edit_departure_arrival(
 
     Parameters: 
     - flight_id (int): flight id.
-    - is_departure (bool): true is updating the departure, flase if the arrival.
-    - data (dict): flight data.
+    - is_departure (bool): true if updating the departure, flase if updating the arrival.
+    - data (dict): new flight data.
 
     Returns: 
-    - dict: flight data and id.
+    - dict: detailed flight data.
 
     Raise:
     - HTTPException (400): if flight or aerodrome doesn't exist.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -465,7 +505,7 @@ def edit_departure_arrival(
 
     db_session.commit()
 
-    return get_basic_flight_data_for_return(
+    return get_extensive_flight_data_for_return(
         flight_ids=[flight_id],
         db_session=db_session,
         user_id=user_id
@@ -488,7 +528,7 @@ def delete_flight(
 
     Raise:
     - HTTPException (401): invalid credentials.
-    - HTTPException (404): status not found.
+    - HTTPException (404): flight not found.
     - HTTPException (500): if there is a server error. 
     """
 

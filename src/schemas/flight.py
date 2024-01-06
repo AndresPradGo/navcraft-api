@@ -269,9 +269,19 @@ class UpdateFlightData(BaseModel):
         return values
 
 
-class NewFlightReturn(NewFlightData, UpdateFlightData):
+class NewFlightReturn(NewFlightData):
     """
     This class defines the flight data returned to the client after posting a new flight.
+    """
+    id: conint(gt=0)
+    departure_aerodrome_is_private: Optional[bool] = None
+    arrival_aerodrome_is_private: Optional[bool] = None
+    waypoints: List[str] = []
+
+
+class ExtensiveFlightDataReturn(NewFlightData, UpdateFlightData):
+    """
+    This class defines the data returned to the client, for a detailed flight observation.
     """
     id: conint(gt=0)
     departure_aerodrome_is_private: Optional[bool] = None
@@ -350,6 +360,6 @@ class UpdateWaypointsReturn(BaseModel):
     waypoints.
     """
 
-    flight_data: NewFlightReturn
+    flight_data: ExtensiveFlightDataReturn
     user_waypoints_not_found: List[WaypointsNotUpdatedReturn]
     vfr_waypoints_not_found: List[WaypointsNotUpdatedReturn]

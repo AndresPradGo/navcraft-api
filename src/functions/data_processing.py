@@ -285,18 +285,77 @@ def check_completeness_and_make_preferred_if_complete(profile_id: int, db_sessio
         db_session.commit()
 
 
-def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session, user_id: int):
+def get_basic_flight_data_for_return(flights: List[models.Flight], db_session: Session, user_id: int):
     """
     This functions organizes basic flight data for returning to user.
     """
     flight_list = []
-    for flight_id in flight_ids:
-        # Get data from DB
-        flight = db_session.query(models.Flight).filter(and_(
-            models.Flight.id == flight_id,
-            models.Flight.pilot_id == user_id
-        )).first()
 
+    for flight in flights:
+        flight_id = flight.id
+
+        departure = db_session.query(models.Departure, models.Aerodrome, models.UserWaypoint)\
+            .outerjoin(models.Aerodrome, models.Departure.aerodrome_id == models.Aerodrome.id)\
+            .outerjoin(models.UserWaypoint, models.Aerodrome.user_waypoint_id == models.UserWaypoint.waypoint_id)\
+            .filter(and_(
+                models.Departure.flight_id == flight_id,
+                or_(
+                    models.Aerodrome.user_waypoint_id.is_(None),
+                    models.UserWaypoint.creator_id == user_id
+                )
+            )).first()
+
+        arrival = db_session.query(models.Arrival, models.Aerodrome, models.UserWaypoint)\
+            .outerjoin(models.Aerodrome, models.Arrival.aerodrome_id == models.Aerodrome.id)\
+            .outerjoin(models.UserWaypoint, models.Aerodrome.user_waypoint_id == models.UserWaypoint.waypoint_id)\
+            .filter(and_(
+                models.Arrival.flight_id == flight_id,
+                or_(
+                    models.Aerodrome.user_waypoint_id.is_(None),
+                    models.UserWaypoint.creator_id == user_id
+                )
+            )).first()
+
+        if arrival is None or departure is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Flight doesn't have a departure and/or arrival aerodrome."
+            )
+
+        legs = db_session.query(models.Leg, models.FlightWaypoint)\
+            .join(models.FlightWaypoint, models.Leg.id == models.FlightWaypoint.leg_id)\
+            .filter(models.Leg.flight_id == flight_id).order_by(models.Leg.sequence).all()
+
+        flight_list.append({
+            "id": flight.id,
+            "departure_time": pytz.timezone('UTC').localize(flight.departure_time),
+            "aircraft_id": flight.aircraft_id,
+            "departure_aerodrome_id": departure[1].id if departure[1] is not None else None,
+            "departure_aerodrome_is_private": departure[1].user_waypoint is not None
+            if departure[1] is not None else None,
+            "arrival_aerodrome_id": arrival[1].id if arrival[1] is not None else None,
+            "arrival_aerodrome_is_private": arrival[1].user_waypoint is not None
+            if arrival[1] is not None else None,
+            "waypoints": [waypoint.code for _, waypoint in legs]
+        })
+
+    return flight_list
+
+
+def get_extensive_flight_data_for_return(flight_ids: List[int], db_session: Session, user_id: int):
+    """
+    This functions organizes extensive flight data for returning to user.
+    """
+    flight_list = []
+
+    flights = db_session.query(models.Flight).filter(and_(
+        models.Flight.id.in_(flight_ids),
+        models.Flight.pilot_id == user_id
+    )).all()
+
+    for flight in flights:
+        flight_id = flight.id
+        # Get data from DB
         departure = db_session.query(
             models.Departure,
             models.Aerodrome,
@@ -315,8 +374,10 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
             ))\
             .filter(and_(
                 models.Departure.flight_id == flight_id,
-                or_(models.Aerodrome.user_waypoint_id.is_(None),
-                    models.UserWaypoint.creator_id == user_id)
+                or_(
+                    models.Aerodrome.user_waypoint_id.is_(None),
+                    models.UserWaypoint.creator_id == user_id
+                )
             )).first()
 
         arrival = db_session.query(
@@ -337,8 +398,10 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
             ))\
             .filter(and_(
                 models.Arrival.flight_id == flight_id,
-                or_(models.Aerodrome.user_waypoint_id.is_(None),
-                    models.UserWaypoint.creator_id == user_id)
+                or_(
+                    models.Aerodrome.user_waypoint_id.is_(None),
+                    models.UserWaypoint.creator_id == user_id
+                )
             )).first()
 
         if arrival is None or departure is None:
@@ -407,7 +470,7 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
                 or temperature_not_official\
                 or altimeter_not_official
 
-            all__weather_is_not_official = wind_not_official\
+            all_weather_is_not_official = wind_not_official\
                 and temperature_not_official\
                 and altimeter_not_official
 
@@ -415,7 +478,7 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
                 all_weather_is_official = False
 
             if weather_hours_from_etd > -1:
-                if all__weather_is_not_official:
+                if all_weather_is_not_official:
                     date_list = [
                         date["wind"],
                         date["temperature"],
@@ -471,19 +534,20 @@ def get_basic_flight_data_for_return(flight_ids: List[int], db_session: Session,
                 flight.briefing_radius_nm * 2
             )
 
-            pre_filter_briefing_aerodromes = []
+            briefing_aerodromes = []
             for briefing_coordinate in briefing_coordinates:
-                pre_filter_briefing_aerodromes += find_aerodromes_within_radius(
+                briefing_aerodromes_for_coordinates = find_aerodromes_within_radius(
                     db_session=db_session,
                     lat=briefing_coordinate[0],
                     lon=briefing_coordinate[1],
-                    radius=flight.briefing_radius_nm
+                    radius=flight.briefing_radius_nm,
+                    exclude_list=aerodromes_in_briefing
                 )
-            briefing_aerodromes = [
-                a for a in pre_filter_briefing_aerodromes if a["code"] not in aerodromes_in_briefing]
 
-            aerodromes_in_briefing = aerodromes_in_briefing.union(
-                {a["code"] for a in briefing_aerodromes})
+                briefing_aerodromes += briefing_aerodromes_for_coordinates
+
+                aerodromes_in_briefing = aerodromes_in_briefing.union(
+                    {a["code"] for a in briefing_aerodromes_for_coordinates})
 
             previous_waypoint = wp if wp is not None else arrival[5]
 
