@@ -31,7 +31,6 @@ class WaypointBase(BaseModel):
     - name
     - coordinates
     - magnetic variation
-
     """
 
     code: constr(
@@ -100,14 +99,7 @@ class UserWaypointData(WaypointBase):
     @classmethod
     def round_magnetic_variation(cls, value: float) -> float:
         '''
-        Classmethod to round magnetic_variation input value to 1 decimal place.
-
-        Parameters:
-        - value (float): the values to be validated.
-
-        Returns:
-        (float) : The magnetic_variation value rounded to 2 decimal place.
-
+        Class method to round magnetic_variation input value to 1 decimal place.
         '''
         if value is None:
             return None
@@ -117,14 +109,7 @@ class UserWaypointData(WaypointBase):
     @classmethod
     def clean_waypoint_name(cls, value: str) -> str:
         '''
-        Classmethod to clean name string.
-
-        Parameters:
-        - value (str): the name string t to be validated.
-
-        Returns:
-        (str): cleaned name string.
-
+        Class method to clean name string.
         '''
         return None if value is None else clean_string(value)
 
@@ -132,19 +117,9 @@ class UserWaypointData(WaypointBase):
     @classmethod
     def validate_waypoint_schema(cls, values):
         '''
-        Classmethod to check whether the lattitude is between 
+        Class method to check whether the lattitude is between 
         89 59 59 S and 90 0 0 N, and the longitude is between 
         179 59 59 W and 180 0 0 E; as part of the data validation.
-
-        Parameters:
-        - values (Any): The object with the values to be validated.
-
-        Returns:
-        (Any) : The object of validated values.
-
-        Raises:
-        ValueError: Whenever the lattitude or longitud values are not within the desired range.
-
         '''
 
         err_message = {

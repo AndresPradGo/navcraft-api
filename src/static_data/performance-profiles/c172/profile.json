@@ -1,5 +1,5 @@
 {
-    "name": "Cessna 172 M Skyhawk, Standard Tanks, Avro Lycoming 0-320-E2D 150 BHP at 2700RPM",
+    "name": "Cessna 172 M Skyhawk 1976, Standard Tanks, Avco Lycoming 0-320-E2D 150 BHP at 2700RPM",
     "is_complete": true,
     "fuel_type_id": 1,
     "center_of_gravity_in": 39.12,
@@ -50,14 +50,14 @@
         {
             "name": "Right Tank",
             "arm_in": 48.0,
-            "fuel_capacity_gallons": 18.0,
+            "fuel_capacity_gallons": 19.0,
             "unusable_fuel_gallons": 2.0,
             "burn_sequence": 1
         },
         {
             "name": "Left Tank",
             "arm_in": 48.0,
-            "fuel_capacity_gallons": 18.0,
+            "fuel_capacity_gallons": 19.0,
             "unusable_fuel_gallons": 2.0,
             "burn_sequence": 1
         }

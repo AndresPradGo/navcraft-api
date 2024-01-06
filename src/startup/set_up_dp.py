@@ -235,9 +235,35 @@ def _add_runways():
     """
     This function adds an initial list of runways.
     """
+    a = models.Aerodrome
+    v = models.VfrWaypoint
+
+    dict_list = csv.csv_to_list(file_path=f"{_PATH}runways.csv")
+    try:
+        aerodrome_codes = {r["aerodrome"].strip().upper()
+                           for r in dict_list}
+    except KeyError as error:
+        print(f'CSV File is missing the header "{error}"')
+
+    try:
+        with Session() as db_session:
+            aerodrome_objects = db_session.query(a, v)\
+                .join(v, a.vfr_waypoint_id == v.waypoint_id)\
+                .filter(v.code.in_(aerodrome_codes))\
+                .all()
+
+    except (IntegrityError, SqlalchemyTimeoutError, OperationalError) as error:
+        print(f"Error! could not add runways: {error}")
+
+    aerodrome_ids_in_db = {v.code: v.waypoint_id for _, v in aerodrome_objects}
+
+    if not len(aerodrome_codes) == len(set(aerodrome_ids_in_db.keys())):
+        print("Some of the aerodromes in runway list, are not in the database.")
 
     data_to_add = [schemas.RunwayData(**{
-        "aerodrome_id": r["aerodrome_id"],
+        "aerodrome_id": int(
+            float(aerodrome_ids_in_db[r["aerodrome"].strip().upper()])
+        ),
         "number": r["number"],
         "length_ft": r["length_ft"],
         "landing_length_ft": None if not r["landing_length_ft"]
@@ -248,7 +274,9 @@ def _add_runways():
         else int(float(r["intersection_departure_length_ft"])),
         "surface_id": r["surface_id"]
     }) if r["position"] == "" else schemas.RunwayData(**{
-        "aerodrome_id": r["aerodrome_id"],
+        "aerodrome_id": int(
+            float(aerodrome_ids_in_db[r["aerodrome"].strip().upper()])
+        ),
         "number": r["number"],
         "position": r["position"],
         "length_ft": r["length_ft"],
@@ -259,7 +287,7 @@ def _add_runways():
         or r["intersection_departure_length_ft"].isspace()
         else int(float(r["intersection_departure_length_ft"])),
         "surface_id": r["surface_id"]
-    }) for r in csv.csv_to_list(file_path=f"{_PATH}runways.csv")]
+    }) for r in dict_list]
 
     try:
         with Session() as db_session:

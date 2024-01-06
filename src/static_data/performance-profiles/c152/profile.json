@@ -1,0 +1,103 @@
+{
+    "name": "Cessna 152, Standard Tanks, no speed fairings, Avro Lycoming 0-235-L2C 110 BHP at 2550RPM",
+    "is_complete": true,
+    "fuel_type_id": 1,
+    "center_of_gravity_in": 30.28,
+    "empty_weight_lb": 1195,
+    "max_ramp_weight_lb": 1670,
+    "max_takeoff_weight_lb": 1670,
+    "max_landing_weight_lb": 1670,
+    "baggage_allowance_lb": 120,
+    "percent_decrease_takeoff_headwind_knot": 1.11,
+    "percent_increase_takeoff_tailwind_knot": 5.0,
+    "take_off_taxi_fuel_gallons": 0.8,
+    "percent_increase_climb_temperature_c": 1,
+    "percent_decrease_landing_headwind_knot": 1.11,
+    "percent_increase_landing_tailwind_knot": 5.0,
+    "baggage_compartments": [
+        {
+            "name":"Baggage Area 1",
+            "arm_in": 64.0,
+            "weight_limit_lb": 120
+        },
+        {
+            "name":"Baggage Area 2",
+            "arm_in": 84.0,
+            "weight_limit_lb": 40
+        }
+    ],
+    "seat_rows": [
+        {
+            "name": "Pilot Seat",
+            "number_of_seats": 1,
+            "arm_in": 39.0,
+            "weight_limit_lb": null
+        },
+        {
+            "name": "Co-Pilot Seat",
+            "number_of_seats": 1,
+            "arm_in": 39.0,
+            "weight_limit_lb": null
+        }
+    ],
+    "fuel_tanks": [
+        {
+            "name": "Right Tank",
+            "arm_in": 42.0,
+            "fuel_capacity_gallons": 12.25,
+            "unusable_fuel_gallons": 0.75,
+            "burn_sequence": 1
+        },
+        {
+            "name": "Left Tank",
+            "arm_in": 42.0,
+            "fuel_capacity_gallons": 12.25,
+            "unusable_fuel_gallons": 0.75,
+            "burn_sequence": 1
+        }
+    ],
+    "weight_balance_profiles": [
+        {
+            "name": "Normal and Utility Category",
+            "limits":[
+                {
+                    "cg_location_in": 31,
+                    "weight_lb": 1000,
+                    "sequence": 1
+                },
+                {
+                    "cg_location_in": 31,
+                    "weight_lb": 1350,
+                    "sequence": 2
+                },
+                {
+                    "cg_location_in": 32.65,
+                    "weight_lb": 1670,
+                    "sequence": 3 
+                },
+                {
+                    "cg_location_in": 36.5,
+                    "weight_lb": 1670,
+                    "sequence": 4
+                },
+                {
+                    "cg_location_in": 36.5,
+                    "weight_lb": 1000,
+                    "sequence": 5
+                }
+            ]
+        }
+    ],
+    "surface_performance_decreas_data": [
+        {
+            "surface_id": 4,
+            "percent": 15,
+            "is_takeoff":true
+        },
+        {
+            "surface_id": 4,
+            "percent": 45,
+            "is_takeoff":false
+        }
+    ]
+}
