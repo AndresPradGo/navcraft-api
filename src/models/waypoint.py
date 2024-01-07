@@ -226,21 +226,21 @@ class Waypoint(BaseModel):
             90 - self.true_track_to_waypoint(to_waypoint=to_waypoint, precise=True))
 
         rotation_z = np.array([
-            [np.cos(angle_1), -np.sin(angle_1), 0],
-            [np.sin(angle_1), np.cos(angle_1), 0],
+            [np.cos(angle_1), np.sin(angle_1), 0],
+            [-np.sin(angle_1), np.cos(angle_1), 0],
             [0, 0, 1]
         ])
 
         rotation_x_1 = np.array([
             [1, 0, 0],
-            [0, np.cos(angle_2), -np.sin(angle_2)],
-            [0, np.sin(angle_2), np.cos(angle_2)]
+            [0, np.cos(angle_2), np.sin(angle_2)],
+            [0, -np.sin(angle_2), np.cos(angle_2)]
         ])
 
         rotation_z_2 = np.array([
-            [1, 0, 0],
-            [0, np.cos(angle_3), -np.sin(angle_3)],
-            [0, np.sin(angle_3), np.cos(angle_3)]
+            [np.cos(angle_3), np.sin(angle_3), 0],
+            [-np.sin(angle_3), np.cos(angle_3), 0],
+            [0, 0, 1]
         ])
 
         rotation_total = np.dot(rotation_z_2, np.dot(rotation_x_1, rotation_z))
@@ -252,21 +252,7 @@ class Waypoint(BaseModel):
         in radians, and returns them in a list of [Latitude, Longitude].
         """
 
-        R_matrix = self.find_rotation_matrix(to_waypoint)
-        distance = self.great_arc_to_waypoint(to_waypoint=to_waypoint)/2
-        cartesian = np.array(self.cartesian_coordinates_nm())
-
-        rotated_halfway_cartesian = np.dot(
-            R_matrix, cartesian) + np.array([distance, 0, 0])
-        halfway_cartesian = np.dot(np.transpose(
-            R_matrix), rotated_halfway_cartesian)
-
-        r = np.linalg.norm(halfway_cartesian)
-        longitude = np.arctan2(halfway_cartesian[1], halfway_cartesian[0])
-        latitude = np.radians(
-            90) - np.arccos(np.clip(halfway_cartesian[2] / r, -1.0, 1.0))
-
-        return [latitude, longitude]
+        return [(self.lat() + to_waypoint.lat())/2, (self.lon() + to_waypoint.lon())/2]
 
     def find_interval_coordinates(self, to_waypoint: 'Waypoint', distance_interval_nm: int) -> List[List[float]]:
         """
@@ -277,6 +263,7 @@ class Waypoint(BaseModel):
         R_matrix = self.find_rotation_matrix(to_waypoint)
         R_inverse = np.transpose(R_matrix)
         total_distance = self.great_arc_to_waypoint(to_waypoint=to_waypoint)
+        n_total = math.ceil(total_distance/distance_interval_nm)
         current_distance = distance_interval_nm
         cartesian_linear_position = np.dot(
             R_matrix, np.array(self.cartesian_coordinates_nm()))
@@ -292,6 +279,7 @@ class Waypoint(BaseModel):
                 cartesian_position[1], cartesian_position[0])
             latitude = np.radians(
                 90) - np.arccos(np.clip(cartesian_position[2] / r, -1.0, 1.0))
+
             coordinate_list.append([latitude, longitude])
 
             current_distance += distance_interval_nm

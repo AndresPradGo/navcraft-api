@@ -5,7 +5,7 @@ Usage:
 - Import the required function and call it.
 """
 from datetime import datetime
-import math
+import numpy as np
 from typing import List, Any
 
 from fastapi import HTTPException, status
@@ -503,6 +503,9 @@ def get_extensive_flight_data_for_return(flight_ids: List[int], db_session: Sess
             radius=flight.diversion_radius_nm
         )
 
+        diversion_options = [a for a in diversion_options if a["code"]
+                             is not arrival[4].code] if arrival[4] is not None else diversion_options
+
         # Organise list of flight legs
         legs_list = []
         aerodromes_in_briefing = {option["code"]
@@ -568,7 +571,7 @@ def get_extensive_flight_data_for_return(flight_ids: List[int], db_session: Sess
                     "lon_direction": wp.lon_direction,
                     "magnetic_variation": wp.magnetic_variation,
                     "from_user_waypoint": flight_wp.from_user_waypoint,
-                    "from_vfr_waypoint": flight_wp.from_vfr_waypoint
+                    "from_vfr_waypoint": flight_wp.from_vfr_waypoint,
                 } if flight_wp is not None else None,
                 "upper_wind_aerodromes": upper_wind_aerodromes,
                 "metar_aerodromes": metar_aerodromes,

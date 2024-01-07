@@ -4,7 +4,7 @@ Useful Functions for Navigation Calculations
 Usage: 
 - Import the required function and call it.
 """
-
+import numpy as np
 import math
 from typing import List, Dict, Tuple, Union, Literal
 
@@ -574,6 +574,8 @@ def find_nearby_aerodromes_with_weather_report(
         "code": v.code,
         "distance_from_target_nm": round(w.great_arc_to(to_lat=lat, to_lon=lon))
     } for _, v, w in aerodromes_query]
+
+    aerodromes.sort(key=lambda item: item["distance_from_target_nm"])
 
     return aerodromes[0:number]
 
