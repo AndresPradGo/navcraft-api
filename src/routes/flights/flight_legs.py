@@ -19,7 +19,7 @@ from utils import common_responses
 from utils.db import get_db
 from functions.data_processing import (
     get_user_id_from_email,
-    get_basic_flight_data_for_return
+    get_extensive_flight_data_for_return
 )
 from functions import navigation
 
@@ -29,7 +29,7 @@ router = APIRouter(tags=["Flight Legs"])
 @router.post(
     "/{flight_id}",
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.NewFlightReturn
+    response_model=schemas.ExtensiveFlightDataReturn
 )
 def post_new_leg(
     flight_id: int,
@@ -207,7 +207,7 @@ def post_new_leg(
     db_session.commit()
 
     # Return flight data
-    return get_basic_flight_data_for_return(
+    return get_extensive_flight_data_for_return(
         flight_ids=[flight_id],
         db_session=db_session,
         user_id=user_id
@@ -217,7 +217,7 @@ def post_new_leg(
 @router.put(
     "/{leg_id}",
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.NewFlightReturn
+    response_model=schemas.ExtensiveFlightDataReturn
 )
 def edit_flight_leg(
     leg_id: int,
@@ -373,7 +373,7 @@ def edit_flight_leg(
     db_session.commit()
 
     # Return flight data
-    return get_basic_flight_data_for_return(
+    return get_extensive_flight_data_for_return(
         flight_ids=[flight_id],
         db_session=db_session,
         user_id=user_id
@@ -518,7 +518,7 @@ def update_flight_waypoints(
 
     # Return
     return {
-        "flight_data": get_basic_flight_data_for_return(
+        "flight_data": get_extensive_flight_data_for_return(
             flight_ids=[flight_id],
             db_session=db_session,
             user_id=user_id
@@ -531,7 +531,7 @@ def update_flight_waypoints(
 @router.delete(
     "/{leg_id}",
     status_code=status.HTTP_200_OK,
-    response_model=schemas.NewFlightReturn
+    response_model=schemas.ExtensiveFlightDataReturn
 )
 def delete_flight_leg(
     leg_id: int,
@@ -611,7 +611,7 @@ def delete_flight_leg(
     db_session.commit()
 
     # Return new flight data
-    return get_basic_flight_data_for_return(
+    return get_extensive_flight_data_for_return(
         flight_ids=[flight_id],
         db_session=db_session,
         user_id=user_id

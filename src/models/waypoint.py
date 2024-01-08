@@ -9,7 +9,7 @@ Usage:
 """
 
 import math
-from typing import Union, List
+from typing import Union, List, Any
 
 import numpy as np
 from sqlalchemy import Column, Integer, DECIMAL, String, Boolean, ForeignKey
@@ -255,37 +255,42 @@ class Waypoint(BaseModel):
 
         return [(self.lat() + to_waypoint.lat())/2, (self.lon() + to_waypoint.lon())/2]
 
-    def find_interval_coordinates(self, to_waypoint: 'Waypoint', distance_interval_nm: int) -> List[List[float]]:
+    def find_boundary_points(self, to_waypoint: 'Waypoint', radius: int) -> List[List[float]]:
         """
         This method finds the list of coordinates, in radians of [Latitude, Longitude], 
-        of the points over the track between self and to_waypoint, in a given intervals of separation.
+        that define a boundary-box of a given radius around the path from self to to_waypoin.
         """
-
+        # Define constants
         R_matrix = self.find_rotation_matrix(to_waypoint)
         R_inverse = np.transpose(R_matrix)
-        total_distance = self.great_arc_to_waypoint(to_waypoint=to_waypoint)
-        n_total = math.ceil(total_distance/distance_interval_nm)
-        current_distance = distance_interval_nm
-        cartesian_linear_position = np.dot(
+        leg_distance = self.great_arc_to_waypoint(to_waypoint=to_waypoint)
+        # Init starting point and boundaries in cartesian linear form
+        linear_position = np.dot(
             R_matrix, np.array(self.cartesian_coordinates_nm()))
-        coordinate_list = [[self.lat(), self.lon()]]
+        linear_boundaries = []
+        boundaries = []
 
-        while current_distance < total_distance:
-            cartesian_linear_position += np.array([distance_interval_nm, 0, 0])
+        # Get the 4 boundary points in cartesian linear form
+        linear_position = linear_position + np.array([0, radius, 0])
+        linear_boundaries.append(linear_position)
+        linear_position = linear_position + np.array([leg_distance, 0, 0])
+        linear_boundaries.append(linear_position)
+        linear_position = linear_position - np.array([0, 2 * radius, 0])
+        linear_boundaries.append(linear_position)
+        linear_position = linear_position - np.array([leg_distance, 0, 0])
+        linear_boundaries.append(linear_position)
 
-            # Rotate back to earth-centered system
-            cartesian_position = np.dot(R_inverse, cartesian_linear_position)
-            r = np.linalg.norm(cartesian_position)
-            longitude = np.arctan2(
-                cartesian_position[1], cartesian_position[0])
-            latitude = np.radians(
-                90) - np.arccos(np.clip(cartesian_position[2] / r, -1.0, 1.0))
+        # Convert to radians and return
+        for linear_boundary in linear_boundaries:
+            rotated_position = np.dot(R_inverse, linear_boundary)
+            r = np.linalg.norm(rotated_position)
+            longitude = np.arctan2(rotated_position[1], rotated_position[0])
+            latitude = np.radians(90)\
+                - np.arccos(np.clip(rotated_position[2] / r, -1.0, 1.0))
 
-            coordinate_list.append([latitude, longitude])
+            boundaries.append([float(latitude), float(longitude)])
 
-            current_distance += distance_interval_nm
-
-        return coordinate_list
+        return boundaries
 
     def is_in_northern_airspace(self):
         """
@@ -301,7 +306,6 @@ class Waypoint(BaseModel):
                              math.sin(lat_rad)])
 
         # Define constants
-        epsilon = 1e-9
         ceil_lat = np.radians(72)
         floor_lat = np.radians(58 + 46/60)
         ref_point = to_cartesian_array(lat=[80, 0, 0], lon=[-90, -0, -0])
@@ -354,8 +358,20 @@ class Waypoint(BaseModel):
                 return False
 
         # Find if waypoint is north of the boundary
+        return self.is_within_boundary(boundary_points_input=boundary_points, ref_point=ref_point)
+
+    def is_within_boundary(self, boundary_points_input: List[Any], ref_point, is_closed: bool = False):
+        """
+        This method checks if the waypoint is within a boundary, defined by a list of points.
+        The boundary is open by default, but it can be set to close.
+        """
+        epsilon = 1e-9
         waypoint = np.array(self.cartesian_coordinates_nm(unit_vector=True))
         i = 0
+        boundary_points = boundary_points_input
+        if is_closed and len(boundary_points_input) > 0:
+            boundary_points.append(boundary_points_input[0])
+
         while i < len(boundary_points) - 1:
             boundary_p1 = boundary_points[i]
             boundary_p2 = boundary_points[i + 1]

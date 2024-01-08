@@ -15,7 +15,11 @@ from sqlalchemy.orm import Session, Query
 
 import models
 from utils import common_responses
-from functions.navigation import find_nearby_aerodromes_with_weather_report, find_aerodromes_within_radius
+from functions.navigation import (
+    find_nearby_aerodromes,
+    find_aerodromes_within_radius,
+    get_path_briefing_aerodromes
+)
 
 
 def clean_string(input_string: str) -> str:
@@ -495,64 +499,102 @@ def get_extensive_flight_data_for_return(flight_ids: List[int], db_session: Sess
                     weather_hours_from_etd
                 ])
 
+        # Query all aerodromes for weather briefings/reports
+        a = models.Aerodrome
+        v = models.VfrWaypoint
+        w = models.Waypoint
+        departure_code = departure[4].code if departure[4] is not None else ""
+        arrival_code = arrival[4].code if arrival[4] is not None else ""
+        aerodromes_for_briefing = db_session.query(a, v, w)\
+            .filter(and_(
+                not_(v.hidden),
+                a.user_waypoint_id.is_(None),
+                not_(v.code == departure_code),
+                not_(v.code == arrival_code)
+            ))\
+            .join(v, a.vfr_waypoint_id == v.waypoint_id)\
+            .join(w, v.waypoint_id == w.id).all()
+
+        weather_reports = ['TAF', 'METAR', 'Upper Wind']
+        aerodromes_for_reports = {}
+        aerodromes_for_reports_query = db_session.query(a, v, w)\
+            .filter(and_(
+                not_(v.hidden),
+                a.user_waypoint_id.is_(None),
+                or_(a.has_taf, a.has_metar, a.has_fds)
+            ))\
+            .join(v, a.vfr_waypoint_id == v.waypoint_id)\
+            .join(w, v.waypoint_id == w.id).all()
+
+        for weather_report in weather_reports:
+            aerodromes_for_reports[weather_report] = [
+                a for a in aerodromes_for_reports_query
+                if (weather_report == "TAF" and a[0].has_taf)
+                or (weather_report == "METAR" and a[0].has_metar)
+                or (weather_report == "Upper Wind" and a[0].has_fds)
+            ]
+
         # Get list of diversion options
         diversion_options = find_aerodromes_within_radius(
-            db_session=db_session,
+            aerodromes_query=aerodromes_for_briefing,
             lat=arrival[5].lat(),
             lon=arrival[5].lon(),
             radius=flight.diversion_radius_nm
         )
-
-        diversion_options = [a for a in diversion_options if a["code"]
-                             is not arrival[4].code] if arrival[4] is not None else diversion_options
+        aerodromes_for_briefing = [
+            a for a in aerodromes_for_briefing
+            if a[1].code not in {a["code"] for a in diversion_options}
+        ]
 
         # Organise list of flight legs
         legs_list = []
-        aerodromes_in_briefing = {option["code"]
-                                  for option in diversion_options}
         previous_waypoint = departure[5]
+
         for (leg, flight_wp, wp, _) in legs:
+            # Get weather report aerodromes for leg
             current_waypoint = wp if wp is not None else arrival[5]
 
             halfway_coordinates = previous_waypoint.find_halfway_coordinates(
                 current_waypoint)
 
-            upper_wind_aerodromes = find_nearby_aerodromes_with_weather_report(
-                db_session=db_session,
+            upper_wind_aerodromes = find_nearby_aerodromes(
+                aerodromes_query=aerodromes_for_reports["Upper Wind"],
                 lat=halfway_coordinates[0],
                 lon=halfway_coordinates[1],
-                weather_report='Upper Wind',
                 number=2
             )
-            metar_aerodromes = find_nearby_aerodromes_with_weather_report(
-                db_session=db_session,
+            metar_aerodromes = find_nearby_aerodromes(
+                aerodromes_query=aerodromes_for_reports["METAR"],
                 lat=halfway_coordinates[0],
                 lon=halfway_coordinates[1],
-                weather_report='METAR',
                 number=3
             )
 
-            briefing_coordinates = previous_waypoint.find_interval_coordinates(
-                current_waypoint,
-                flight.briefing_radius_nm * 2
+            # Get briefing aerodromes for leg
+            briefing_aerodromes = find_aerodromes_within_radius(
+                aerodromes_query=aerodromes_for_briefing,
+                lat=previous_waypoint.lat(),
+                lon=previous_waypoint.lon(),
+                radius=flight.briefing_radius_nm,
             )
 
-            briefing_aerodromes = []
-            for briefing_coordinate in briefing_coordinates:
-                briefing_aerodromes_for_coordinates = find_aerodromes_within_radius(
-                    db_session=db_session,
-                    lat=briefing_coordinate[0],
-                    lon=briefing_coordinate[1],
-                    radius=flight.briefing_radius_nm,
-                    exclude_list=aerodromes_in_briefing
-                )
+            path_boundaries = previous_waypoint.find_boundary_points(
+                to_waypoint=current_waypoint,
+                radius=flight.briefing_radius_nm
+            )
 
-                briefing_aerodromes += briefing_aerodromes_for_coordinates
-
-                aerodromes_in_briefing = aerodromes_in_briefing.union(
-                    {a["code"] for a in briefing_aerodromes_for_coordinates})
+            briefing_aerodromes += get_path_briefing_aerodromes(
+                aerodromes_query=aerodromes_for_briefing,
+                boundaries=path_boundaries,
+                reference=halfway_coordinates,
+                distance=flight.briefing_radius_nm
+            )
 
             previous_waypoint = wp if wp is not None else arrival[5]
+            aerodromes_for_briefing = [
+                a for a in aerodromes_for_briefing
+                if a[1].code not in {a["code"] for a in briefing_aerodromes}
+            ]
 
             legs_list.append({
                 "id": leg.id,
@@ -640,32 +682,28 @@ def get_extensive_flight_data_for_return(flight_ids: List[int], db_session: Sess
             "contingency_fuel_hours": flight.contingency_fuel_hours,
             "fuel_on_board_gallons": sum((tank.gallons for tank in fuel_tanks)),
             "legs": legs_list,
-            "departure_taf_aerodromes": find_nearby_aerodromes_with_weather_report(
-                db_session=db_session,
+            "departure_taf_aerodromes": find_nearby_aerodromes(
+                aerodromes_query=aerodromes_for_reports["TAF"],
                 lat=departure[5].lat(),
                 lon=departure[5].lon(),
-                weather_report='TAF',
                 number=3
             ),
-            "departure_metar_aerodromes": find_nearby_aerodromes_with_weather_report(
-                db_session=db_session,
+            "departure_metar_aerodromes": find_nearby_aerodromes(
+                aerodromes_query=aerodromes_for_reports["METAR"],
                 lat=departure[5].lat(),
                 lon=departure[5].lon(),
-                weather_report='METAR',
                 number=3
             ),
-            "arrival_taf_aerodromes": find_nearby_aerodromes_with_weather_report(
-                db_session=db_session,
+            "arrival_taf_aerodromes": find_nearby_aerodromes(
+                aerodromes_query=aerodromes_for_reports["TAF"],
                 lat=arrival[5].lat(),
                 lon=arrival[5].lon(),
-                weather_report='TAF',
                 number=3
             ),
-            "arrival_metar_aerodromes": find_nearby_aerodromes_with_weather_report(
-                db_session=db_session,
+            "arrival_metar_aerodromes": find_nearby_aerodromes(
+                aerodromes_query=aerodromes_for_reports["METAR"],
                 lat=arrival[5].lat(),
                 lon=arrival[5].lon(),
-                weather_report='METAR',
                 number=3
             ),
             "diversion_options": diversion_options

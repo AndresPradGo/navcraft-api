@@ -4,12 +4,12 @@ Useful Functions for Navigation Calculations
 Usage: 
 - Import the required function and call it.
 """
-import numpy as np
 import math
 from typing import List, Dict, Tuple, Union, Literal
 
 from fastapi import HTTPException, status
-from sqlalchemy import and_, or_, not_
+import numpy as np
+from sqlalchemy import and_, Row
 from sqlalchemy.orm import Session
 
 from functions import aircraft_performance
@@ -533,42 +533,16 @@ def location_coordinate(lat_deg: float, lon_deg: float, strict: bool = False) ->
     return location
 
 
-def find_nearby_aerodromes_with_weather_report(
-    db_session: Session,
+def find_nearby_aerodromes(
+    aerodromes_query: List[Row[Tuple[models.Aerodrome, models.VfrWaypoint, models.Waypoint]]],
     lat: float,
     lon: float,
-    weather_report: Literal['TAF', 'METAR', 'Upper Wind'],
     number: int = 1
 ) -> List[Dict[str, Union[str, int]]]:
     """
     This function finds the aerodrome(s) closest to the waypoint 
-    provided, which has the weather report passed as an argument, 
-    and returns the list of codes.
+    provided, and returns the list of codes.
     """
-
-    a = models.Aerodrome
-    v = models.VfrWaypoint
-    w = models.Waypoint
-
-    aerodromes_query = db_session.query(a, v, w)\
-        .filter(and_(
-            not_(v.hidden),
-            a.user_waypoint_id.is_(None),
-            or_(
-                not_(weather_report == 'TAF'),
-                a.has_taf
-            ),
-            or_(
-                not_(weather_report == 'METAR'),
-                a.has_metar
-            ),
-            or_(
-                not_(weather_report == 'Upper Wind'),
-                a.has_fds
-            )
-        ))\
-        .join(v, a.vfr_waypoint_id == v.waypoint_id)\
-        .join(w, v.waypoint_id == w.id).all()
 
     aerodromes = [{
         "code": v.code,
@@ -581,29 +555,15 @@ def find_nearby_aerodromes_with_weather_report(
 
 
 def find_aerodromes_within_radius(
-    db_session: Session,
+    aerodromes_query: List[Row[Tuple[models.Aerodrome, models.VfrWaypoint, models.Waypoint]]],
     lat: float,
     lon: float,
     radius: int,
-    exclude_list: List[str] = []
 ) -> List[Dict[str, Union[str, int]]]:
     """
     This function finds the aerodromes within a given radius away 
     from a given lat/lon coordinate.
     """
-
-    a = models.Aerodrome
-    v = models.VfrWaypoint
-    w = models.Waypoint
-
-    aerodromes_query = db_session.query(a, v, w)\
-        .filter(and_(
-            not_(v.hidden),
-            a.user_waypoint_id.is_(None),
-            v.code.notin_(exclude_list)
-        ))\
-        .join(v, a.vfr_waypoint_id == v.waypoint_id)\
-        .join(w, v.waypoint_id == w.id).all()
 
     all_aerodromes = [{
         "code": v.code,
@@ -614,3 +574,38 @@ def find_aerodromes_within_radius(
         a for a in all_aerodromes if a["distance_from_target_nm"] <= radius)
 
     return list(aerodromes)
+
+
+def get_path_briefing_aerodromes(
+    aerodromes_query: List[Row[Tuple[models.Aerodrome, models.VfrWaypoint, models.Waypoint]]],
+    boundaries: List[List[float]],
+    reference: List[float],
+    distance: int
+) -> List[Dict[str, Union[str, int]]]:
+    """
+    This function returns list of aerodromes within a given boundary around a path.
+    The boundary is given by a list of points. The reference point is a point inside 
+    the boundary.
+    """
+    # Function to convert from coordinate to cartesian unit np array
+
+    def to_cartesian_array(lat_rad: List[int], lon_rad: List[int]):
+        return np.array([math.cos(lat_rad) * math.cos(lon_rad),
+                         math.cos(lat_rad) * math.sin(lon_rad),
+                         math.sin(lat_rad)])
+    # Preprocess imputs
+    ref_point = to_cartesian_array(lat_rad=reference[0], lon_rad=reference[1])
+    boundary_points = [
+        to_cartesian_array(lat_rad=b[0], lon_rad=b[1]) for b in boundaries
+    ]
+    aerodromes = []
+    for aerodrome in aerodromes_query:
+        if aerodrome[2].is_within_boundary(
+            boundary_points_input=boundary_points, ref_point=ref_point, is_closed=True
+        ):
+            aerodromes.append({
+                "code": aerodrome[1].code,
+                "distance_from_target_nm": distance
+            })
+
+    return aerodromes
