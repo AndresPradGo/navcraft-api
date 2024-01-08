@@ -436,7 +436,7 @@ def post_new_user_waypoint(
         lon_direction=waypoint.lon_direction,
         magnetic_variation=waypoint.magnetic_variation,
     )
-
+    new_waypoint.in_north_airspace = new_waypoint.is_in_northern_airspace()
     new_waypoint.magnetic_variation = get_magnetic_variation_for_waypoint(
         waypoint=new_waypoint,
         db_session=db_session
@@ -524,6 +524,7 @@ def post_private_aerodrome(
         lon_direction=aerodrome.lon_direction,
         magnetic_variation=aerodrome.magnetic_variation,
     )
+    new_waypoint.in_north_airspace = new_waypoint.is_in_northern_airspace()
     new_waypoint.magnetic_variation = get_magnetic_variation_for_waypoint(
         waypoint=new_waypoint,
         db_session=db_session
@@ -627,15 +628,28 @@ def edit_user_waypoint(
             detail=f"Waypoint with code {waypoint.code} already exists."
         )
 
+    new_waypoint = models.Waypoint(
+        lat_degrees=waypoint.lat_degrees,
+        lat_minutes=waypoint.lat_minutes,
+        lat_seconds=waypoint.lat_seconds,
+        lat_direction=waypoint.lat_direction,
+        lon_degrees=waypoint.lon_degrees,
+        lon_minutes=waypoint.lon_minutes,
+        lon_seconds=waypoint.lon_seconds,
+        lon_direction=waypoint.lon_direction,
+    )
+    new_waypoint.in_north_airspace = new_waypoint.is_in_northern_airspace()
+
     update_waypoint_data = {
-        "lat_degrees": waypoint.lat_degrees,
-        "lat_minutes": waypoint.lat_minutes,
-        "lat_seconds": waypoint.lat_seconds,
-        "lat_direction": waypoint.lat_direction,
-        "lon_degrees": waypoint.lon_degrees,
-        "lon_minutes": waypoint.lon_minutes,
-        "lon_seconds": waypoint.lon_seconds,
-        "lon_direction": waypoint.lon_direction,
+        "lat_degrees": new_waypoint.lat_degrees,
+        "lat_minutes": new_waypoint.lat_minutes,
+        "lat_seconds": new_waypoint.lat_seconds,
+        "lat_direction": new_waypoint.lat_direction,
+        "lon_degrees": new_waypoint.lon_degrees,
+        "lon_minutes": new_waypoint.lon_minutes,
+        "lon_seconds": new_waypoint.lon_seconds,
+        "lon_direction": new_waypoint.lon_direction,
+        "in_north_airspace": new_waypoint.in_north_airspace
     }
     if waypoint.magnetic_variation is not None:
         update_waypoint_data["magnetic_variation"] = waypoint.magnetic_variation
@@ -735,15 +749,27 @@ def edit_private_aerodrome(
             detail=f"Aerodrome with code {aerodrome.code} already exists."
         )
 
+    new_waypoint = models.Waypoint(
+        lat_degrees=aerodrome.lat_degrees,
+        lat_minutes=aerodrome.lat_minutes,
+        lat_seconds=aerodrome.lat_seconds,
+        lat_direction=aerodrome.lat_direction,
+        lon_degrees=aerodrome.lon_degrees,
+        lon_minutes=aerodrome.lon_minutes,
+        lon_seconds=aerodrome.lon_seconds,
+        lon_direction=aerodrome.lon_direction,
+    )
+    new_waypoint.in_north_airspace = new_waypoint.is_in_northern_airspace()
     update_waypoint_data = {
-        "lat_degrees": aerodrome.lat_degrees,
-        "lat_minutes": aerodrome.lat_minutes,
-        "lat_seconds": aerodrome.lat_seconds,
-        "lat_direction": aerodrome.lat_direction,
-        "lon_degrees": aerodrome.lon_degrees,
-        "lon_minutes": aerodrome.lon_minutes,
-        "lon_seconds": aerodrome.lon_seconds,
-        "lon_direction": aerodrome.lon_direction,
+        "lat_degrees": new_waypoint.lat_degrees,
+        "lat_minutes": new_waypoint.lat_minutes,
+        "lat_seconds": new_waypoint.lat_seconds,
+        "lat_direction": new_waypoint.lat_direction,
+        "lon_degrees": new_waypoint.lon_degrees,
+        "lon_minutes": new_waypoint.lon_minutes,
+        "lon_seconds": new_waypoint.lon_seconds,
+        "lon_direction": new_waypoint.lon_direction,
+        "in_north_airspace": new_waypoint.in_north_airspace
     }
     if aerodrome.magnetic_variation is not None:
         update_waypoint_data["magnetic_variation"] = aerodrome.magnetic_variation

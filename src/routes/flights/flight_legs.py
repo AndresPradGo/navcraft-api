@@ -196,6 +196,7 @@ def post_new_leg(
     db_session.add(new_leg)
 
     # Add waypoint
+    new_waypoint.in_north_airspace = new_waypoint.is_in_northern_airspace()
     db_session.add(new_waypoint)
     db_session.commit()
     db_session.refresh(new_leg)
@@ -310,7 +311,8 @@ def edit_flight_leg(
                 "lon_minutes": waypoint[0].lon_minutes,
                 "lon_seconds": waypoint[0].lon_seconds,
                 "lon_direction": waypoint[0].lon_direction,
-                "magnetic_variation": waypoint[0].magnetic_variation
+                "magnetic_variation": waypoint[0].magnetic_variation,
+                "in_north_airspace": waypoint[0].in_north_airspace
             })
             flight_waypoint_query.update({
                 "code": waypoint_code,
@@ -323,18 +325,31 @@ def edit_flight_leg(
             flight_waypoint_query = db_session.query(models.FlightWaypoint).filter(
                 models.FlightWaypoint.leg_id == leg_query.first().id
             )
+            new_waypoint = models.Waypoint(
+                lat_degrees=leg_data.new_waypoint.lat_degrees,
+                lat_minutes=leg_data.new_waypoint.lat_minutes,
+                lat_seconds=leg_data.new_waypoint.lat_seconds,
+                lat_direction=leg_data.new_waypoint.lat_direction,
+                lon_degrees=leg_data.new_waypoint.lon_degrees,
+                lon_minutes=leg_data.new_waypoint.lon_minutes,
+                lon_seconds=leg_data.new_waypoint.lon_seconds,
+                lon_direction=leg_data.new_waypoint.lon_direction,
+                magnetic_variation=leg_data.new_waypoint.magnetic_variation
+            )
+            new_waypoint.in_north_airspace = new_waypoint.is_in_northern_airspace()
             db_session.query(models.Waypoint).filter(
                 models.Waypoint.id == flight_waypoint_query.first().waypoint_id
             ).update({
-                "lat_degrees": leg_data.new_waypoint.lat_degrees,
-                "lat_minutes": leg_data.new_waypoint.lat_minutes,
-                "lat_seconds": leg_data.new_waypoint.lat_seconds,
-                "lat_direction": leg_data.new_waypoint.lat_direction,
-                "lon_degrees": leg_data.new_waypoint.lon_degrees,
-                "lon_minutes": leg_data.new_waypoint.lon_minutes,
-                "lon_seconds": leg_data.new_waypoint.lon_seconds,
-                "lon_direction": leg_data.new_waypoint.lon_direction,
-                "magnetic_variation": leg_data.new_waypoint.magnetic_variation
+                "lat_degrees": new_waypoint.lat_degrees,
+                "lat_minutes": new_waypoint.lat_minutes,
+                "lat_seconds": new_waypoint.lat_seconds,
+                "lat_direction": new_waypoint.lat_direction,
+                "lon_degrees": new_waypoint.lon_degrees,
+                "lon_minutes": new_waypoint.lon_minutes,
+                "lon_seconds": new_waypoint.lon_seconds,
+                "lon_direction": new_waypoint.lon_direction,
+                "magnetic_variation": new_waypoint.magnetic_variation,
+                "in_north_airspace": new_waypoint.in_north_airspace,
             })
             flight_waypoint_query.update({
                 "code": leg_data.new_waypoint.code,
@@ -382,11 +397,11 @@ def update_flight_waypoints(
     - flight_id (int): flight id.
 
     Returns: 
-    - Dict: flight data.
+    - Dict: detailed flight data, and list of waypoints not found.
 
     Raise:
     - HTTPException (400): if flight doesn't exist, or data is wrong.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated user.
     - HTTPException (500): if there is a server error. 
     """
     # Check flight exists and user has permission to update flight
@@ -454,7 +469,8 @@ def update_flight_waypoints(
                 "lon_minutes": user_waypoint[1].lon_minutes,
                 "lon_seconds": user_waypoint[1].lon_seconds,
                 "lon_direction": user_waypoint[1].lon_direction,
-                "magnetic_variation": user_waypoint[1].magnetic_variation
+                "magnetic_variation": user_waypoint[1].magnetic_variation,
+                "in_north_airspace": user_waypoint[1].in_north_airspace
             })
 
     # Updata vfr-waypoints
@@ -494,7 +510,8 @@ def update_flight_waypoints(
                 "lon_minutes": vfr_waypoint[1].lon_minutes,
                 "lon_seconds": vfr_waypoint[1].lon_seconds,
                 "lon_direction": vfr_waypoint[1].lon_direction,
-                "magnetic_variation": vfr_waypoint[1].magnetic_variation
+                "magnetic_variation": vfr_waypoint[1].magnetic_variation,
+                "in_north_airspace": vfr_waypoint[1].in_north_airspace
             })
 
     db_session.commit()

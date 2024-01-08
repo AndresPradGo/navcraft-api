@@ -568,7 +568,7 @@ def get_weight_balance_calculations(
             if (x1 <= float(test_point["arm_in"]) <= x2 or
                     x2 <= float(test_point["arm_in"]) <= x1) and \
                     float(test_point["weight_lb"]) < ((y2 - y1) / (x2 - x1))\
-            * (float(test_point["arm_in"]) - x1) + y1:
+                * (float(test_point["arm_in"]) - x1) + y1:
                 return True
         return False
 
@@ -887,9 +887,16 @@ def takeoff_and_landing_distances(
     takeoff_landing_result = {}
     for key, parameters in loop_parameters.items():
         # Get aerodrome and weather
-        departure_arrival = db_session.query(parameters["model"], models.Aerodrome).join(
+        departure_arrival = db_session.query(
+            parameters["model"],
+            models.Aerodrome,
+            models.Waypoint
+        ).join(
             models.Aerodrome,
             parameters["model"].aerodrome_id == models.Aerodrome.id
+        ).join(
+            models.Waypoint,
+            models.Aerodrome.id == models.Waypoint.id
         ).filter(and_(
             parameters["model"].flight_id == flight_id,
             parameters["model"].aerodrome_id.isnot(None)
@@ -910,7 +917,8 @@ def takeoff_and_landing_distances(
         for runway in runways:
             pressure_alt = navigation.pressure_altitude_converter(
                 altitude_ft=departure_arrival[1].elevation_ft,
-                altimeter_inhg=float(departure_arrival[0].altimeter_inhg)
+                altimeter_inhg=29.92 if departure_arrival[2].in_north_airspace else float(
+                    departure_arrival[0].altimeter_inhg)
             )
             waypoint_id = departure_arrival[1].vfr_waypoint_id\
                 if departure_arrival[1].vfr_waypoint_id is not None\
@@ -928,7 +936,7 @@ def takeoff_and_landing_distances(
                 wind_magnitude_knot=departure_arrival[0].wind_magnitude_knot,
                 wind_direction_true=departure_arrival[0].wind_direction,
                 runway_number=runway.number,
-                magnetic_variation=magnetic_variation
+                magnetic_variation=0 if departure_arrival[2].in_north_airspace else magnetic_variation
             )
 
             # Get groundroll and obstacle clearance distances

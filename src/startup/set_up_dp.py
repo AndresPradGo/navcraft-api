@@ -156,6 +156,7 @@ def _add_vfr_waypoints():
                         lon_direction=waypoint.lon_direction,
                         magnetic_variation=waypoint.magnetic_variation,
                     )
+                    new_waypoint.in_north_airspace = new_waypoint.is_in_northern_airspace()
                     db_session.add(new_waypoint)
                     db_session.commit()
                     db_session.refresh(new_waypoint)
@@ -201,6 +202,7 @@ def _add_aerodromes():
                         lon_direction=aerodrome.lon_direction,
                         magnetic_variation=aerodrome.magnetic_variation,
                     )
+                    new_waypoint.in_north_airspace = new_waypoint.is_in_northern_airspace()
                     db_session.add(new_waypoint)
                     db_session.commit()
                     db_session.refresh(new_waypoint)

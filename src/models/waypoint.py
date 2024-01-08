@@ -37,6 +37,7 @@ class Waypoint(BaseModel):
     lon_seconds = Column(Integer, nullable=False, default=0)
     lon_direction = Column(String(1), nullable=False, default="E")
     magnetic_variation = Column(DECIMAL(4, 2))
+    in_north_airspace = Column(Boolean, nullable=False, default=False)
 
     vfr_waypoint = Relationship(
         "VfrWaypoint",
@@ -82,12 +83,12 @@ class Waypoint(BaseModel):
 
         return math.radians(lon_degrees)
 
-    def cartesian_coordinates_nm(self) -> List[float]:
+    def cartesian_coordinates_nm(self, unit_vector: bool = False) -> List[float]:
         """
         This method returns the cartesian coordinates of the waypoint in nautical miles.
         """
 
-        earth_radius = get_constant("earth_radius_ft")\
+        earth_radius = 1 if unit_vector else get_constant("earth_radius_ft")\
             * get_constant("ft_to_nautical")
 
         return [earth_radius * math.cos(self.lat()) * math.cos(self.lon()),
@@ -285,6 +286,101 @@ class Waypoint(BaseModel):
             current_distance += distance_interval_nm
 
         return coordinate_list
+
+    def is_in_northern_airspace(self):
+        """
+        This method finds if the waypoint is in the Northern Domestic Airspace
+        """
+        # Function to convert from coordinate to cartesian unit np array
+        def to_cartesian_array(lat: List[int], lon: List[int]):
+            lat_rad = np.radians(lat[0] + (lat[1] + lat[2] / 60) / 60)
+            lon_rad = np.radians(lon[0] + (lon[1] + lon[2] / 60) / 60)
+
+            return np.array([math.cos(lat_rad) * math.cos(lon_rad),
+                             math.cos(lat_rad) * math.sin(lon_rad),
+                             math.sin(lat_rad)])
+
+        # Define constants
+        epsilon = 1e-9
+        ceil_lat = np.radians(72)
+        floor_lat = np.radians(58 + 46/60)
+        ref_point = to_cartesian_array(lat=[80, 0, 0], lon=[-90, -0, -0])
+        boundary_points = [
+            to_cartesian_array(lat=[69, 0, 0], lon=[-141, -0, -0]),
+            to_cartesian_array(lat=[72, 0, 0], lon=[-129, -0, -0]),
+            to_cartesian_array(lat=[67, 40, 22], lon=[-129, -29, -34]),
+            to_cartesian_array(lat=[63, 11, 21], lon=[-115, -19, -22]),
+            to_cartesian_array(lat=[62, 10, 55], lon=[-112, -45, -20]),
+            to_cartesian_array(lat=[59, 0, 30], lon=[-95, -29, -15]),
+            to_cartesian_array(lat=[58, 46, 0], lon=[-92, -21, -0]),
+            to_cartesian_array(lat=[62, 6, 47], lon=[-79, -11, -59]),
+            to_cartesian_array(lat=[62, 34, 13], lon=[-76, -31, -52]),
+            to_cartesian_array(lat=[63, 26, 30], lon=[-69, -53, -30]),
+            to_cartesian_array(lat=[64, 14, 23], lon=[-67, -34, -28]),
+            to_cartesian_array(lat=[67, 31, 57], lon=[-60, -18, -13]),
+        ]
+        boundary_arcs = [
+            {
+                "lat": math.radians(62 + (27 + 52/60)/60),
+                "lon": math.radians(-114 - (26 + 12/60)/60),
+                "radius": 50
+            },
+            {
+                "lat": math.radians(58 + (45 + 45/60)/60),
+                "lon": math.radians(-93 - (57 + 14/60)/60),
+                "radius": 50
+            },
+            {
+                "lat": math.radians(62 + (24 + 49/60)/60),
+                "lon": math.radians(-77 - (55 + 38/60)/60),
+                "radius": 40
+            },
+            {
+                "lat": math.radians(63 + (44)/60),
+                "lon": math.radians(-68 - (32 + 53/60)/60),
+                "radius": 40
+            },
+        ]
+
+        # Find if waypoint is above ceil or below floor
+        if self.lat() > ceil_lat:
+            return True
+        if self.lat() < floor_lat:
+            return False
+
+        # Find if waypoint is within radius of arc segments of the NDA boundary
+        for arc in boundary_arcs:
+            if self.great_arc_to(to_lat=arc["lat"], to_lon=arc["lon"]) <= arc['radius']:
+                return False
+
+        # Find if waypoint is north of the boundary
+        waypoint = np.array(self.cartesian_coordinates_nm(unit_vector=True))
+        i = 0
+        while i < len(boundary_points) - 1:
+            boundary_p1 = boundary_points[i]
+            boundary_p2 = boundary_points[i + 1]
+            normal_1 = np.cross(waypoint, ref_point)
+            normal_2 = np.cross(boundary_p1, boundary_p2)
+            intersect_vector = np.cross(normal_1, normal_2)
+            intersect_1 = intersect_vector / np.linalg.norm(intersect_vector)
+            intersect_2 = -intersect_1
+
+            for intersect in [intersect_1, intersect_2]:
+                arcs_intersect = True
+                for arc in [[waypoint, ref_point], [boundary_p1, boundary_p2]]:
+                    theta_1_to_intersect = np.arccos(np.dot(
+                        arc[0], intersect) / (np.linalg.norm(arc[0]) * np.linalg.norm(intersect)))
+                    theta_2_to_intersect = np.arccos(np.dot(
+                        arc[1], intersect) / (np.linalg.norm(arc[1]) * np.linalg.norm(intersect)))
+                    theta_1_to_2 = np.arccos(
+                        np.dot(arc[0], arc[1]) / (np.linalg.norm(arc[0]) * np.linalg.norm(arc[1])))
+                    arcs_intersect = arcs_intersect and (
+                        abs(theta_1_to_2 - theta_1_to_intersect - theta_2_to_intersect) <= epsilon)
+                if arcs_intersect:
+                    return False
+            i += 1
+
+        return True
 
 
 class VfrWaypoint(BaseModel):
