@@ -35,7 +35,7 @@ def get_nav_log_and_fuel_calculations(
     user_id: int
 ):
     """
-    This reusable function prepares all the nav-log and fuel data,
+    This reusable function prepares all the nav-log and fuel calculations data,
     and returns the results.
     """
 
@@ -616,7 +616,8 @@ def navigation_log(
     - flight_id (int): flight id.
 
     Returns: 
-    - list: list of dictionaries with the nav-log data per leg.
+    - list[dict[NavigationLogLegResults]]: list of dictionaries 
+      with the nav-log data per leg.
 
     Raise:
     - HTTPException (400): if flight doesn't exist.
@@ -742,7 +743,7 @@ def fuel_calculations(
     - flight_id (int): flight id.
 
     Returns: 
-    - dict: dictionary with the fuel calculation results.
+    - dict[FuelCalculationResults]: dictionary with the fuel calculation results.
 
     Raise:
     - HTTPException (400): if flight doesn't exist.
@@ -803,7 +804,8 @@ def takeoff_and_landing_distances(
     - flight_id (int): flight id.
 
     Returns: 
-    - dict: dictionary with the takeoff and landing distance data.
+    - dict[TakeoffAndLandingDistances]: dictionary with the 
+      takeoff and landing distance data.
 
     Raise:
     - HTTPException (400): if flight doesn't exist.
@@ -995,7 +997,7 @@ def weight_and_balance_report(
     - flight_id (int): flight id.
 
     Returns: 
-    - Dict: W&B Report data.
+    - dict[WeightAndBalanceReport]: W&B Report data.
 
     Raise:
     - HTTPException (400): if flight doesn't exist.

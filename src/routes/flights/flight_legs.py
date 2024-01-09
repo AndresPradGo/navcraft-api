@@ -230,14 +230,14 @@ def edit_flight_leg(
 
     Parameters: 
     - leg_id (int): flight leg id.
-    - leg_data (dict): the flight leg data to be added.
+    - leg_data (dict[UpdateLegData]): the flight leg data to be added.
 
     Returns: 
-    - Dict: flight data.
+    - dict[ExtensiveFlightDataReturn]: flight data.
 
     Raise:
     - HTTPException (400): if flight leg doesn't exist, or data is wrong.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
     # Check flight exists
@@ -397,11 +397,12 @@ def update_flight_waypoints(
     - flight_id (int): flight id.
 
     Returns: 
-    - Dict: detailed flight data, and list of waypoints not found.
+    - dict[UpdateWaypointsReturn]: detailed flight data, and 
+      list of waypoints not found.
 
     Raise:
     - HTTPException (400): if flight doesn't exist, or data is wrong.
-    - HTTPException (401): if user is not authenticated user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
     # Check flight exists and user has permission to update flight
@@ -547,7 +548,7 @@ def delete_flight_leg(
     Returns: None
 
     Raise:
-    - HTTPException (401): invalid credentials.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (404): status not found.
     - HTTPException (500): if there is a server error. 
     """

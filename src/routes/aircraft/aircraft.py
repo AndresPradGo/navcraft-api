@@ -48,10 +48,10 @@ def get_aircraft_list(
     - complete_only (bool): If true, only return aircraft with a preferred profile.
 
     Returns: 
-    - List: list of dictionaries with aircraft data.
+    - List[dict[GetAircraftList]]: list of dictionaries with aircraft data.
 
     Raise:
-    - HTTPException (401): if user is not valid.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -126,14 +126,14 @@ def post_new_aircraft(
     Post New Aircraft Endpoint.
 
     Parameters: 
-    - aircraft_data (dict): the data to be added.
+    - aircraft_data (dict[AircraftData]): the aircraft data to be added.
 
     Returns: 
-    - Dic: dictionary with the data added to the database, and the id.
+    - dic[AircraftReturn]: dictionary with the aircraft data added to the database, and the id.
 
     Raise:
     - HTTPException (400): if aircraft already exists, or data is wrong.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -185,15 +185,17 @@ def post_new_aircraft_performance_profile(
     Post New Performance Profile Endpoint.
 
     Parameters: 
-    - performance_data (dict): the data to be added.
     - aircraft_id (int): the aircraft id.
+    - performance_data (dict[PerformanceProfileData]): 
+      the perforamnce profile data to be added.
 
     Returns: 
-    - Dic: dictionary with the data added to the database, and the id.
+    - dic[PerformanceProfileReturn]: dictionary with the 
+      performance profile data added to the database, and the id.
 
     Raise:
     - HTTPException (400): if data is wrong.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -280,11 +282,12 @@ def post_new_aircraft_performance_profile_from_model(
     - model_id (int): the model id.
 
     Returns: 
-    - Dic: dictionary with the data added to the database, and the id.
+    - dic[PerformanceProfileReturn]: dictionary with the
+      performance profile data added to the database, and the id.
 
     Raise:
     - HTTPException (400): if data is wrong.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
     # Check if user has permission
@@ -476,14 +479,15 @@ def edit_aircraft(
 
     Parameters: 
     - aircraft_id (int): aircraft id
-    - aircraft_data (dict): the data to be added.
+    - aircraft_data (dict[AircraftData]): the data to be added.
 
     Returns: 
-    - Dic: dictionary with the data added to the database, and the id.
+    - dic[AircraftReturn]: dictionary with the aircraft data added to the 
+      database, and the id.
 
     Raise:
     - HTTPException (400): if aircraft doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -540,14 +544,16 @@ def edit_aircraft_performance_profile(
 
     Parameters: 
     - performance_profile_id (int): performance profile id.
-    - performance_data (dict): the data to be added.
+    - performance_data (dict[PerformanceProfileData]): the 
+      perforamnce profile data to be added.
 
     Returns: 
-    - Dic: dictionary with the data added to the database, and the id.
+    - dic[PerformanceProfileReturn]: dictionary with the data added 
+      to the database, and the id.
 
     Raise:
     - HTTPException (400): if performance profile doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -640,11 +646,11 @@ def make_aircraft_performance_profile_preferred_profile(
     - performance_profile_id (int): performance profile id.
 
     Returns: 
-    - Dic: dictionary with the profile data.
+    - dic[PerformanceProfileReturn]: dictionary with the performance profile data.
 
     Raise:
     - HTTPException (400): if performance profile doesn't exists.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -733,7 +739,7 @@ def delete_aircraft_performance_profile(
 
     Raise:
     - HTTPException (400): if performance profile doesn't exists.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -808,7 +814,7 @@ def delete_aircraft(
 
     Raise:
     - HTTPException (400): if aircraft doesn't exists.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 

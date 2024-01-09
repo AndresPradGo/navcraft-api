@@ -36,13 +36,15 @@ def get_all_runways(
     """
     Get All Runways Endpoint.
 
-    Parameters: None
+    Parameters: 
+    - runway_id (int[optional]): if provided, only the runway 
+      with thisid will be returned.
 
     Returns: 
-    - list: list of runway dictionaries.
+    - list[dict[RunwayReturn]]: list of runway dictionaries.
 
     Raise:
-    - HTTPException (401): if user is not authenticated.
+    - HTTPException (401): if user is not admin user.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -105,6 +107,7 @@ def get_csv_file_with_all_runways(
        - surface_ids.csv
 
     Raise:
+    - HTTPException (401): if user is not admin user.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -215,7 +218,7 @@ def get_all_runway_surfaces(
     Parameters: None
 
     Returns: 
-    - list: list of runway syrface dictionaries.
+    - list[dict[RunwaySurfaceReturn]]: list of runway surface dictionaries.
 
     Raise:
     - HTTPException (401): if user is not authenticated.
@@ -238,13 +241,14 @@ def post_runway(
     Post Runway Endpoint.
 
     Parameters: 
-    - runway_data (dict): the runway object to be added.
+    - runway_data (dict[RunwayData]): the runway object to be added.
 
     Returns: 
-    Dic: dictionary with the runway data.
+    - dic[RunwayReturn]: dictionary with the runway data.
 
     Raise:
     - HTTPException (400): if runway already exists.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -495,13 +499,14 @@ def post_runway_surface(
     Post Runway Surface Endpoint.
 
     Parameters: 
-    - surface_data (dict): the runway surface object to be added.
+    - surface_data (dict[RunwaySurfaceData]): the runway surface object to be added.
 
     Returns: 
-    Dic: dictionary with the runway surface data.
+    - dict[RunwaySurfaceReturn]: dictionary with the runway surface data.
 
     Raise:
     - HTTPException (400): if runway surface already exists.
+    - HTTPException (401): if user is not admin user.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -536,13 +541,14 @@ def edit_runway(
     Edit Runway Endpoint.
 
     Parameters: 
-    - runway_data (dict): the runway  object to be added.
+    - runway_data (dict[RunwayDataEdit]): the runway  object to be added.
 
     Returns: 
-    Dic: dictionary with the runway  data.
+    - dict[RunwayReturn]: dictionary with the runway  data.
 
     Raise:
     - HTTPException (400): if runway already exists.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
     # Check if runway exists
@@ -654,13 +660,14 @@ def edit_runway_surface(
     Edit Runway Surface Endpoint.
 
     Parameters: 
-    - surface_data (dict): the runway surface object to be added.
+    - surface_data (dict[RunwaySurfaceData]): the runway surface object to be added.
 
     Returns: 
-    Dic: dictionary with the runway surface data.
+    - dict[RunwaySurfaceReturn]: dictionary with the runway surface data.
 
     Raise:
     - HTTPException (400): if runway surface already exists.
+    - HTTPException (401): if user is not admin user.
     - HTTPException (500): if there is a server error. 
     """
     surface_exists = db_session.query(models.RunwaySurface).filter(and_(
@@ -710,7 +717,7 @@ def delete_runway(
     Returns: None
 
     Raise:
-    - HTTPException (401): invalid credentials.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (404): passenger profile not found.
     - HTTPException (500): if there is a server error. 
     """
@@ -776,7 +783,7 @@ def delete_runway_surface(
     Returns: None
 
     Raise:
-    - HTTPException (401): invalid credentials.
+    - HTTPException (401): if user is not admin user.
     - HTTPException (404): passenger profile not found.
     - HTTPException (500): if there is a server error. 
     """

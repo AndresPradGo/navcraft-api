@@ -48,7 +48,7 @@ def get_aircraft_weight_balance_data(
     - profile_id (int): performance profile id.
 
     Returns: 
-    - dict: dictionary with the weight and balance data.
+    - dict[GetWeightBalanceData]: dictionary with the weight and balance data.
 
     Raise:
     - HTTPException (401): if user is not authenticated.
@@ -131,7 +131,7 @@ async def get_aircraft_weight_and_balance_graph(
     - profile_id (int): aircraft performance profile id.
 
     Returns: 
-    - Png-file: W&B graph.
+    - png-file: W&B graph.
 
     Raise:
     - HTTPException (400): if performance profile doesn't exist.
@@ -272,11 +272,12 @@ def post_new_weight_and_balance_profile(
     - data (dict): the data to be added.
 
     Returns: 
-    - Dic: dictionary with the data added to the database, and the id.
+    - dic[WeightBalanceReturn]: dictionary with the W&B data 
+      added to the database, and the id.
 
     Raise:
     - HTTPException (400): if profile doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -370,14 +371,16 @@ def edit_weight_and_balance_data_for_performance_profile(
 
     Parameters: 
     - profile_id (int): performance profile id.
-    - performance_data (dict): the data to be added.
+    - performance_data (dict[PerformanceProfileWeightBalanceData]): 
+      the performance data to be added.
 
     Returns: 
-    - Dic: dictionary with the performance profile data, and the id.
+    - dic[PerformanceProfileReturn]: dictionary with the performance 
+      profile data, and the id.
 
     Raise:
     - HTTPException (400): if performance profile doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -443,14 +446,15 @@ def edit_weight_and_balance_profile(
 
     Parameters: 
     - wb_profile_id (int): weight and balance id.
-    - data (dict): the data to be added.
+    - data (dict[WeightBalanceData]): the W&B data to be added.
 
     Returns: 
-    - Dic: dictionary with the data added to the database, and the id.
+    - dic[WeightBalanceReturn]: dictionary with the data added to 
+      the database, and the id.
 
     Raise:
     - HTTPException (400): if weight and balance doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -536,8 +540,8 @@ def delete_weight_and_balance_profile(
     Returns: None
 
     Raise:
-    - HTTPException (400): if W&B profile id doesn't exists.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (400): if W&B profile doesn't exists.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 

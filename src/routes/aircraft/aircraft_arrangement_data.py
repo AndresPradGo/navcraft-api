@@ -43,7 +43,8 @@ def get_aircraft_arrangement_data(
     - profile_id (int): performance profile id.
 
     Returns: 
-    - dict: dictionary with the list of seat rows, baggage compartments and fuel tanks' data.
+    - dict[AircraftArrangementReturn]: dictionary with the list of seat rows, baggage 
+      compartments and fuel tanks' data.
 
     Raise:
     - HTTPException (401): if user is not authenticated.
@@ -118,14 +119,14 @@ def post_new_baggage_compartment(
 
     Parameters: 
     - profile_id (int): profile id.
-    - performance_data (dict): the data to be added.
+    - performance_data (dict[BaggageCompartmentData]): the data to be added.
 
     Returns: 
-    - Dic: dictionary with the data added to the database, and the id.
+    - dic[BaggageCompartmentReturn]: dictionary with the compartment data.
 
     Raise:
     - HTTPException (400): if profile doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -180,14 +181,14 @@ def post_new_seat_row(
 
     Parameters: 
     - profile_id (int): profile id.
-    - data (dict): the data to be added.
+    - data (dict[SeatRowData]): the data to be added.
 
     Returns: 
-    - Dic: dictionary with the data added to the database, and the id.
+    - dic[SeatRowReturn]: dictionary with the seat row data.
 
     Raise:
     - HTTPException (400): if profile doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -251,14 +252,14 @@ def post_new_fuel_tank(
 
     Parameters: 
     - profile_id (int): profile id.
-    - data (dict): the data to be added.
+    - data (dict[FuelTankData]): the data to be added.
 
     Returns: 
-    - Dic: dictionary with the data added to the database, and the id.
+    - dic[FuelTankReturn]: dictionary with the fuel tank data.
 
     Raise:
     - HTTPException (400): if profile doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -355,14 +356,14 @@ def edit_baggage_compartment(
 
     Parameters: 
     - compartment_id (int): baggage compartment id.
-    - data (dict): the data to be added.
+    - data (dict[BaggageCompartmentData]): the data to be added.
 
     Returns: 
-    - Dic: dictionary with the data added to the database, and the id.
+    - dic[BaggageCompartmentReturn]: dictionary with the compartment data.
 
     Raise:
     - HTTPException (400): if baggage compartment doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -424,14 +425,14 @@ def edit_seat_row(
 
     Parameters: 
     - row_id (int): seat row id.
-    - data (dict): the data to be added.
+    - data (dict[SeatRowData]): the data to be added.
 
     Returns: 
-    - Dic: dictionary with the data added to the database, and the id.
+    - dic[SeatRowReturn]: dictionary with the seat row data.
 
     Raise:
     - HTTPException (400): if seat row doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -493,14 +494,14 @@ def edit_fuel_tank(
 
     Parameters: 
     - tank_id (int): fuel tank id.
-    - data (dict): the data to be added.
+    - data (dict[FuelTankData]): the data to be added.
 
     Returns: 
-    - Dic: dictionary with the data added to the database, and the id.
+    - dict[FuelTankReturn]: dictionary with the fuel tank data.
 
     Raise:
     - HTTPException (400): if fuel tank doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -576,7 +577,7 @@ def delete_baggage_compartment(
 
     Raise:
     - HTTPException (400): if baggage compartment id doesn't exists.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -622,7 +623,7 @@ def delete_seat_row(
 
     Raise:
     - HTTPException (400): if seat row id doesn't exists.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -674,7 +675,7 @@ def delete_fuel_tank(
 
     Raise:
     - HTTPException (400): if fuel tank id doesn't exists.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 

@@ -47,7 +47,7 @@ def get_all_flight(
     Parameters: None
 
     Returns: 
-    - List: List of dictionaries with basic flight data.
+    - list[dict[NewFlightReturn]]: List of dictionaries with basic flight data.
 
     Raise:
     - HTTPException (401): if user is not authenticated.
@@ -87,7 +87,7 @@ def get_flight(
     - flight_id (int): flight id.
 
     Returns: 
-    - Dict: Dictionary with detailed flight data.
+    - dict[ExtensiveFlightDataReturn]: dictionary with detailed flight data.
 
     Raise:
     - HTTPException (401): if user is not authenticated.
@@ -124,10 +124,10 @@ def post_new_flight(
     Post New Flight Endpoint.
 
     Parameters: 
-    - flight_data (dict): the flight data to be added.
+    - flight_data (dict[NewFlightData]): the flight data to be added.
 
     Returns: 
-    - Dic: dictionary with the summarized flight data.
+    - dic[NewFlightReturn]: dictionary with the summarized flight data.
 
     Raise:
     - HTTPException (400): if data is wrong.
@@ -303,10 +303,10 @@ def edit_flight(
 
     Parameters: 
     - flight_id (int): flight id.
-    - data (dict): new flight data.
+    - data (dict[UpdateFlightData]): new flight data.
 
     Returns: 
-    - dict: detailed flight data.
+    - dict[ExtensiveFlightDataReturn]: detailed flight data.
 
     Raise:
     - HTTPException (400): if flight doesn't exist.
@@ -358,7 +358,7 @@ def change_aircraft(
     - aircraft_id (int): aircraft id.
 
     Returns: 
-    - dict: detailed flight data.
+    - dict[ExtensiveFlightDataReturn]: detailed flight data.
 
     Raise:
     - HTTPException (400): if flight or aircraft doesn't exist.
@@ -447,10 +447,10 @@ def edit_departure_arrival(
     Parameters: 
     - flight_id (int): flight id.
     - is_departure (bool): true if updating the departure, flase if updating the arrival.
-    - data (dict): new flight data.
+    - data (dict[UpdateDepartureArrivalData]): new flight data.
 
     Returns: 
-    - dict: detailed flight data.
+    - dict[ExtensiveFlightDataReturn]: detailed flight data.
 
     Raise:
     - HTTPException (400): if flight or aerodrome doesn't exist.
@@ -527,7 +527,7 @@ def delete_flight(
     Returns: None
 
     Raise:
-    - HTTPException (401): invalid credentials.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (404): flight not found.
     - HTTPException (500): if there is a server error. 
     """

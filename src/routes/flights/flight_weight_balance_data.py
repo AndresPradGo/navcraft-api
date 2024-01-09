@@ -41,11 +41,11 @@ def get_all_persons_on_board(
     - Flight_id (int): flight id.
 
     Returns: 
-    - list: list of person on board dictionaries.
+    - list[dict[PersonOnBoardReturn]]: list of person on board dictionaries.
 
     Raise:
     - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is authenticated.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -122,10 +122,10 @@ def get_all_flight_baggage(
     Get Flight Baggage Endpoint.
 
     Parameters:
-    - Flight_id (int): flight id.
+    - flight_id (int): flight id.
 
     Returns: 
-    - list: list of baggage dictionaries.
+    - list[dict[FlightBaggageReturn]]: list of baggage dictionaries.
 
     Raise:
     - HTTPException (400): if flight doesn't exist.
@@ -181,7 +181,7 @@ def get_all_flight_fuel(
     - Flight_id (int): flight id.
 
     Returns: 
-    - list: list of dictionaries with fuel tank.
+    - list[dict[FlightFuelReturn]]: list of dictionaries with fuel tank.
 
     Raise:
     - HTTPException (400): if flight doesn't exist.
@@ -257,10 +257,10 @@ def add_person_on_board(
 
     Parameters: 
     - flight_id (int): flight id.
-    - data (dict): name and weight of personand seat row.
+    - data (dict[PersonOnBoardData]): name and weight of person and seat row.
 
     Returns: 
-    - dict: person on board data and id.
+    - dict[PersonOnBoardReturn]: person on board data and id.
 
     Raise:
     - HTTPException (400): if flight doesn't exist.
@@ -433,14 +433,14 @@ def add_flight_baggage(
 
     Parameters: 
     - flight_id (int): flight id.
-    - data (dict): baggage data
+    - data (dict[FlightBaggageData]): baggage data
 
     Returns: 
-    - dict: ggage data and id.
+    - dict[FlightBaggageReturn]: ggage data and id.
 
     Raise:
     - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -524,14 +524,14 @@ def edit_person_on_board(
 
     Parameters: 
     - pob_id (int): person on board id.
-    - data (dict): name and weight of personand seat row.
+    - data (dict[PersonOnBoardData]): name and weight of person and seat row.
 
     Returns: 
-    - dict: person on board data and id.
+    - dict[PersonOnBoardReturn]: person on board data and id.
 
     Raise:
     - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
     # Get person on board
@@ -714,14 +714,14 @@ def edit_flight_baggage(
 
     Parameters: 
     - baggage_id (int): baggage id.
-    - data (dict): baggage data
+    - data (dict[FlightBaggageData]): baggage data
 
     Returns: 
-    - dict: baggage data and id.
+    - dict[FlightBaggageReturn]: baggage data and id.
 
     Raise:
     - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
     # Get baggage
@@ -813,14 +813,14 @@ def edit_flight_fuel(
 
     Parameters: 
     - fuel_id (int): fuel id.
-    - data (dict): dict with gallons of fuel in tank
+    - data (dict[FuelData]): dict with gallons of fuel in tank
 
     Returns: 
-    - dict: fuel data and id.
+    - dict[FlightFuelReturn]: fuel data and id.
 
     Raise:
     - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
     # Get fuel
@@ -907,7 +907,7 @@ def delete_person_on_board(
 
     Raise:
     - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
     # Get person on board
@@ -971,7 +971,7 @@ def delete_flight_baggage(
 
     Raise:
     - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
     # Get person on board

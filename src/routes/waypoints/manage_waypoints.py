@@ -40,6 +40,7 @@ def get_csv_file_with_all_vfr_waypoints(
     - CSV file: csv file with a list of VFR Waypoints.
 
     Raise:
+    - HTTPException (401): if user is not admin user.
     - HTTPException (500): if there is a server error. 
     """
     a = models.Aerodrome
@@ -111,6 +112,7 @@ def get_csv_file_with_all_aerodromes(
     - CSV file: csv file with a list of aerodromes (does not include the runways).
 
     Raise:
+    - HTTPException (401): if user is not admin user.
     - HTTPException (500): if there is a server error. 
     """
 

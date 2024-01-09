@@ -43,7 +43,7 @@ def get_all_users(
 
 
     Returns: 
-    - list: list of user dictionaries.
+    - list[dict[UserReturnBasic]]: list of user dictionaries.
 
     Raise:
     - HTTPException (401): if user is not master user.
@@ -71,10 +71,10 @@ def get_user_profile_data(
     Parameters: None
 
     Returns: 
-    - dict: dictionary with user data.
+    - dict[UserReturn]: dictionary with user data.
 
     Raise:
-    - HTTPException (401): validation fails.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
     user = db_session.query(models.User).filter(
@@ -103,10 +103,10 @@ def get_passenger_profiles(
     profile_id (int): optional profile id.
 
     Returns: 
-    - list: list of dictionaries with the profiles.
+    - list[dict[PassengerProfileReturn]]: list of dictionaries with the profiles.
 
     Raise:
-    - HTTPException (401): validation fails.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
     user_id = get_user_id_from_email(
@@ -131,10 +131,10 @@ def register(
     Post User Endpoint.
 
     Parameters: 
-    - user (dict): the user object to be added.
+    - user (dict[UserRegister]): the user data to be added.
 
     Returns: 
-    - Dic: dictionary with the user data.
+    - dic[JWTData]: dictionary with the JWT user data.
 
     Raise:
     - HTTPException (400): if user already exists.
@@ -181,14 +181,16 @@ def add_new_passenger_profile(
     Endpoint to add a new passenger profile
 
     Parameters: 
-    - passenger_profile_data (dict): dictionary with passenger profile data.
+    - passenger_profile_data (dict[PassengerProfileData]): dictionary with 
+      passenger profile data.
 
     Returns: 
-    - Dic: dictionary with passenger profile data and database id.
+    - dic[PassengerProfileReturn]: dictionary with passenger profile 
+      data and database id.
 
     Raise:
     - HTTPException (400): if user already has a passenger profile with the given name.
-    - HTTPException (401): not able to validate user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -228,14 +230,14 @@ def change_email(
     Change User Email Endpoint.
 
     Parameters: 
-    - user_data (dict): schema with the new user email.
+    - user_data (dict[UserEmail]): dict with the new user email.
 
     Returns: 
-    - Dic: dictionary with the user data.
+    - dic[UserReturnBasic]: dictionary with the user data.
 
     Raise:
     - HTTPException (400): if user with new email already exists.
-    - HTTPException (401): if user is invalid or trying to update other user's data.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -283,14 +285,15 @@ def change_password(
     Change Password Endpoint.
 
     Parameters: 
-    - user_data (dict): dictionary current password and new password.
+    - user_data (dict[PasswordChangeData]): dictionary current 
+      password and new password.
 
     Returns: 
-    - Dic: dictionary with the user data.
+    - dic[UserReturnBasic]: dictionary with the user data.
 
     Raise:
     - HTTPException (400): if new password is not in the right format.
-    - HTTPException (401): if user is invalid or trying to update other user's data.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
     # Get user from database
@@ -326,14 +329,14 @@ def edit_user_profile(
     Edit User Endpoint.
 
     Parameters: 
-    - user (dict): dictionary with the user data.
+    - user (dict[UserEditProfileData]): dictionary with the user data.
 
     Returns: 
-    - Dic: dictionary with the user data.
+    - dic[UserReturnBasic]: dictionary with the user data.
 
     Raise:
      - HTTPException (400): if user with new email already exists.
-    - HTTPException (401): if user is invalid or trying to update other user's data.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
     # Get User from database
@@ -367,10 +370,10 @@ def grant_revoke_admin_privileges_or_deactivate(
 
     Parameters: 
     - user_id (int): user id.
-    - data (dict): (make_admin(bool), activate (bool))
+    - data (dict[EditUserData]): (make_admin(bool), activate (bool))
 
     Returns: 
-    - Dic: dictionary with user data.
+    - dic[UserReturnBasic]: dictionary with user data.
 
     Raise:
     - HTTPException (400): if the user being updated is a master user.
@@ -416,14 +419,16 @@ def edit_existing_passenger_profile(
 
     Parameters: 
     - profile_id (int): passenger profile id
-    - passenger_profile_data (dict): dictionary with passenger profile data.
+    - passenger_profile_data (dict[PassengerProfileData]): 
+      dictionary with passenger profile data.
 
     Returns: 
-    - Dic: dictionary with passenger profile data and database id.
+    - dict[PassengerProfileReturn]: dictionary with passenger profile 
+      data and database id.
 
     Raise:
     - HTTPException (400): if user already has a passenger profile with the given name.
-    - HTTPException (401): not able to validate user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -473,7 +478,7 @@ def delete_account(
 
     Raise:
     - HTTPException (404): user not found.
-    - HTTPException (401): if user making the change is not authenticated.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -535,7 +540,7 @@ def delete_passenger_profile(
     Returns: None
 
     Raise:
-    - HTTPException (401): invalid credentials.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (404): passenger profile not found.
     - HTTPException (500): if there is a server error. 
     """

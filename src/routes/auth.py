@@ -33,10 +33,10 @@ def login(
     Authenticate Endpoint.
 
     Parameters: 
-    - login_data (dict): an object with email and password fields.
+    - login_data (dict[OAuth2PasswordRequestForm]): an object with email and password fields.
 
     Returns: 
-    - Dic: dictionary with JWT.
+    - dic: dictionary with JWT.
 
     Raise:
     - HTTPException (401): if login details are invalid.

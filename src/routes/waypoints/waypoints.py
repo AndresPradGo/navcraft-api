@@ -49,9 +49,11 @@ def get_all_user_waypoints(
     - waypoint_id (int): waypoint id.
 
     Returns: 
-    - list: list of waypoint dictionaries.
+    - list[dict[UserWaypointReturn]]: list of waypoint dictionaries.
 
     Raise:
+    - HTTPException (400): if values are wrong. 
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -110,9 +112,11 @@ def get_all_vfr_waypoints(
     - waypoint_id (int): waypoint id.
 
     Returns: 
-    - list: list of waypoint dictionaries.
+    - list[dict[VfrWaypointReturn]]: list of waypoint dictionaries.
 
     Raise:
+    - HTTPException (400): if values are wrong. 
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
     a = models.Aerodrome
@@ -168,13 +172,16 @@ def get_all_nearby_waypoints(
     Parameters: 
     - lat (float): latitude of the coordinate.
     - lon (float): longitude of the coordinate.
-    - distance (int): radius around the coordinate in nautical miles.
+    - distance (optional int): radius around the coordinate in 
+      nautical miles.
 
     Returns: 
-    - list: list of dictionaries, of all waypoints within a radius of the coordinate.
+    - list[dict[NearbyWaypointReturn]]: list of dictionaries, of 
+      all waypoints within a radius of the coordinate.
 
     Raise:
     - HTTPException (400): if values are wrong. 
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
     # Check coordinate
@@ -274,9 +281,10 @@ def get_all_aerodromes(
     - aerodrome_id (optional int): aerodrome id.
 
     Returns: 
-    - list: list of aerodrome dictionaries.
+    - list[dict[AerodromeReturnWithRunways]]: list of aerodrome dictionaries.
 
     Raise:
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
     user_id = get_user_id_from_email(
@@ -375,9 +383,11 @@ def get_all_aerodrome_status(
     - status_id (optional int): status id.
 
     Returns: 
-    - list: list of aerodrome status dictionaries with status and id.
+    - list[dict[AerodromeStatusReturn]]: list of aerodrome 
+      status dictionaries with status and id.
 
     Raise:
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -401,14 +411,14 @@ def post_new_user_waypoint(
     Post User Waypoint Endpoint.
 
     Parameters: 
-    - waypoint (dict): the waypoint object to be added.
+    - waypoint (dict[UserWaypointData]): the waypoint object to be added.
 
     Returns: 
-    Dic: dictionary with the waypoint data.
+    - dic[UserWaypointReturn]: dictionary with the waypoint data.
 
     Raise:
     - HTTPException (400): if waypoint already exists.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -480,15 +490,16 @@ def post_private_aerodrome(
     Post Private Aerodrome Endpoint.
 
     Parameters: 
-    - waypoint (dict): the waypoint object to be added.
-    - aerodrome (dict): the aerodrome object to be added.
+    - aerodrome (dict[PrivateAerodromeData]): the aerodrome object
+      to be added.
 
     Returns: 
-    - Dic: dictionary with the aerodrome and waypoint data.
+    - dic[PrivateAerodromeReturn]: dictionary with the aerodrome
+      and waypoint data.
 
     Raise:
     - HTTPException (400): if waypoint already exists.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -593,13 +604,14 @@ def edit_user_waypoint(
 
     Parameters: 
     - waypoint_id (int): waypoint id
-    - waypoint (dict): the waypoint object to be added.
+    - waypoint (dict[UserWaypointData]): the waypoint object to be added.
 
     Returns: 
-    Dic: dictionary with the waypoint data.
+    - dic[UserWaypointReturn]: dictionary with the waypoint data.
 
     Raise:
-    - HTTPException (400): if waypoint already exists.
+    - HTTPException (400): if waypoint already exits, or data is wrong. 
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -696,13 +708,14 @@ def edit_private_aerodrome(
 
     Parameters: 
     - aerodrome_id (int): aerodrome id
-    - aerodrome (dict): the aerodrome object to be added.
+    - aerodrome (dict[PrivateAerodromeData]): the aerodrome object to be added.
 
     Returns: 
-    Dic: dictionary with the aerodrome data.
+    - dic[PrivateAerodromeReturn]: dictionary with the aerodrome data.
 
     Raise:
-    - HTTPException (400): if aerodrome already exists.
+    - HTTPException (400): if aerodrome already exists, or data is wrong. 
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -831,7 +844,7 @@ def delete_user_waypoint_or_private_aerodrome(
     Returns: None
 
     Raise:
-    - HTTPException (401): invalid credentials.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (404): waypoint not found.
     - HTTPException (500): if there is a server error. 
     """

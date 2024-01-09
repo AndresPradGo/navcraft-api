@@ -36,17 +36,6 @@ def post_vfr_waypoint(
     This function checks if the waypoint passed as a parameter
     already exists in the database, and adds it to the database, 
     or returns and error response.
-
-    Parameters: 
-    - waypoint (waypoint pydantic schema): waypoint data.
-    - creator_id (int): id of the user.
-
-    Returns: 
-    dict: Object with the added waypoint data.
-
-    Raise:
-    - HTTPException (400): if waypoint already exists.
-    - HTTPException (500): if there is a server error. 
     """
 
     exists = db_session.query(models.VfrWaypoint).filter(
@@ -105,19 +94,8 @@ def update_vfr_waypoint(
         waypoint_id: int
 ):
     """
-    This function updates the waypoint in the database, after performing the necessary checks.
-
-    Parameters: 
-    - waypoint (waypoint pydantic schema): waypoint data.
-    - creator_id (int): id of the user.
-    - waypoint_id (int): waypoint id.
-
-    Returns: 
-    Session: Sqlalchemy session qith changes to be commited.
-
-    Raise:
-    - HTTPException (400): if waypoint code already exists.
-    - HTTPException (500): if there is a server error. 
+    This function updates the waypoint in the database, after 
+    performing the necessary checks.
     """
 
     vfr_waypoint_exists = db_session.query(models.VfrWaypoint).filter(
@@ -198,10 +176,10 @@ def post_new_vfr_waypoint(
     Post VFR Waypoint Endpoint.
 
     Parameters: 
-    - waypoint (dict): the waypoint object to be added.
+    - waypoint (dict[VfrWaypointData]): the waypoint object to be added.
 
     Returns: 
-    Dic: dictionary with the waypoint data.
+    - dic[VfrWaypointReturn]: dictionary with the waypoint data.
 
     Raise:
     - HTTPException (400): if waypoint already exists.
@@ -235,11 +213,10 @@ def post_registered_aerodrome(
     Post Registered Aerodrome Endpoint.
 
     Parameters: 
-    - waypoint (dict): the waypoint object to be added.
-    - aerodrome (dict): the aerodrome object to be added.
+    - aerodrome (dict[RegisteredAerodromeData]): the aerodrome object to be added.
 
     Returns: 
-    - Dic: dictionary with the aerodrome and waypoint data.
+    - dic[RegisteredAerodromeReturn]: dictionary with the aerodrome and waypoint data.
 
     Raise:
     - HTTPException (400): if waypoint already exists.
@@ -306,14 +283,13 @@ def post_aerodrome_status(
     Post Aerodrome Status Endpoint.
 
     Parameters: 
-    - status (dict): the aerodrom status to be added.
+    - aerodrome_status (str): the aerodrom status to be added.
 
     Returns: 
-    - Dic: dictionary with the aerodrome status and id.
+    - dic[AerodromeStatusReturn]: dictionary with the aerodrome status and id.
 
     Raise:
-    - HTTPException (400): if aerodrome status already exists, or it
-      contains characters other than letters, hyphen and white space.
+    - HTTPException (400): if aerodrome status already exists, or data is wrong.
     - HTTPException (401): if user is not admin user.
     - HTTPException (500): if there is a server error. 
     """
@@ -360,13 +336,14 @@ def edit_vfr_waypoint(
 
     Parameters: 
     - waypoint_id (int): waypoint id
-    - waypoint (dict): the waypoint object to be added.
+    - waypoint (dict[VfrWaypointData]): the waypoint object to be added.
 
     Returns: 
-    Dic: dictionary with the waypoint data.
+    - dict[VfrWaypointReturn]: dictionary with the waypoint data.
 
     Raise:
     - HTTPException (400): if waypoint already exists.
+    - HTTPException (401): if user is not admin user.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -416,13 +393,14 @@ def edit_registered_aerodrome(
 
     Parameters: 
     - aerodrome_id (int): aerodrome id
-    - aerodrome (dict): the aerodrome object to be added.
+    - aerodrome (dict[RegisteredAerodromeData]): the aerodrome object to be added.
 
     Returns: 
-    Dic: dictionary with the aerodrome data.
+    - dic[RegisteredAerodromeReturn]: dictionary with the aerodrome data.
 
     Raise:
-    - HTTPException (400): if aerodrome already exists.
+    - HTTPException (400): if aerodrome already exists or data is wrong.
+    - HTTPException (401): if user is not admin user.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -515,7 +493,7 @@ def delete_vfr_waypoints_or_aerodromes(
     Returns: None
 
     Raise:
-    - HTTPException (401): invalid credentials.
+    - HTTPException (401): if user is not admin user.
     - HTTPException (404): waypoint not found.
     - HTTPException (500): if there is a server error. 
     """
@@ -553,7 +531,7 @@ def delete_aerodrome_status(
     Returns: None
 
     Raise:
-    - HTTPException (401): invalid credentials.
+    - HTTPException (401): if user is not admin user.
     - HTTPException (404): status not found.
     - HTTPException (500): if there is a server error. 
     """

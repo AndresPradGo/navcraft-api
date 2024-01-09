@@ -39,13 +39,13 @@ def get_performance_profile_model_list(
     Get Performance Profile Model List Endpoint.
 
     Parameters: 
-    - profile_id (int optional): If provided, only 1 profile will be provided.
+    - profile_id (int [optional]): If provided, only 1 profile will be provided.
 
     Returns: 
-    - List: list of dictionaries with profile data.
+    - List[dict[GetPerformanceProfileList]]: list of dictionaries with profile data.
 
     Raise:
-    - HTTPException (401): if user is not valid.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -102,7 +102,7 @@ def get_fuel_types(
       it returns all entries. If id doesn't exist, it returns an empty list
 
     Returns: 
-    - List: list of dictionaries with the fuel types.
+    - list[dict[FuelTypeReturn]]: list of dictionaries with the fuel types.
 
     Raise:
     - HTTPException (401): if user is not authenticated.
@@ -129,10 +129,10 @@ def post_new_fuel_type(
     Post Fuel Type Endpoint.
 
     Parameters: 
-    - fuel_type (dict): the fuel type data to be added.
+    - fuel_type (dict[FuelTypeData]): the fuel type data to be added.
 
     Returns: 
-    - Dic: dictionary with the fuel type data added to the database, and the id.
+    - dic[FuelTypeReturn]: dictionary with the fuel type data added to the database, and the id.
 
     Raise:
     - HTTPException (400): if fuel type already exists.
@@ -173,10 +173,11 @@ def post_new_performance_profile(
     Post New Performance Profile Endpoint.
 
     Parameters: 
-    - performance_data (dict): the data to be added.
+    - performance_data (dict[OfficialPerformanceProfileData]): dictionary with 
+      the performance data to be added.
 
     Returns: 
-    - Dic: dictionary with the data added to the database, and the id.
+    - dic[PerformanceProfileReturn]: dictionary with the data added to the database, and the id.
 
     Raise:
     - HTTPException (400): if data is wrong.
@@ -240,10 +241,10 @@ def edit_fuel_type(
 
     Parameters: 
     - fuel_type_id (int): fuel type id.
-    - fuel_type (dict): the fuel type data to be added.
+    - fuel_type (dict[FuelTypeData]): the fuel type data to be added.
 
     Returns: 
-    - Dic: dictionary with the new fuel type data.
+    - dic[FuelTypeReturn]: dictionary with the new fuel type data.
 
     Raise:
     - HTTPException (400): if fuel type doesn't exists.
@@ -295,10 +296,12 @@ def edit_performance_profile(
 
     Parameters: 
     - performance_profile_id (int): performance profile id.
-    - performance_data (dict): the data to be added.
+    - performance_data (dict[OfficialPerformanceProfileData]): the 
+      performance data to be added.
 
     Returns: 
-    - Dic: dictionary with the data added to the database, and the id.
+    - dic[PerformanceProfileReturn]: dictionary with the performance 
+      data added to the database, and the id.
 
     Raise:
     - HTTPException (400): if performance profile doesn't exists, or data is wrong.

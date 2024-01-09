@@ -289,7 +289,8 @@ def get_takeoff_landing_performance_data(
     - is_takeoff (bool): false if you want to get landing data.
 
     Returns: 
-    - dict: dictionary with the runway performance data.
+    - dict[TakeoffLandingPerformanceReturn]: dictionary with 
+      the takeoff/landing performance data.
 
     Raise:
     - HTTPException (401): if user is not authenticated.
@@ -381,7 +382,8 @@ def get_climb_performance_data(
     - profile_id (int): performance profile id.
 
     Returns: 
-    - dict: dictionary with the climb performance data.
+    - dict[ClimbPerformanceReturn]: dictionary with the 
+      climb performance data.
 
     Raise:
     - HTTPException (401): if user is not authenticated.
@@ -458,7 +460,8 @@ def get_cruise_performance_data(
     - profile_id (int): performance profile id.
 
     Returns: 
-    - dict: dictionary with the cruise performance data.
+    - dict[CruisePerformanceReturn]: dictionary with the cruise 
+      performance data.
 
     Raise:
     - HTTPException (401): if user is not authenticated.
@@ -548,7 +551,7 @@ async def manage_takeoff_landing_performance_data_with_csv_file(
 
     Raise:
     - HTTPException (400): file or file-data is wrong.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -677,7 +680,7 @@ async def manage_climb_performance_data_with_csv_file(
 
     Raise:
     - HTTPException (400): file or file-data is wrong.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -794,7 +797,7 @@ async def manage_cruise_performance_data_with_csv_file(
 
     Raise:
     - HTTPException (400): file or file-data is wrong.
-    - HTTPException (401): if user is not admin user.
+    - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
 
@@ -882,12 +885,14 @@ def edit_takeoff_landing_adjustment_values(
 
     Parameters: 
     - profile_id (int): performance profile id.
-    - adjustment_data (Dict): dictionary with the percentage adjustment data.
+    - adjustment_data (dict[RunwayDistanceAdjustmentPercentages]): 
+      dictionary with the percentage adjustment data.
     - is_takeoff (bool): false if you want to get landing data.
 
     Returns: None
 
     Raise:
+    - HTTPException (400): if data is wrong.
     - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
@@ -972,11 +977,13 @@ def edit_climb_performance_adjustment_values(
 
     Parameters: 
     - profile_id (int): performance profile id.
-    - adjustment_data (Dict): dictionary with the percentage adjustment data.
+    - adjustment_data (dict[ClimbPerformanceAdjustments]): 
+      dictionary with the percentage adjustment data.
 
     Returns: None
 
     Raise:
+    - HTTPException (400): if data is wrong.
     - HTTPException (401): if user is not authenticated.
     - HTTPException (500): if there is a server error. 
     """
