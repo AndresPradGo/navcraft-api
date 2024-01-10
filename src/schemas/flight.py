@@ -253,7 +253,7 @@ class UpdateFlightData(BaseModel):
     reserve_fuel_hours: confloat(allow_inf_nan=False, ge=0, le=99.94)
     contingency_fuel_hours: confloat(allow_inf_nan=False, ge=0, le=99.94)
     briefing_radius_nm: conint(ge=5, le=50)
-    diversion_radius_nm: conint(ge=5, le=100)
+    alternate_radius_nm: conint(ge=5, le=100)
 
     @model_validator(mode='after')
     @classmethod
@@ -294,10 +294,10 @@ class ExtensiveFlightDataReturn(NewFlightData, UpdateFlightData):
     arrival_weather: LegWeatherData
     legs: List[NewLegReturn] = []
     briefing_radius_nm: conint(ge=0)
-    diversion_radius_nm: conint(ge=0)
+    alternate_radius_nm: conint(ge=0)
     all_weather_is_official: bool
     weather_hours_from_etd: conint(ge=-1)
-    diversion_options: List[BaseWeatherReportRequestData] = []
+    alternates: List[BaseWeatherReportRequestData] = []
 
 
 class UpdateDepartureArrivalData(BaseModel):

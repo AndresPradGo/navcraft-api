@@ -534,16 +534,16 @@ def get_extensive_flight_data_for_return(flight_ids: List[int], db_session: Sess
                 or (weather_report == "Upper Wind" and a[0].has_fds)
             ]
 
-        # Get list of diversion options
-        diversion_options = find_aerodromes_within_radius(
+        # Get list of alternate options
+        alternates = find_aerodromes_within_radius(
             aerodromes_query=aerodromes_for_briefing,
             lat=arrival[5].lat(),
             lon=arrival[5].lon(),
-            radius=flight.diversion_radius_nm
+            radius=flight.alternate_radius_nm
         )
         aerodromes_for_briefing = [
             a for a in aerodromes_for_briefing
-            if a[1].code not in {a["code"] for a in diversion_options}
+            if a[1].code not in {a["code"] for a in alternates}
         ]
 
         # Organise list of flight legs
@@ -643,7 +643,7 @@ def get_extensive_flight_data_for_return(flight_ids: List[int], db_session: Sess
             "arrival_aerodrome_is_private": arrival[1].user_waypoint is not None
             if arrival[1] is not None else None,
             "briefing_radius_nm": flight.briefing_radius_nm,
-            "diversion_radius_nm": flight.diversion_radius_nm,
+            "alternate_radius_nm": flight.alternate_radius_nm,
             "all_weather_is_official": all_weather_is_official,
             "weather_hours_from_etd": weather_hours_from_etd,
             "departure_weather": {
@@ -706,7 +706,7 @@ def get_extensive_flight_data_for_return(flight_ids: List[int], db_session: Sess
                 lon=arrival[5].lon(),
                 number=3
             ),
-            "diversion_options": diversion_options
+            "alternates": alternates
         })
 
     return flight_list
