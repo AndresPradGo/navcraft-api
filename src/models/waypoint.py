@@ -368,10 +368,9 @@ class Waypoint(BaseModel):
         epsilon = 1e-9
         waypoint = np.array(self.cartesian_coordinates_nm(unit_vector=True))
         i = 0
-        boundary_points = boundary_points_input
+        boundary_points = [b for b in boundary_points_input]
         if is_closed and len(boundary_points_input) > 0:
             boundary_points.append(boundary_points_input[0])
-
         while i < len(boundary_points) - 1:
             boundary_p1 = boundary_points[i]
             boundary_p2 = boundary_points[i + 1]

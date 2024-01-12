@@ -938,7 +938,8 @@ def takeoff_and_landing_distances(
                 wind_magnitude_knot=departure_arrival[0].wind_magnitude_knot,
                 wind_direction_true=departure_arrival[0].wind_direction,
                 runway_number=runway.number,
-                magnetic_variation=0 if departure_arrival[2].in_north_airspace else magnetic_variation
+                magnetic_variation=0 if departure_arrival[2].in_north_airspace else magnetic_variation,
+                is_northern=departure_arrival[2].in_north_airspace
             )
 
             # Get groundroll and obstacle clearance distances

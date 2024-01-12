@@ -5,7 +5,6 @@ Usage:
 - Import the required function and call it.
 """
 from datetime import datetime
-import numpy as np
 from typing import List, Any
 
 from fastapi import HTTPException, status
@@ -577,6 +576,10 @@ def get_extensive_flight_data_for_return(flight_ids: List[int], db_session: Sess
                 lon=previous_waypoint.lon(),
                 radius=flight.briefing_radius_nm,
             )
+            aerodromes_for_briefing = [
+                a for a in aerodromes_for_briefing
+                if a[1].code not in {a["code"] for a in briefing_aerodromes}
+            ]
 
             path_boundaries = previous_waypoint.find_boundary_points(
                 to_waypoint=current_waypoint,

@@ -142,14 +142,17 @@ def runway_wind_direction(
     wind_magnitude_knot: int,
     wind_direction_true: int,
     runway_number: int,
-    magnetic_variation: float
+    magnetic_variation: float,
+    is_northern: bool,
 ) -> Dict[str, int]:
     """
     This function calculates and returns the runway headwind and cross-wind in knots.
     """
     if (wind_direction_true is not None):
-        runway_direction = runway_number * 10 - magnetic_variation
-        wind_angle = math.radians(wind_direction_true - runway_direction)
+        runway_direction = runway_number * \
+            10 if is_northern else runway_number * 10 - magnetic_variation
+        wind_angle = math.radians(-210) if wind_direction_true == 0 else math.radians(
+            wind_direction_true - runway_direction)
 
         return {
             "headwind": int(round(wind_magnitude_knot * math.cos(wind_angle), 0)),
@@ -593,7 +596,7 @@ def get_path_briefing_aerodromes(
         return np.array([math.cos(lat_rad) * math.cos(lon_rad),
                          math.cos(lat_rad) * math.sin(lon_rad),
                          math.sin(lat_rad)])
-    # Preprocess imputs
+    # Preprocess inputs
     ref_point = to_cartesian_array(lat_rad=reference[0], lon_rad=reference[1])
     boundary_points = [
         to_cartesian_array(lat_rad=b[0], lon_rad=b[1]) for b in boundaries
