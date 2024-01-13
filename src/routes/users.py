@@ -8,6 +8,7 @@ Usage:
 
 """
 
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException, Response
@@ -159,6 +160,48 @@ def register(
         password=hashed_pswd,
         is_admin=False,
         is_master=False,
+    )
+    db_session.add(new_user)
+    db_session.commit()
+    db_session.refresh(new_user)
+
+    return {"access_token": new_user.generate_auth_token(), "token_type": "Bearer"}
+
+
+@router.post("/trial", status_code=status.HTTP_201_CREATED, response_model=schemas.JWTData)
+def register_trial(db_session: Session = Depends(get_db)):
+    """
+    Post Trial Endpoint.
+
+    Parameters: None
+
+    Returns: 
+    - dic[JWTData]: dictionary with the JWT user data.
+
+    Raise:
+    - HTTPException (500): if there is a server error. 
+    """
+
+    # Create a unique email
+    email_exists = True
+    while email_exists:
+        date_time = datetime.utcnow().strftime("%y%m%d%H%M%S%f")[:-4]
+        email = f"user{date_time}@trial.com"
+
+        email_in_db = db_session.query(models.User.id).filter(
+            models.User.email == email).first()
+
+        email_exists = email_in_db is not None
+
+    hashed_pswd = auth.Hasher.bcrypt(f"Pass8725{date_time}")
+
+    new_user = models.User(
+        email=email,
+        name="Trial User",
+        password=hashed_pswd,
+        is_admin=False,
+        is_master=False,
+        is_trial=True
     )
     db_session.add(new_user)
     db_session.commit()

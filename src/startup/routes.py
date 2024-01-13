@@ -32,11 +32,6 @@ def link_routes(app: FastAPI) -> None:
     """
     This function asigns each router to its url path, 
     and links it to the FastAPI app.
-
-    Parameters:
-    - app (FastAPI): The FastAPI app.
-
-    Returns: None
     """
 
     print("------ LINKING ROUTES ------")

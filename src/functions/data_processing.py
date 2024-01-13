@@ -560,7 +560,7 @@ def get_extensive_flight_data_for_return(flight_ids: List[int], db_session: Sess
                 aerodromes_query=aerodromes_for_reports["Upper Wind"],
                 lat=halfway_coordinates[0],
                 lon=halfway_coordinates[1],
-                number=2
+                number=3
             )
             metar_aerodromes = find_nearby_aerodromes(
                 aerodromes_query=aerodromes_for_reports["METAR"],

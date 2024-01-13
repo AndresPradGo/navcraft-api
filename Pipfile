@@ -16,6 +16,7 @@ numpy = "*"
 matplotlib = "*"
 sentry-sdk = {extras = ["fastapi"], version = "*"}
 passlib = {extras = ["bcrypt"], version = "*"}
+apscheduler = "*"
 
 [dev-packages]
 

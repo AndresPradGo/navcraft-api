@@ -16,6 +16,7 @@ from startup.config_cors import config_cors
 from startup import error_logger
 from startup.set_up_dp import set_up_database
 from startup.routes import link_routes
+from startup.schedule_clean_db_job import schedule_clean_db_job
 
 
 error_logger.init_logger()
@@ -26,3 +27,4 @@ create_database()
 set_up_database()
 config_cors(app)
 link_routes(app)
+schedule_clean_db_job()

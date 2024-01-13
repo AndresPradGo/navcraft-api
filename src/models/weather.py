@@ -215,16 +215,6 @@ class FdForecast(BaseModel):
     __tablename__ = "fd_forecasts"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    date = Column(
-        DateTime,
-        nullable=False,
-        default=datetime.utcnow()
-    )
-    date_valid = Column(
-        DateTime,
-        nullable=False,
-        default=datetime.utcnow()
-    )
     date_from = Column(
         DateTime,
         nullable=False,

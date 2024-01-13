@@ -31,6 +31,7 @@ class User(BaseModel):
     is_active = Column(Boolean, nullable=False, default=True)
     is_admin = Column(Boolean, nullable=False, default=False)
     is_master = Column(Boolean, nullable=False, default=False)
+    is_trial = Column(Boolean, nullable=False, default=False)
 
     aircraft = Relationship(
         "Aircraft",
