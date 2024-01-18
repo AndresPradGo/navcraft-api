@@ -12,6 +12,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException, Response
+import pytz
 from sqlalchemy import and_, or_, not_
 from sqlalchemy.orm import Session
 
@@ -58,7 +59,13 @@ def get_all_users(
 
     limit = len(users) if limit == -1 else limit
 
-    return users[start:start + limit]
+    return [
+        {
+            **user.__dict__,
+            "created_at": pytz.timezone('UTC').localize((user.created_at)),
+            "last_updated": pytz.timezone('UTC').localize((user.last_updated)),
+        } for user in users[start:start + limit]
+    ]
 
 
 @router.get("/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturn)
@@ -84,7 +91,16 @@ def get_user_profile_data(
     if user is None:
         raise common_responses.invalid_credentials()
 
-    return user
+    profiles = db_session.query(models.PassengerProfile).filter(
+        models.PassengerProfile.creator_id == user.id
+    ).order_by(models.PassengerProfile.name).all()
+
+    return {
+        **user.__dict__,
+        "passenger_profiles": profiles,
+        "created_at": pytz.timezone('UTC').localize((user.created_at)),
+        "last_updated": pytz.timezone('UTC').localize((user.last_updated)),
+    }
 
 
 @router.get(
@@ -314,7 +330,11 @@ def change_email(
         models.User.email == user_data.email).first()
     response.headers["x-access-token"] = new_user.generate_auth_token()
     response.headers["x-token-type"] = "Bearer"
-    return new_user
+    return {
+        **new_user.__dict__,
+        "created_at": pytz.timezone('UTC').localize((new_user.created_at)),
+        "last_updated": pytz.timezone('UTC').localize((new_user.last_updated)),
+    }
 
 
 @router.put("/password/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturnBasic)
@@ -359,7 +379,11 @@ def change_password(
         models.User.email == current_user.email).first()
     response.headers["x-access-token"] = new_user.generate_auth_token()
     response.headers["x-token-type"] = "Bearer"
-    return new_user
+    return {
+        **new_user.__dict__,
+        "created_at": pytz.timezone('UTC').localize((new_user.created_at)),
+        "last_updated": pytz.timezone('UTC').localize((new_user.last_updated)),
+    }
 
 
 @router.put("/me", status_code=status.HTTP_200_OK, response_model=schemas.UserReturnBasic)
@@ -394,7 +418,11 @@ def edit_user_profile(
     new_user = db_session.query(models.User).filter(
         models.User.email == current_user.email).first()
 
-    return new_user
+    return {
+        **new_user.__dict__,
+        "created_at": pytz.timezone('UTC').localize((new_user.created_at)),
+        "last_updated": pytz.timezone('UTC').localize((new_user.last_updated)),
+    }
 
 
 @router.put(
@@ -443,7 +471,11 @@ def grant_revoke_admin_privileges_or_deactivate(
     new_user = user.first()
     db_session.refresh(new_user)
 
-    return new_user
+    return {
+        **new_user.__dict__,
+        "created_at": pytz.timezone('UTC').localize((new_user.created_at)),
+        "last_updated": pytz.timezone('UTC').localize((new_user.last_updated)),
+    }
 
 
 @router.put(

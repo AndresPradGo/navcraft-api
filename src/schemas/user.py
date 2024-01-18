@@ -10,7 +10,7 @@ Usage:
 
 from typing import List
 
-from pydantic import BaseModel, constr, EmailStr, conint, confloat, field_validator
+from pydantic import BaseModel, constr, EmailStr, conint, confloat, field_validator, AwareDatetime
 
 from functions.data_processing import clean_string
 
@@ -116,6 +116,9 @@ class UserReturnBasic(UserName, UserEmail):
     is_admin: bool
     is_master: bool
     is_active: bool
+    is_trial: bool
+    created_at: AwareDatetime
+    last_updated: AwareDatetime
     weight_lb: confloat(ge=0, le=999.94)
 
 
