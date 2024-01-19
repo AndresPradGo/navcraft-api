@@ -216,7 +216,7 @@ class UpdateLegData(LegWeatherData, LegWaypointData):
     """
     This class defines the data required from the client to update a leg data.
     """
-    altitude_ft: conint(ge=500)
+    altitude_ft: conint(ge=500, lt=18000)
 
     @model_validator(mode='after')
     @classmethod

@@ -225,14 +225,6 @@ class FdForecast(BaseModel):
         nullable=False,
         default=datetime.utcnow()
     )
-    altitude_ft_1 = Column(Integer, nullable=False)
-    wind_direction_1 = Column(Integer)
-    wind_magnitude_knot_1 = Column(Integer, nullable=False)
-    temperature_c_1 = Column(Integer, nullable=False)
-    altitude_ft_2 = Column(Integer, nullable=False)
-    wind_direction_2 = Column(Integer)
-    wind_magnitude_knot_2 = Column(Integer, nullable=False)
-    temperature_c_2 = Column(Integer, nullable=False)
 
     enroute_weather_id = Column(
         Integer,
@@ -256,3 +248,36 @@ class FdForecast(BaseModel):
     enroute_weather = Relationship(
         "EnrouteWeatherReport", back_populates="fds")
     aerodrome = Relationship("Aerodrome", back_populates="fds")
+
+    values = Relationship(
+        "FdAtAltitude",
+        back_populates="forecast",
+        passive_deletes=True,
+        passive_updates=True
+    )
+
+
+class FdAtAltitude(BaseModel):
+    """
+    This class defines the database fds_at_altitude table.
+    """
+
+    __tablename__ = "fds_at_altitude"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    altitude_ft = Column(Integer, nullable=False)
+    wind_direction = Column(Integer)
+    wind_magnitude_knot = Column(Integer)
+    temperature_c = Column(Integer)
+
+    fd_forecasts_id = Column(
+        Integer,
+        ForeignKey(
+            "fd_forecasts.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE"
+        ),
+        nullable=False
+    )
+
+    forecast = Relationship("FdForecast", back_populates="values")
