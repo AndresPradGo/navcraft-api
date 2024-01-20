@@ -416,7 +416,7 @@ def get_extensive_flight_data_for_return(flight_ids: List[int], db_session: Sess
         legs = db_session.query(models.Leg, models.FlightWaypoint, models.Waypoint, models.EnrouteWeatherReport)\
             .outerjoin(models.FlightWaypoint, models.Leg.id == models.FlightWaypoint.leg_id)\
             .outerjoin(models.Waypoint, models.FlightWaypoint.waypoint_id == models.Waypoint.id)\
-            .outerjoin(models.EnrouteWeatherReport, models.Leg.id == models.EnrouteWeatherReport.leg_id)\
+            .outerjoin(models.EnrouteWeatherReport, models.Leg.id == models.EnrouteWeatherReport.id)\
             .filter(models.Leg.flight_id == flight_id).order_by(models.Leg.sequence).all()
 
         fuel_tanks = db_session.query(models.Fuel).filter_by(

@@ -159,7 +159,7 @@ class LegWeatherData(BaseModel):
     """
     temperature_c: int
     altimeter_inhg: confloat(ge=-99.94, le=99.94)
-    wind_direction: Optional[conint(gt=0, le=360)] = None
+    wind_direction: Optional[conint(ge=0, le=360)] = None
     wind_magnitude_knot: conint(ge=0)
     temperature_last_updated: Optional[AwareDatetime] = None
     wind_last_updated: Optional[AwareDatetime] = None

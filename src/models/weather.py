@@ -37,7 +37,8 @@ class AerodromeWeatherReport(BaseModel):
             "departures.flight_id",
             ondelete="CASCADE",
             onupdate="CASCADE"
-        )
+        ),
+        unique=True,
     )
     arrival_id = Column(
         Integer,
@@ -45,7 +46,8 @@ class AerodromeWeatherReport(BaseModel):
             "arrivals.flight_id",
             ondelete="CASCADE",
             onupdate="CASCADE"
-        )
+        ),
+        unique=True,
     )
 
     departure = Relationship("Departure", back_populates="official_weather")
@@ -72,21 +74,21 @@ class EnrouteWeatherReport(BaseModel):
 
     __tablename__ = "enroute_weather_reports"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    date = Column(
-        DateTime,
-        nullable=False,
-        default=datetime.utcnow()
-    )
-
-    leg_id = Column(
+    id = Column(
         Integer,
         ForeignKey(
             "legs.id",
             ondelete="CASCADE",
             onupdate="CASCADE"
         ),
-        unique=True
+        primary_key=True,
+        nullable=False,
+        unique=True,
+    )
+    date = Column(
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow()
     )
 
     leg = Relationship("Leg", back_populates="official_weather")
@@ -171,8 +173,8 @@ class MetarReport(BaseModel):
         nullable=False,
         default=datetime.utcnow()
     )
-    altimeter_inhg = Column(DECIMAL(4, 2), nullable=False, default=29.92)
-    temperature_c = Column(Integer, nullable=False, default=13)
+    altimeter_inhg = Column(DECIMAL(4, 2), nullable=False)
+    temperature_c = Column(Integer)
 
     aerodrome_weather_id = Column(
         Integer,
