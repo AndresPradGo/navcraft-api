@@ -424,38 +424,50 @@ def get_extensive_flight_data_for_return(flight_ids: List[int], db_session: Sess
 
         # Find if weather is official and when was it last updated
         dates = [{
-            "official": departure[2].date if departure[2] is not None else None,
+            "official": departure[2].date if departure[2] is not None
+            and flight.last_updated <= departure[2].date else None,
             "wind": departure[0].wind_last_updated
             if departure[0].wind_last_updated is not None
+            and flight.last_updated <= departure[0].wind_last_updated
             else datetime(year=1, month=1, day=1),
             "temperature": departure[0].temperature_last_updated
             if departure[0].temperature_last_updated is not None
+            and flight.last_updated <= departure[0].temperature_last_updated
             else datetime(year=1, month=1, day=1),
             "altimeter": departure[0].altimeter_last_updated
             if departure[0].altimeter_last_updated is not None
+            and flight.last_updated <= departure[0].altimeter_last_updated
             else datetime(year=1, month=1, day=1)
         }] + [{
-            "official": w.date if w is not None else None,
+            "official": w.date if w is not None
+            and flight.last_updated <= w.date else None,
             "wind": l.wind_last_updated
             if l.wind_last_updated is not None
+            and flight.last_updated <= l.wind_last_updated
             else datetime(year=1, month=1, day=1),
             "temperature": l.temperature_last_updated
             if l.temperature_last_updated is not None
+            and flight.last_updated <= l.temperature_last_updated
             else datetime(year=1, month=1, day=1),
             "altimeter": l.altimeter_last_updated
             if l.altimeter_last_updated is not None
+            and flight.last_updated <= l.altimeter_last_updated
             else datetime(year=1, month=1, day=1)
         } for l, _, _, w in legs] + [
             {
-                "official": arrival[2].date if arrival[2] is not None else None,
+                "official": arrival[2].date if arrival[2] is not None
+                and flight.last_updated <= arrival[2].date else None,
                 "wind": arrival[0].wind_last_updated
                 if arrival[0].wind_last_updated is not None
+                and flight.last_updated <= arrival[0].wind_last_updated
                 else datetime(year=1, month=1, day=1),
                 "temperature": arrival[0].temperature_last_updated
                 if arrival[0].temperature_last_updated is not None
+                and flight.last_updated <= arrival[0].temperature_last_updated
                 else datetime(year=1, month=1, day=1),
                 "altimeter": arrival[0].altimeter_last_updated
                 if arrival[0].altimeter_last_updated is not None
+                and flight.last_updated <= arrival[0].altimeter_last_updated
                 else datetime(year=1, month=1, day=1)
             }
         ]

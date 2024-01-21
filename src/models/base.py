@@ -9,9 +9,7 @@ Usage:
 
 """
 
-from datetime import datetime
-
-from sqlalchemy import Column, DateTime
+from sqlalchemy import Column, DateTime, text
 from sqlalchemy.orm import declarative_base
 
 # from utils.db import Session
@@ -28,10 +26,11 @@ class BaseModel(Model):
 
     __abstract__ = True
 
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow())
+    created_at = Column(DateTime, nullable=False,
+                        default=text('UTC_TIMESTAMP()'))
     last_updated = Column(
         DateTime,
         nullable=False,
-        default=datetime.utcnow(),
-        onupdate=datetime.utcnow()
+        default=text('UTC_TIMESTAMP()'),
+        onupdate=text('UTC_TIMESTAMP()')
     )
