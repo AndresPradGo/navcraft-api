@@ -202,7 +202,7 @@ def register_trial(db_session: Session = Depends(get_db)):
     email_exists = True
     while email_exists:
         date_time = datetime.utcnow().strftime("%y%m%d%H%M%S%f")[:-4]
-        email = f"user{date_time}@trial.com"
+        email = f"guest{date_time}@trial.com"
 
         email_in_db = db_session.query(models.User.id).filter(
             models.User.email == email).first()
@@ -213,7 +213,7 @@ def register_trial(db_session: Session = Depends(get_db)):
 
     new_user = models.User(
         email=email,
-        name="Trial User",
+        name="Trial Guest",
         password=hashed_pswd,
         is_admin=False,
         is_master=False,
