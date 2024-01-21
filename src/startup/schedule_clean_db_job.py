@@ -39,7 +39,7 @@ def schedule_clean_db_job():
                 )).delete()
 
                 db_session.commit()
-        except Exception as e:
+        except Exception:
             db_session.rollback()
 
-    scheduler.add_job(cleanup_database, 'interval', hours=24)
+    scheduler.add_job(cleanup_database, 'interval', hours=12)

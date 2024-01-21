@@ -54,7 +54,7 @@ class NavigationLogLegResults(BaseModel):
     kcas: conint(ge=0)
     true_track: conint(gt=0, le=360)
     wind_magnitude_knot: conint(ge=0)
-    wind_direction: Optional[conint(gt=0, le=360)] = None
+    wind_direction: Optional[conint(ge=0, le=360)] = None
     true_heading: conint(gt=0, le=360)
     magnetic_variation: confloat(allow_inf_nan=False, ge=-99.94, le=99.94)
     magnetic_heading: int
