@@ -5,6 +5,7 @@ Usage:
 - Import the required function and call it.
 """
 from datetime import datetime
+import math
 from typing import List, Any
 
 from fastapi import HTTPException, status
@@ -557,6 +558,9 @@ def get_extensive_flight_data_for_return(flight_ids: List[int], db_session: Sess
             if a[1].code not in {a["code"] for a in alternates}
         ]
 
+        max_num_brief_aerodromes = math.floor(
+            (45 - 2 - len(aerodromes_for_briefing)) / len(legs))
+
         # Organise list of flight legs
         legs_list = []
         previous_waypoint = departure[5]
@@ -593,17 +597,18 @@ def get_extensive_flight_data_for_return(flight_ids: List[int], db_session: Sess
                 if a[1].code not in {a["code"] for a in briefing_aerodromes}
             ]
 
-            path_boundaries = previous_waypoint.find_boundary_points(
-                to_waypoint=current_waypoint,
-                radius=flight.briefing_radius_nm
-            )
+            if previous_waypoint.great_arc_to_waypoint(current_waypoint) <= 150:
+                path_boundaries = previous_waypoint.find_boundary_points(
+                    to_waypoint=current_waypoint,
+                    radius=flight.briefing_radius_nm
+                )
 
-            briefing_aerodromes += get_path_briefing_aerodromes(
-                aerodromes_query=aerodromes_for_briefing,
-                boundaries=path_boundaries,
-                reference=halfway_coordinates,
-                distance=flight.briefing_radius_nm
-            )
+                briefing_aerodromes += get_path_briefing_aerodromes(
+                    aerodromes_query=aerodromes_for_briefing,
+                    boundaries=path_boundaries,
+                    reference=halfway_coordinates,
+                    distance=flight.briefing_radius_nm
+                )
 
             previous_waypoint = wp if wp is not None else arrival[5]
             aerodromes_for_briefing = [

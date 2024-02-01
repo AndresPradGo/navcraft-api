@@ -130,7 +130,11 @@ class Waypoint(BaseModel):
 
         return self.great_arc_to(to_waypoint.lat(), to_waypoint.lon())
 
-    def true_track_to(self, to_lat: float, to_lon: float, precise: bool = False) -> Union[int, float]:
+    def true_track_to(
+        self, to_lat: float,
+        to_lon: float,
+        precise: bool = False
+    ) -> Union[int, float]:
         """
         This method finds the true track from self, 
         to a given latitude and longitude, in degrees.
@@ -216,8 +220,9 @@ class Waypoint(BaseModel):
 
     def find_rotation_matrix(self, to_waypoint: 'Waypoint'):
         """
-        This method returns the rotation matrix to rotate from an eatch-centered coordinate system, 
-        to a coordinate system where the positive x-axis points towards the true track from waypoint_1
+        This method returns the rotation matrix to rotate from an 
+        eatch-centered coordinate system, to a coordinate system where 
+        the positive x-axis points towards the true track from waypoint_1
         to to_waypoint.
         """
         rad_90 = np.radians(90)
@@ -261,12 +266,12 @@ class Waypoint(BaseModel):
         that define a boundary-box of a given radius around the path from self to to_waypoin.
         """
         # Define constants
-        R_matrix = self.find_rotation_matrix(to_waypoint)
-        R_inverse = np.transpose(R_matrix)
+        rotation_matrix = self.find_rotation_matrix(to_waypoint)
+        rotation_inverse = np.transpose(rotation_matrix)
         leg_distance = self.great_arc_to_waypoint(to_waypoint=to_waypoint)
         # Init starting point and boundaries in cartesian linear form
         linear_position = np.dot(
-            R_matrix, np.array(self.cartesian_coordinates_nm()))
+            rotation_matrix, np.array(self.cartesian_coordinates_nm()))
         linear_boundaries = []
         boundaries = []
 
@@ -282,7 +287,7 @@ class Waypoint(BaseModel):
 
         # Convert to radians and return
         for linear_boundary in linear_boundaries:
-            rotated_position = np.dot(R_inverse, linear_boundary)
+            rotated_position = np.dot(rotation_inverse, linear_boundary)
             r = np.linalg.norm(rotated_position)
             longitude = np.arctan2(rotated_position[1], rotated_position[0])
             latitude = np.radians(90)\
@@ -360,7 +365,11 @@ class Waypoint(BaseModel):
         # Find if waypoint is north of the boundary
         return self.is_within_boundary(boundary_points_input=boundary_points, ref_point=ref_point)
 
-    def is_within_boundary(self, boundary_points_input: List[Any], ref_point, is_closed: bool = False):
+    def is_within_boundary(
+        self,
+        boundary_points_input: List[Any],
+        ref_point, is_closed: bool = False
+    ):
         """
         This method checks if the waypoint is within a boundary, defined by a list of points.
         The boundary is open by default, but it can be set to close.

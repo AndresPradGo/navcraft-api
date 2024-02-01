@@ -5,7 +5,7 @@ Usage:
 - Import the required function and call it.
 """
 import math
-from typing import List, Dict, Tuple, Union, Literal
+from typing import List, Dict, Tuple, Union
 
 from fastapi import HTTPException, status
 import numpy as np
@@ -583,13 +583,16 @@ def get_path_briefing_aerodromes(
     aerodromes_query: List[Row[Tuple[models.Aerodrome, models.VfrWaypoint, models.Waypoint]]],
     boundaries: List[List[float]],
     reference: List[float],
-    distance: int
+    distance: int,
+    max_number: int = 0
 ) -> List[Dict[str, Union[str, int]]]:
     """
     This function returns list of aerodromes within a given boundary around a path.
     The boundary is given by a list of points. The reference point is a point inside 
     the boundary.
     """
+
+    limit_number = max_number if max_number > 0 else len(aerodromes_query)
     # Function to convert from coordinate to cartesian unit np array
 
     def to_cartesian_array(lat_rad: List[int], lon_rad: List[int]):
@@ -602,7 +605,9 @@ def get_path_briefing_aerodromes(
         to_cartesian_array(lat_rad=b[0], lon_rad=b[1]) for b in boundaries
     ]
     aerodromes = []
-    for aerodrome in aerodromes_query:
+    i = 0
+    while i < len(aerodromes_query) and len(aerodromes) < limit_number:
+        aerodrome = aerodromes_query[i]
         if aerodrome[2].is_within_boundary(
             boundary_points_input=boundary_points, ref_point=ref_point, is_closed=True
         ):
@@ -610,5 +615,6 @@ def get_path_briefing_aerodromes(
                 "code": aerodrome[1].code,
                 "distance_from_target_nm": distance
             })
+        i += 1
 
     return aerodromes
