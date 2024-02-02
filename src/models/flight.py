@@ -8,9 +8,6 @@ Usage:
 
 """
 
-from datetime import datetime
-
-
 from sqlalchemy import Column, Integer, DECIMAL, DateTime, String, ForeignKey
 from sqlalchemy.orm import Relationship
 
@@ -27,8 +24,7 @@ class Flight(BaseModel):
     id = Column(Integer, primary_key=True, autoincrement=True)
     departure_time = Column(
         DateTime,
-        nullable=False,
-        default=datetime.utcnow()
+        nullable=False
     )
     bhp_percent = Column(Integer, nullable=False, default=65)
     added_enroute_time_hours = Column(
@@ -47,8 +43,8 @@ class Flight(BaseModel):
         default=0.0
     )
 
-    briefing_radius_nm = Column(Integer, nullable=False, default=20)
-    alternate_radius_nm = Column(Integer, nullable=False, default=20)
+    briefing_radius_nm = Column(Integer, nullable=False, default=10)
+    alternate_radius_nm = Column(Integer, nullable=False, default=25)
 
     aircraft_id = Column(
         Integer,

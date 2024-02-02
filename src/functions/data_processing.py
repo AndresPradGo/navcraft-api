@@ -551,7 +551,7 @@ def get_extensive_flight_data_for_return(flight_ids: List[int], db_session: Sess
             aerodromes_query=aerodromes_for_briefing,
             lat=arrival[5].lat(),
             lon=arrival[5].lon(),
-            radius=flight.alternate_radius_nm
+            radius=max(flight.alternate_radius_nm, flight.briefing_radius_nm)
         )
         aerodromes_for_briefing = [
             a for a in aerodromes_for_briefing

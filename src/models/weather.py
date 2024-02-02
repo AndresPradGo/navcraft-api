@@ -8,10 +8,7 @@ Usage:
 
 """
 
-from datetime import datetime
-
-
-from sqlalchemy import Column, Integer, DECIMAL, DateTime, String, ForeignKey
+from sqlalchemy import Column, Integer, DECIMAL, DateTime, ForeignKey
 from sqlalchemy.orm import Relationship
 
 from models.base import BaseModel
@@ -27,8 +24,7 @@ class AerodromeWeatherReport(BaseModel):
     id = Column(Integer, primary_key=True, autoincrement=True)
     date = Column(
         DateTime,
-        nullable=False,
-        default=datetime.utcnow()
+        nullable=False
     )
 
     departure_id = Column(
@@ -87,8 +83,7 @@ class EnrouteWeatherReport(BaseModel):
     )
     date = Column(
         DateTime,
-        nullable=False,
-        default=datetime.utcnow()
+        nullable=False
     )
 
     leg = Relationship("Leg", back_populates="official_weather")
@@ -117,18 +112,15 @@ class TafForecast(BaseModel):
     id = Column(Integer, primary_key=True, autoincrement=True)
     date = Column(
         DateTime,
-        nullable=False,
-        default=datetime.utcnow()
+        nullable=False
     )
     date_from = Column(
         DateTime,
-        nullable=False,
-        default=datetime.utcnow()
+        nullable=False
     )
     date_to = Column(
         DateTime,
-        nullable=False,
-        default=datetime.utcnow()
+        nullable=False
     )
     wind_direction = Column(Integer)
     wind_direction_range = Column(Integer)
@@ -170,8 +162,7 @@ class MetarReport(BaseModel):
     id = Column(Integer, primary_key=True, autoincrement=True)
     date = Column(
         DateTime,
-        nullable=False,
-        default=datetime.utcnow()
+        nullable=False
     )
     altimeter_inhg = Column(DECIMAL(4, 2), nullable=False)
     temperature_c = Column(Integer)
@@ -219,13 +210,11 @@ class FdForecast(BaseModel):
     id = Column(Integer, primary_key=True, autoincrement=True)
     date_from = Column(
         DateTime,
-        nullable=False,
-        default=datetime.utcnow()
+        nullable=False
     )
     date_to = Column(
         DateTime,
-        nullable=False,
-        default=datetime.utcnow()
+        nullable=False
     )
 
     enroute_weather_id = Column(
