@@ -252,8 +252,8 @@ class UpdateFlightData(BaseModel):
     added_enroute_time_hours: confloat(allow_inf_nan=False, ge=0, le=99.94)
     reserve_fuel_hours: confloat(allow_inf_nan=False, ge=0, le=99.94)
     contingency_fuel_hours: confloat(allow_inf_nan=False, ge=0, le=99.94)
-    briefing_radius_nm: conint(ge=5, le=20)
-    alternate_radius_nm: conint(ge=5, le=100)
+    briefing_radius_nm: conint(ge=0, le=50)
+    alternate_radius_nm: conint(ge=0, le=200)
 
     @model_validator(mode='after')
     @classmethod
