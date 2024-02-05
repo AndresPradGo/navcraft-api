@@ -41,18 +41,7 @@ def get_aircraft_list(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Aircraft List Endpoint.
-
-    Parameters: 
-    - aircraft_id (int optional): If provided, only 1 aircraft will be returned.
-    - complete_only (bool): If true, only return aircraft with a preferred profile.
-
-    Returns: 
-    - List[dict[GetAircraftList]]: list of dictionaries with aircraft data.
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns the list of aircraft of the authenticated user
     """
 
     # Get aircraft models
@@ -123,18 +112,7 @@ def post_new_aircraft(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Post New Aircraft Endpoint.
-
-    Parameters: 
-    - aircraft_data (dict[AircraftData]): the aircraft data to be added.
-
-    Returns: 
-    - dic[AircraftReturn]: dictionary with the aircraft data added to the database, and the id.
-
-    Raise:
-    - HTTPException (400): if aircraft already exists, or data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Creates a new aircraft
     """
 
     user_id = get_user_id_from_email(
@@ -182,21 +160,7 @@ def post_new_aircraft_performance_profile(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Post New Performance Profile Endpoint.
-
-    Parameters: 
-    - aircraft_id (int): the aircraft id.
-    - performance_data (dict[PerformanceProfileData]): 
-      the perforamnce profile data to be added.
-
-    Returns: 
-    - dic[PerformanceProfileReturn]: dictionary with the 
-      performance profile data added to the database, and the id.
-
-    Raise:
-    - HTTPException (400): if data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Creates a new aircraft performance profile from scratch
     """
 
     # Check if user has permission
@@ -275,20 +239,7 @@ def post_new_aircraft_performance_profile_from_model(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Post New Performance Profile Frpm Model Endpoint.
-
-    Parameters: 
-    - aircraft_id (int): the aircraft id.
-    - model_id (int): the model id.
-
-    Returns: 
-    - dic[PerformanceProfileReturn]: dictionary with the
-      performance profile data added to the database, and the id.
-
-    Raise:
-    - HTTPException (400): if data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Creates a new aircraft performance profile from a model
     """
     # Check if user has permission
     user_id = get_user_id_from_email(
@@ -414,7 +365,7 @@ def post_new_aircraft_performance_profile_from_model(
     def add_performance_models(models_list: List[Any]):
         """
         This function copies the performance data from the model performance profile,
-        and adds it to the new performance profile.
+        and adds it to the new performance profile
         """
         for model in models_list:
             query_results = db_session.query(model)\
@@ -475,20 +426,7 @@ def edit_aircraft(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit Aircraft Endpoint.
-
-    Parameters: 
-    - aircraft_id (int): aircraft id
-    - aircraft_data (dict[AircraftData]): the data to be added.
-
-    Returns: 
-    - dic[AircraftReturn]: dictionary with the aircraft data added to the 
-      database, and the id.
-
-    Raise:
-    - HTTPException (400): if aircraft doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Edits an aircraft's data
     """
 
     # Check if aircraft exists
@@ -540,21 +478,7 @@ def edit_aircraft_performance_profile(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit Aircraft Performance Profile Endpoint.
-
-    Parameters: 
-    - performance_profile_id (int): performance profile id.
-    - performance_data (dict[PerformanceProfileData]): the 
-      perforamnce profile data to be added.
-
-    Returns: 
-    - dic[PerformanceProfileReturn]: dictionary with the data added 
-      to the database, and the id.
-
-    Raise:
-    - HTTPException (400): if performance profile doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Edits an aircraft performance profile data
     """
 
     # Check profile exists
@@ -640,18 +564,7 @@ def make_aircraft_performance_profile_preferred_profile(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Make Aircraft Performance Profile, Preferred Profile Endpoint.
-
-    Parameters: 
-    - performance_profile_id (int): performance profile id.
-
-    Returns: 
-    - dic[PerformanceProfileReturn]: dictionary with the performance profile data.
-
-    Raise:
-    - HTTPException (400): if performance profile doesn't exists.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Selects an aircraft performance profile, as the aircraft's preferred profile
     """
 
     # Check profile exists
@@ -730,17 +643,7 @@ def delete_aircraft_performance_profile(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Delete Performance Profile Endpoint.
-
-    Parameters: 
-    - profile_id (int): performance_profile id.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (400): if performance profile doesn't exists.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Deletes aircraft performance profile
     """
 
     # Check if performance profile exists and user has permission.
@@ -805,17 +708,7 @@ def delete_aircraft(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Delete Aircraft Endpoint.
-
-    Parameters: 
-    - aircraft_id (int): aircraft id.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (400): if aircraft doesn't exists.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Deletes an aircraft
     """
 
     # Check if aircraft exists and user has permission.

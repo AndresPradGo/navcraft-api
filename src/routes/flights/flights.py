@@ -42,16 +42,7 @@ def get_all_flight(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get All Flights Endpoint.
-
-    Parameters: None
-
-    Returns: 
-    - list[dict[NewFlightReturn]]: List of dictionaries with basic flight data.
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns the list of flights of the authenticated user
     """
     user_id = get_user_id_from_email(
         email=current_user.email, db_session=db_session)
@@ -81,17 +72,7 @@ def get_flight(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Flight Endpoint.
-
-    Parameters: 
-    - flight_id (int): flight id.
-
-    Returns: 
-    - dict[ExtensiveFlightDataReturn]: dictionary with detailed flight data.
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns the detailed data of the requested flight
     """
     user_id = get_user_id_from_email(
         email=current_user.email, db_session=db_session)
@@ -121,18 +102,7 @@ def post_new_flight(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Post New Flight Endpoint.
-
-    Parameters: 
-    - flight_data (dict[NewFlightData]): the flight data to be added.
-
-    Returns: 
-    - dic[NewFlightReturn]: dictionary with the summarized flight data.
-
-    Raise:
-    - HTTPException (400): if data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Creates a new flight
     """
     # Get user ID
     user_id = get_user_id_from_email(
@@ -299,19 +269,7 @@ def edit_flight(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit Flight Endpoint.
-
-    Parameters: 
-    - flight_id (int): flight id.
-    - data (dict[UpdateFlightData]): new flight data.
-
-    Returns: 
-    - dict[ExtensiveFlightDataReturn]: detailed flight data.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Edits a flight's data
     """
 
     # Create flight query and check if flight exists
@@ -351,19 +309,7 @@ def change_aircraft(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Change Aircraft Endpoint.
-
-    Parameters: 
-    - flight_id (int): flight id.
-    - aircraft_id (int): aircraft id.
-
-    Returns: 
-    - dict[ExtensiveFlightDataReturn]: detailed flight data.
-
-    Raise:
-    - HTTPException (400): if flight or aircraft doesn't exist.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Changes a flight's aircraft
     """
     # Get user ID
     user_id = get_user_id_from_email(
@@ -442,20 +388,7 @@ def edit_departure_arrival(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit Departure And Arrival Endpoint.
-
-    Parameters: 
-    - flight_id (int): flight id.
-    - is_departure (bool): true if updating the departure, flase if updating the arrival.
-    - data (dict[UpdateDepartureArrivalData]): new flight data.
-
-    Returns: 
-    - dict[ExtensiveFlightDataReturn]: detailed flight data.
-
-    Raise:
-    - HTTPException (400): if flight or aerodrome doesn't exist.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Edits deaparture/arrival data of a flight
     """
 
     # Check if flight exists
@@ -519,17 +452,7 @@ def delete_flight(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Delete Flight.
-
-    Parameters: 
-    flight_id (int): flight id.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (404): flight not found.
-    - HTTPException (500): if there is a server error. 
+    Deletes a flight
     """
 
     # Create flight query and check if flight exists

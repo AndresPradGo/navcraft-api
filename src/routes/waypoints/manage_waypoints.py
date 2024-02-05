@@ -32,16 +32,7 @@ def get_csv_file_with_all_vfr_waypoints(
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Get CSV File With All VFR Waypoints Endpoint.
-
-    Parameters: None
-
-    Returns: 
-    - CSV file: csv file with a list of VFR Waypoints.
-
-    Raise:
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Returns a CSV File with all VFR waypoints (only admin users can use this endpoint)
     """
     a = models.Aerodrome
     v = models.VfrWaypoint
@@ -104,16 +95,7 @@ def get_csv_file_with_all_aerodromes(
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Get CSV File With All Aerodromes Endpoint.
-
-    Parameters: None
-
-    Returns: 
-    - CSV file: csv file with a list of aerodromes (does not include the runways).
-
-    Raise:
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Returns a CSV File with all registered aerodromes (only admin users can use this endpoint)
     """
 
     a = models.Aerodrome
@@ -184,32 +166,25 @@ async def manage_vfr_waypoints_with_csv_file(
     current_user: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Manage VFR Waypoints Endpoint.
+    Manages VFR waypoints (only admin users can use this endpoint)
 
     Usage:
-    - Download the VFR-Waypoint csv-list, from the "Get Csv File With All Vfr Waypoints" endpoint.
-    - Use this file to update the list in the desired way.
+    - Download the VFR-Waypoint csv-list, from the "Get Csv File With All Vfr Waypoints" endpoint
+    - Use this file to update the list in the desired way
     - New columns can be added for your reference, but they won't be considered for updating the 
-      data in the database. 
+      data in the database
     - Do not delete or edit the headers of the existing colums in any way, or the file 
-      will be rejected.
-    - Enter all data in the correct colum to ensure data integrity.
-    - Make sure there are no typos or repeated entries.
-    - After getting a 204 response, download csv list again to check it has been uploaded correctly.
+      will be rejected
+    - Enter all data in the correct colum to ensure data integrity
+    - Make sure there are no typos or repeated entries
+    - After getting a 204 response, download csv list again to check it has been uploaded correctly
 
     NOTE: This endpoint will post new data-entries, and update existing ones, 
     but it will not delete any entries already in the database. To delete existing 
-    data-entries, use the appropriate delete endpoint.
+    data-entries, use the appropriate delete endpoint
 
-    Parameters: 
-    - csv-file (UploadFile): csv file with VFR Waypoint data.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (400): file or file-data is wrong.
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Other Parameters: 
+    - csv-file (UploadFile schema): csv file with VFR Waypoint data
     """
     # Check and decode csv-file
     csv.check_format(csv_file)
@@ -356,33 +331,26 @@ async def manage_registered_aerodrome_with_csv_file(
     current_user: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Manage Registered Aerodrome Endpoint.
+    Manages registered aerodrome (only admin users can use this endpoint)
 
     Usage:
     - Download the Registered-Aerodrome csv-list, from the 
-      "Get Csv File With All Aerodrome" endpoint.
-    - Use this file to update the list in the desired way.
+      "Get Csv File With All Aerodrome" endpoint
+    - Use this file to update the list in the desired way
     - New columns can be added for your reference, but they won't be considered for updating the 
-      data in the database. 
+      data in the database
     - Do not delete or edit the headers of the existing colums in any way, 
-      or the file will be rejected.
-    - Enter all data in the correct colum to ensure data integrity.
-    - Make sure there are no typos or repeated entries.
-    - After getting a 204 response, download csv list again to check it has been uploaded correctly.
+      or the file will be rejected
+    - Enter all data in the correct colum to ensure data integrity
+    - Make sure there are no typos or repeated entries
+    - After getting a 204 response, download csv list again to check it has been uploaded correctly
 
     NOTE: This endpoint will post new data-entries, and update existing ones, 
     but it will not delete any entries already in the database. To delete 
-    existing data-entries, use the appropriate delete endpoint.
+    existing data-entries, use the appropriate delete endpoint
 
-    Parameters: 
-    - csv-file (UploadFile): csv file with registered aerodrome data.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (400): file or file-data is wrong.
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Other Parameters: 
+    - csv-file (UploadFile shcema): csv file with registered aerodrome data
     """
 
     # Check and decode csv-file

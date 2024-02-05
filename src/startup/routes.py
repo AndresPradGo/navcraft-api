@@ -35,33 +35,33 @@ def link_routes(app: FastAPI) -> None:
     """
 
     print("------ LINKING ROUTES ------")
-    app.include_router(auth, prefix="/login")
-    app.include_router(users, prefix="/users")
+    app.include_router(auth, prefix="/api/login")
+    app.include_router(users, prefix="/api/users")
     app.include_router(
         flight_plans,
-        prefix="/flight-plans"
+        prefix="/api/flight-plans"
     )
-    app.include_router(flights, prefix="/flights")
-    app.include_router(flight_legs, prefix="/flight-legs")
+    app.include_router(flights, prefix="/api/flights")
+    app.include_router(flight_legs, prefix="/api/flight-legs")
     app.include_router(
         flight_weight_balance_data,
-        prefix="/flight-weight-balance-data"
+        prefix="/api/flight-weight-balance-data"
     )
-    app.include_router(aircraft_models, prefix="/aircraft-models")
-    app.include_router(aircraft, prefix="/aircraft")
+    app.include_router(aircraft_models, prefix="/api/aircraft-models")
+    app.include_router(aircraft, prefix="/api/aircraft")
     app.include_router(
         aircraft_performance_data,
-        prefix="/aircraft-performance-data"
+        prefix="/api/aircraft-performance-data"
     )
     app.include_router(
         aircraft_weight_balnace_data,
-        prefix="/aircraft-weight-balance-data"
+        prefix="/api/aircraft-weight-balance-data"
     )
     app.include_router(
         aircraft_arrangement_data,
-        prefix="/aircraft-arrangement-data"
+        prefix="/api/aircraft-arrangement-data"
     )
-    app.include_router(waypoints, prefix="/waypoints")
-    app.include_router(admin_waypoints, prefix="/admin-waypoints")
-    app.include_router(manage_waypoints, prefix="/manage-waypoints")
-    app.include_router(runways, prefix="/runways")
+    app.include_router(waypoints, prefix="/api/waypoints")
+    app.include_router(admin_waypoints, prefix="/api/admin-waypoints")
+    app.include_router(manage_waypoints, prefix="/api/manage-waypoints")
+    app.include_router(runways, prefix="/api/runways")

@@ -30,17 +30,7 @@ def login(
     db_session: Session = Depends(get_db)
 ):
     """
-    Authenticate Endpoint.
-
-    Parameters: 
-    - login_data (dict[OAuth2PasswordRequestForm]): an object with email and password fields.
-
-    Returns: 
-    - dic: dictionary with JWT.
-
-    Raise:
-    - HTTPException (401): if login details are invalid.
-    - HTTPException (500): if there is a server error. 
+    Authentication Endpoint
     """
 
     user = db_session.query(models.User).filter(

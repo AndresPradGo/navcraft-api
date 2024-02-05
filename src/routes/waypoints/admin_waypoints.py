@@ -35,7 +35,7 @@ def post_vfr_waypoint(
     """
     This function checks if the waypoint passed as a parameter
     already exists in the database, and adds it to the database, 
-    or returns and error response.
+    or returns and error response
     """
 
     exists = db_session.query(models.VfrWaypoint).filter(
@@ -95,7 +95,7 @@ def update_vfr_waypoint(
 ):
     """
     This function updates the waypoint in the database, after 
-    performing the necessary checks.
+    performing the necessary checks
     """
 
     vfr_waypoint_exists = db_session.query(models.VfrWaypoint).filter(
@@ -173,18 +173,7 @@ def post_new_vfr_waypoint(
     current_user: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Post VFR Waypoint Endpoint.
-
-    Parameters: 
-    - waypoint (dict[VfrWaypointData]): the waypoint object to be added.
-
-    Returns: 
-    - dic[VfrWaypointReturn]: dictionary with the waypoint data.
-
-    Raise:
-    - HTTPException (400): if waypoint already exists.
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Creates a new VFR Waypoint (only admin users can use this endpoint)
     """
 
     user_id = get_user_id_from_email(
@@ -210,18 +199,7 @@ def post_registered_aerodrome(
     current_user: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Post Registered Aerodrome Endpoint.
-
-    Parameters: 
-    - aerodrome (dict[RegisteredAerodromeData]): the aerodrome object to be added.
-
-    Returns: 
-    - dic[RegisteredAerodromeReturn]: dictionary with the aerodrome and waypoint data.
-
-    Raise:
-    - HTTPException (400): if waypoint already exists.
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Creates a new registered aerodrome (only admin users can use this endpoint)
     """
 
     status_exists = db_session.query(models.AerodromeStatus).filter_by(
@@ -280,18 +258,7 @@ def post_aerodrome_status(
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Post Aerodrome Status Endpoint.
-
-    Parameters: 
-    - aerodrome_status (str): the aerodrom status to be added.
-
-    Returns: 
-    - dic[AerodromeStatusReturn]: dictionary with the aerodrome status and id.
-
-    Raise:
-    - HTTPException (400): if aerodrome status already exists, or data is wrong.
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Creates a new aerodrome status (only admin users can use this endpoint)
     """
 
     pattern = r'^[-A-Za-z ]*$'
@@ -332,19 +299,7 @@ def edit_vfr_waypoint(
     current_user: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Edit VFR Waypoint Endpoint.
-
-    Parameters: 
-    - waypoint_id (int): waypoint id
-    - waypoint (dict[VfrWaypointData]): the waypoint object to be added.
-
-    Returns: 
-    - dict[VfrWaypointReturn]: dictionary with the waypoint data.
-
-    Raise:
-    - HTTPException (400): if waypoint already exists.
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Editss a VFR Waypoint (only admin users can use this endpoint)
     """
 
     user_id = get_user_id_from_email(
@@ -389,19 +344,7 @@ def edit_registered_aerodrome(
     current_user: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Edit Registered Aerodrome Endpoint.
-
-    Parameters: 
-    - aerodrome_id (int): aerodrome id
-    - aerodrome (dict[RegisteredAerodromeData]): the aerodrome object to be added.
-
-    Returns: 
-    - dic[RegisteredAerodromeReturn]: dictionary with the aerodrome data.
-
-    Raise:
-    - HTTPException (400): if aerodrome already exists or data is wrong.
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Edits a registered aerodrome (only admin users can use this endpoint)
     """
 
     aerodrome_query = db_session.query(models.Aerodrome).filter(
@@ -485,17 +428,7 @@ def delete_vfr_waypoints_or_aerodromes(
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Delete VFR Waypoint or Aerodrome.
-
-    Parameters: 
-    waypoint_id int: waypoint id to be deleted.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (404): waypoint not found.
-    - HTTPException (500): if there is a server error. 
+    Deletes a VFR waypoint or registedes aerodrome (only admin users can use this endpoint)
     """
 
     waypoint_query = db_session.query(models.VfrWaypoint).filter(
@@ -523,17 +456,7 @@ def delete_aerodrome_status(
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Delete Aerodrome Status.
-
-    Parameters: 
-    status_id (int): status id.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (404): status not found.
-    - HTTPException (500): if there is a server error. 
+    Deletes an aerodrome status (only admin users can use this endpoint)
     """
 
     status_query = db_session.query(models.AerodromeStatus).filter(

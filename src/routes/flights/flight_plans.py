@@ -36,7 +36,7 @@ def get_nav_log_and_fuel_calculations(
 ):
     """
     This reusable function prepares all the nav-log and fuel calculations data,
-    and returns the results.
+    and returns the results
     """
 
     # Get flight and check permissions
@@ -202,7 +202,7 @@ def get_weight_balance_calculations(
 ):
     """
     This reusable function prepares all the weight and balance report data,
-    and returns the results.
+    and returns the results
     """
     # Check flight exists and get flight data
     flight = db_session.query(models.Flight).filter(and_(
@@ -610,19 +610,7 @@ def navigation_log(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Navigation Log Endpoint.
-
-    Parameters:
-    - flight_id (int): flight id.
-
-    Returns: 
-    - list[dict[NavigationLogLegResults]]: list of dictionaries 
-      with the nav-log data per leg.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns the Navigation Log data of the requested flight
     """
 
     user_id = get_user_id_from_email(
@@ -646,18 +634,7 @@ def download_navigation_log_csv_file(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Navigation Log CSV File Endpoint.
-
-    Parameters:
-    - flight_id (int): flight id.
-
-    Returns: 
-    - CSV file: csv file with with the nav-log data per leg.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns the Navigation Log data of the requested flight, in a CSV File
     """
 
     user_id = get_user_id_from_email(
@@ -737,18 +714,7 @@ def fuel_calculations(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Fuel Calculations Endpoint.
-
-    Parameters:
-    - flight_id (int): flight id.
-
-    Returns: 
-    - dict[FuelCalculationResults]: dictionary with the fuel calculation results.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns the fuel calculations of the requested flight
     """
     # Get fuel data
     user_id = get_user_id_from_email(
@@ -798,19 +764,7 @@ def takeoff_and_landing_distances(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Takeoff And Landing Distances Endpoint.
-
-    Parameters:
-    - flight_id (int): flight id.
-
-    Returns: 
-    - dict[TakeoffAndLandingDistances]: dictionary with the 
-      takeoff and landing distance data.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns the takeoff and landing distance calculations of the requested flight
     """
 
     # Get flight and check permissions
@@ -992,18 +946,7 @@ def weight_and_balance_report(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Weight and Balance Report Endpoint.
-
-    Parameters:
-    - flight_id (int): flight id.
-
-    Returns: 
-    - dict[WeightAndBalanceReport]: W&B Report data.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns the weight and balance data of the requested flight
     """
     user_id = get_user_id_from_email(
         email=current_user.email, db_session=db_session)
@@ -1024,18 +967,7 @@ async def weight_and_balance_graph(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Weight and Balance Graph Endpoint.
-
-    Parameters:
-    - flight_id (int): flight id.
-
-    Returns: 
-    - Png-file: W&B graph.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns a PNG file with the weight and balance graph of the requested flight
     """
     # Define line graph style variables
     colors = ['#00D5C8', '#D500CB', '#4AD500', '#D50000']

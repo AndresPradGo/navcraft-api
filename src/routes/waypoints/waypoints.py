@@ -41,20 +41,7 @@ def get_all_user_waypoints(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get All User Waypoints Endpoint.
-
-    Parameters:
-    - limit (int): number of results.
-    - start (int): index of the first waypoint.
-    - waypoint_id (int): waypoint id.
-
-    Returns: 
-    - list[dict[UserWaypointReturn]]: list of waypoint dictionaries.
-
-    Raise:
-    - HTTPException (400): if values are wrong. 
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns all user waypoints
     """
 
     a = models.Aerodrome
@@ -104,20 +91,7 @@ def get_all_vfr_waypoints(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get All VFR Waypoints Endpoint.
-
-    Parameters: 
-    - limit (int): number of results.
-    - start (int): index of the first waypoint.
-    - waypoint_id (int): waypoint id.
-
-    Returns: 
-    - list[dict[VfrWaypointReturn]]: list of waypoint dictionaries.
-
-    Raise:
-    - HTTPException (400): if values are wrong. 
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns all VFR waypoints
     """
     a = models.Aerodrome
     v = models.VfrWaypoint
@@ -167,22 +141,7 @@ def get_all_nearby_waypoints(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get All Waypoints Near a Given Coordinate Endpoint.
-
-    Parameters: 
-    - lat (float): latitude of the coordinate.
-    - lon (float): longitude of the coordinate.
-    - distance (optional int): radius around the coordinate in 
-      nautical miles.
-
-    Returns: 
-    - list[dict[NearbyWaypointReturn]]: list of dictionaries, of 
-      all waypoints within a radius of the coordinate.
-
-    Raise:
-    - HTTPException (400): if values are wrong. 
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns all Waypoints near a given coordinate
     """
     # Check coordinate
     try:
@@ -273,19 +232,7 @@ def get_all_aerodromes(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get All Aerodromes Endpoint.
-
-    Parameters: 
-    - limit (int): number of results.
-    - start (int): index of the first aerodromes.
-    - aerodrome_id (optional int): aerodrome id.
-
-    Returns: 
-    - list[dict[AerodromeReturnWithRunways]]: list of aerodrome dictionaries.
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns all aerodromes
     """
     user_id = get_user_id_from_email(
         email=current_user.email, db_session=db_session)
@@ -377,18 +324,7 @@ def get_all_aerodrome_status(
     _: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get All Aerodrome Status Endpoint.
-
-    Parameters: 
-    - status_id (optional int): status id.
-
-    Returns: 
-    - list[dict[AerodromeStatusReturn]]: list of aerodrome 
-      status dictionaries with status and id.
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns all Aerodrome status
     """
 
     return db_session.query(models.AerodromeStatus.id, models.AerodromeStatus.status).filter(or_(
@@ -408,18 +344,7 @@ def post_new_user_waypoint(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Post User Waypoint Endpoint.
-
-    Parameters: 
-    - waypoint (dict[UserWaypointData]): the waypoint object to be added.
-
-    Returns: 
-    - dic[UserWaypointReturn]: dictionary with the waypoint data.
-
-    Raise:
-    - HTTPException (400): if waypoint already exists.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Creates a new user waypoint
     """
 
     user_id = get_user_id_from_email(
@@ -487,20 +412,7 @@ def post_private_aerodrome(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Post Private Aerodrome Endpoint.
-
-    Parameters: 
-    - aerodrome (dict[PrivateAerodromeData]): the aerodrome object
-      to be added.
-
-    Returns: 
-    - dic[PrivateAerodromeReturn]: dictionary with the aerodrome
-      and waypoint data.
-
-    Raise:
-    - HTTPException (400): if waypoint already exists.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Creates a new private aerodrome
     """
 
     status_exists = db_session.query(models.AerodromeStatus).filter_by(
@@ -600,19 +512,7 @@ def edit_user_waypoint(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit User Waypoint Endpoint.
-
-    Parameters: 
-    - waypoint_id (int): waypoint id
-    - waypoint (dict[UserWaypointData]): the waypoint object to be added.
-
-    Returns: 
-    - dic[UserWaypointReturn]: dictionary with the waypoint data.
-
-    Raise:
-    - HTTPException (400): if waypoint already exits, or data is wrong. 
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Edits a user waypoint
     """
 
     user_id = get_user_id_from_email(
@@ -704,19 +604,7 @@ def edit_private_aerodrome(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit Private Aerodrome Endpoint.
-
-    Parameters: 
-    - aerodrome_id (int): aerodrome id
-    - aerodrome (dict[PrivateAerodromeData]): the aerodrome object to be added.
-
-    Returns: 
-    - dic[PrivateAerodromeReturn]: dictionary with the aerodrome data.
-
-    Raise:
-    - HTTPException (400): if aerodrome already exists, or data is wrong. 
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Edits a private aerodrome
     """
 
     aerodrome_query = db_session.query(models.Aerodrome).filter(
@@ -836,17 +724,7 @@ def delete_user_waypoint_or_private_aerodrome(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Delete User Waypoint or Private Aerodrome.
-
-    Parameters: 
-    waypoint_id (int): waypoint id.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (404): waypoint not found.
-    - HTTPException (500): if there is a server error. 
+    Deletes a user waypoint or private aerodrome
     """
 
     user_id = get_user_id_from_email(

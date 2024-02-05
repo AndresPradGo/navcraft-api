@@ -37,18 +37,7 @@ def get_aircraft_arrangement_data(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Aircraft Arrangement Data Endpoint.
-
-    Parameters: 
-    - profile_id (int): performance profile id.
-
-    Returns: 
-    - dict[AircraftArrangementReturn]: dictionary with the list of seat rows, baggage 
-      compartments and fuel tanks' data.
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns an aircraft's arrangement data
     """
 
     # Get the performance profile and check permissions.
@@ -115,19 +104,7 @@ def post_new_baggage_compartment(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Post New Baggage Compartment Endpoint.
-
-    Parameters: 
-    - profile_id (int): profile id.
-    - performance_data (dict[BaggageCompartmentData]): the data to be added.
-
-    Returns: 
-    - dic[BaggageCompartmentReturn]: dictionary with the compartment data.
-
-    Raise:
-    - HTTPException (400): if profile doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Creates a new baggage compartment
     """
 
     # Check performance profile and permissions.
@@ -177,19 +154,7 @@ def post_new_seat_row(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Post New Seat Row Endpoint.
-
-    Parameters: 
-    - profile_id (int): profile id.
-    - data (dict[SeatRowData]): the data to be added.
-
-    Returns: 
-    - dic[SeatRowReturn]: dictionary with the seat row data.
-
-    Raise:
-    - HTTPException (400): if profile doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Creates a new seat row
     """
 
     # Check performance profile and permissions.
@@ -248,19 +213,7 @@ def post_new_fuel_tank(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Post New Fuel Tank Endpoint.
-
-    Parameters: 
-    - profile_id (int): profile id.
-    - data (dict[FuelTankData]): the data to be added.
-
-    Returns: 
-    - dic[FuelTankReturn]: dictionary with the fuel tank data.
-
-    Raise:
-    - HTTPException (400): if profile doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Creates a new fuel tank
     """
 
     # Check performance profile and permissions.
@@ -352,19 +305,7 @@ def edit_baggage_compartment(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit Baggage Compartment Endpoint.
-
-    Parameters: 
-    - compartment_id (int): baggage compartment id.
-    - data (dict[BaggageCompartmentData]): the data to be added.
-
-    Returns: 
-    - dic[BaggageCompartmentReturn]: dictionary with the compartment data.
-
-    Raise:
-    - HTTPException (400): if baggage compartment doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Eidts a baggage compartment
     """
 
     # Check baggage compartment exists
@@ -421,19 +362,7 @@ def edit_seat_row(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit Seat Row Endpoint.
-
-    Parameters: 
-    - row_id (int): seat row id.
-    - data (dict[SeatRowData]): the data to be added.
-
-    Returns: 
-    - dic[SeatRowReturn]: dictionary with the seat row data.
-
-    Raise:
-    - HTTPException (400): if seat row doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Edits a seat row
     """
 
     # Check seat row exists
@@ -490,19 +419,7 @@ def edit_fuel_tank(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit fuel tank Endpoint.
-
-    Parameters: 
-    - tank_id (int): fuel tank id.
-    - data (dict[FuelTankData]): the data to be added.
-
-    Returns: 
-    - dict[FuelTankReturn]: dictionary with the fuel tank data.
-
-    Raise:
-    - HTTPException (400): if fuel tank doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Edits a fuel tank 
     """
 
     # Check fuel tank exists
@@ -568,17 +485,7 @@ def delete_baggage_compartment(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Delete Baggage Compartment Endpoint.
-
-    Parameters: 
-    - compartment_id (int): baggage compartment id.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (400): if baggage compartment id doesn't exists.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Delets a baggage compartment
     """
 
     # Check baggage compartment exists
@@ -614,17 +521,7 @@ def delete_seat_row(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Delete Seat Row Endpoint.
-
-    Parameters: 
-    - row_id (int): seat row id.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (400): if seat row id doesn't exists.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Delets a seat row
     """
 
     # Check seat row exists
@@ -666,17 +563,7 @@ def delete_fuel_tank(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Delete Fuel Tank Endpoint.
-
-    Parameters: 
-    - tank_id (int): fuel tank id.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (400): if fuel tank id doesn't exists.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Deletes a fuel tank
     """
 
     # Check fuel tank exists

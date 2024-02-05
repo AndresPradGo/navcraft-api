@@ -36,20 +36,7 @@ def get_all_users(
     _: schemas.TokenData = Depends(auth.validate_master_user)
 ):
     """
-    Get All Users Endpoint.
-
-    Parameters: 
-    - limit (int): number of results.
-    - start (int): index of the first user.
-    - user_id (int): user id.
-
-
-    Returns: 
-    - list[dict[UserReturnBasic]]: list of user dictionaries.
-
-    Raise:
-    - HTTPException (401): if user is not master user.
-    - HTTPException (500): if there is a server error. 
+    Returns the list of all users (only the master user can use this endpoint)
     """
 
     users = db_session.query(models.User).filter(or_(
@@ -74,16 +61,7 @@ def get_user_profile_data(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Profile Data Endpoint.
-
-    Parameters: None
-
-    Returns: 
-    - dict[UserReturn]: dictionary with user data.
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns the uthenticated user's profile data
     """
     user = db_session.query(models.User).filter(
         models.User.email == current_user.email).first()
@@ -114,17 +92,8 @@ def get_passenger_profiles(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Passenger Profiles Endpoint.
-
-    Parameters:
-    profile_id (int): optional profile id.
-
-    Returns: 
-    - list[dict[PassengerProfileReturn]]: list of dictionaries with the profiles.
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns the list of passenger profiles from the authenticated user
+    (if a profile ID is provided, only returns one passenger profile)
     """
     user_id = get_user_id_from_email(
         email=current_user.email, db_session=db_session)
@@ -145,17 +114,7 @@ def register(
     db_session: Session = Depends(get_db)
 ):
     """
-    Post User Endpoint.
-
-    Parameters: 
-    - user (dict[UserRegister]): the user data to be added.
-
-    Returns: 
-    - dic[JWTData]: dictionary with the JWT user data.
-
-    Raise:
-    - HTTPException (400): if user already exists.
-    - HTTPException (500): if there is a server error. 
+    Registers a new user
     """
 
     email_exists = db_session.query(models.User.id).filter(
@@ -187,15 +146,7 @@ def register(
 @router.post("/trial", status_code=status.HTTP_201_CREATED, response_model=schemas.JWTData)
 def register_trial(db_session: Session = Depends(get_db)):
     """
-    Post Trial Endpoint.
-
-    Parameters: None
-
-    Returns: 
-    - dic[JWTData]: dictionary with the JWT user data.
-
-    Raise:
-    - HTTPException (500): if there is a server error. 
+    Creates a new guest account for a trial (guest accounts last 24 hours)
     """
 
     # Create a unique email
@@ -237,20 +188,7 @@ def add_new_passenger_profile(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Endpoint to add a new passenger profile
-
-    Parameters: 
-    - passenger_profile_data (dict[PassengerProfileData]): dictionary with 
-      passenger profile data.
-
-    Returns: 
-    - dic[PassengerProfileReturn]: dictionary with passenger profile 
-      data and database id.
-
-    Raise:
-    - HTTPException (400): if user already has a passenger profile with the given name.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Creates a new passenger profile for the authenticated user
     """
 
     user_id = get_user_id_from_email(
@@ -286,18 +224,7 @@ def change_email(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Change User Email Endpoint.
-
-    Parameters: 
-    - user_data (dict[UserEmail]): dict with the new user email.
-
-    Returns: 
-    - dic[UserReturnBasic]: dictionary with the user data.
-
-    Raise:
-    - HTTPException (400): if user with new email already exists.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Changes the authenticated user's email address
     """
 
     # Check if email is equal to current email
@@ -345,19 +272,7 @@ def change_password(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Change Password Endpoint.
-
-    Parameters: 
-    - user_data (dict[PasswordChangeData]): dictionary current 
-      password and new password.
-
-    Returns: 
-    - dic[UserReturnBasic]: dictionary with the user data.
-
-    Raise:
-    - HTTPException (400): if new password is not in the right format.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Changes the authenticated user's password
     """
     # Get user from database
     user_query = db_session.query(models.User).filter(
@@ -393,18 +308,7 @@ def edit_user_profile(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit User Endpoint.
-
-    Parameters: 
-    - user (dict[UserEditProfileData]): dictionary with the user data.
-
-    Returns: 
-    - dic[UserReturnBasic]: dictionary with the user data.
-
-    Raise:
-     - HTTPException (400): if user with new email already exists.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Edits the authenticated user's profile data
     """
     # Get User from database
     user = db_session.query(models.User).filter(
@@ -437,20 +341,8 @@ def grant_revoke_admin_privileges_or_deactivate(
     _: schemas.TokenData = Depends(auth.validate_master_user)
 ):
     """
-    Grant or Revoke Admin Privileges Endpoint. Only master users can use this endpoint.
-
-    Parameters: 
-    - user_id (int): user id.
-    - data (dict[EditUserData]): (make_admin(bool), activate (bool))
-
-    Returns: 
-    - dic[UserReturnBasic]: dictionary with user data.
-
-    Raise:
-    - HTTPException (400): if the user being updated is a master user.
-    - HTTPException (401): if user making the change is not master user.
-    - HTTPException (404): user not found.
-    - HTTPException (500): if there is a server error. 
+    Grants or revokes admin privileges to a given user
+    (only the master user can use this endpoint)
     """
 
     user = db_session.query(models.User).filter(models.User.id == user_id)
@@ -490,21 +382,7 @@ def edit_existing_passenger_profile(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit a Passenger Profile
-
-    Parameters: 
-    - profile_id (int): passenger profile id
-    - passenger_profile_data (dict[PassengerProfileData]): 
-      dictionary with passenger profile data.
-
-    Returns: 
-    - dict[PassengerProfileReturn]: dictionary with passenger profile 
-      data and database id.
-
-    Raise:
-    - HTTPException (400): if user already has a passenger profile with the given name.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Edits a Passenger Profile
     """
 
     user_id = get_user_id_from_email(
@@ -545,16 +423,7 @@ def delete_account(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Delete Account.
-
-    Parameters: None
-
-    Returns: None
-
-    Raise:
-    - HTTPException (404): user not found.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Deletes an Account
     """
 
     deleted = db_session.query(models.User).\
@@ -576,17 +445,7 @@ def delete_user(
     _: schemas.TokenData = Depends(auth.validate_master_user)
 ):
     """
-    Delete user endpoint, for master users to delete othe accounts.
-
-    Parameters: 
-    user_id (int): user id.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (401): if user making the change is not master user.
-    - HTTPException (404): user not found.
-    - HTTPException (500): if there is a server error. 
+    Deletes a user (only the master user can use this endpoint)
     """
 
     deleted = db_session.query(models.User).filter(models.User.id == user_id).\
@@ -607,17 +466,7 @@ def delete_passenger_profile(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Delete passenger profile.
-
-    Parameters: 
-    profile_id (int): passenger profile id.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (404): passenger profile not found.
-    - HTTPException (500): if there is a server error. 
+    Deletes a passenger profile
     """
 
     user_id = get_user_id_from_email(

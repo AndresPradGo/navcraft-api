@@ -38,19 +38,7 @@ def post_new_leg(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Post New Leg Endpoint.
-
-    Parameters: 
-    - flight_id (int): flight id.
-    - flight_data (dict): the flight data to be added.
-
-    Returns: 
-    - Dict: flight data.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Adds a new leg the the given flight
     """
 
     # Check flight exists
@@ -226,19 +214,7 @@ def edit_flight_leg(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit Flight Leg Endpoint.
-
-    Parameters: 
-    - leg_id (int): flight leg id.
-    - leg_data (dict[UpdateLegData]): the flight leg data to be added.
-
-    Returns: 
-    - dict[ExtensiveFlightDataReturn]: flight data.
-
-    Raise:
-    - HTTPException (400): if flight leg doesn't exist, or data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Edits a flight leg
     """
     # Check flight exists
     leg_query = db_session.query(models.Leg).filter_by(id=leg_id)
@@ -391,19 +367,7 @@ def update_flight_waypoints(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Update Flight Waypoints Endpoint.
-
-    Parameters: 
-    - flight_id (int): flight id.
-
-    Returns: 
-    - dict[UpdateWaypointsReturn]: detailed flight data, and 
-      list of waypoints not found.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist, or data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Refreshes all the flight waypoints with the most up-to-date VFR and User waypoints' data
     """
     # Check flight exists and user has permission to update flight
     user_id = get_user_id_from_email(
@@ -540,17 +504,7 @@ def delete_flight_leg(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Delete Flight Leg.
-
-    Parameters: 
-    leg_id (int): leg id.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (404): status not found.
-    - HTTPException (500): if there is a server error. 
+    Deletes flight leg
     """
 
     # Check leg exists and user has permission to delete

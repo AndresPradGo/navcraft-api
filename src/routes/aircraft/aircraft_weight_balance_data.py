@@ -42,17 +42,7 @@ def get_aircraft_weight_balance_data(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Weight and Balance Data Endpoint.
-
-    Parameters: 
-    - profile_id (int): performance profile id.
-
-    Returns: 
-    - dict[GetWeightBalanceData]: dictionary with the weight and balance data.
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns aircraft performance profile's weight and balance data
     """
 
     # Get the performance profile and check permissions.
@@ -125,18 +115,7 @@ async def get_aircraft_weight_and_balance_graph(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Aircraft Weight and Balance Graph Endpoint.
-
-    Parameters:
-    - profile_id (int): aircraft performance profile id.
-
-    Returns: 
-    - png-file: W&B graph.
-
-    Raise:
-    - HTTPException (400): if performance profile doesn't exist.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns a png file with an aircraft performance profile's weight and balance graph
     """
     # Get the performance profile and check permissions.
     performance_profile = check_performance_profile_and_permissions(
@@ -265,20 +244,7 @@ def post_new_weight_and_balance_profile(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Post New Weight And Balance Profile Endpoint.
-
-    Parameters: 
-    - profile_id (int): profile id.
-    - data (dict): the data to be added.
-
-    Returns: 
-    - dic[WeightBalanceReturn]: dictionary with the W&B data 
-      added to the database, and the id.
-
-    Raise:
-    - HTTPException (400): if profile doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Creates a new weight and balance profile
     """
 
     # Check performance profile and permissions.
@@ -367,21 +333,7 @@ def edit_weight_and_balance_data_for_performance_profile(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit Weight And Balance Data For Performance Profile Endpoint.
-
-    Parameters: 
-    - profile_id (int): performance profile id.
-    - performance_data (dict[PerformanceProfileWeightBalanceData]): 
-      the performance data to be added.
-
-    Returns: 
-    - dic[PerformanceProfileReturn]: dictionary with the performance 
-      profile data, and the id.
-
-    Raise:
-    - HTTPException (400): if performance profile doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Edits the weight and balance data of an aircraft performance profile
     """
 
     # Check performance profile and permissions.
@@ -442,20 +394,7 @@ def edit_weight_and_balance_profile(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit Weight And Balance Profile Endpoint.
-
-    Parameters: 
-    - wb_profile_id (int): weight and balance id.
-    - data (dict[WeightBalanceData]): the W&B data to be added.
-
-    Returns: 
-    - dic[WeightBalanceReturn]: dictionary with the data added to 
-      the database, and the id.
-
-    Raise:
-    - HTTPException (400): if weight and balance doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Edits a weight and balance profile
     """
 
     # Check if W&B ID exists
@@ -532,17 +471,7 @@ def delete_weight_and_balance_profile(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Delete Weight and Balance Profile Endpoint.
-
-    Parameters: 
-    - wb_profile_id (int): weight and balance id.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (400): if W&B profile doesn't exists.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Deletes a weight and balance profile
     """
 
     # Check if W&B ID exists

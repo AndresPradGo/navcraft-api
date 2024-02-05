@@ -4,7 +4,7 @@ Pydantic user schemas
 This module defines the user pydantic schemas for data validation.
 
 Usage: 
-- Import the required schema class to validate data at the API endpoints.
+- Import the required schema to validate data at the API endpoints.
 
 """
 
@@ -17,7 +17,7 @@ from functions.data_processing import clean_string
 
 class PassengerProfileData(BaseModel):
     """
-    This class defines the pdata-structure used to send passenger profile data.
+    Schema that outlines the data required to create a new passenger profile
     """
 
     name: constr(
@@ -32,7 +32,7 @@ class PassengerProfileData(BaseModel):
     @field_validator('name')
     @classmethod
     def clean_name(cls, value: str) -> str:
-        '''
+        """
         Classmethod to clean name string.
 
         Parameters:
@@ -41,13 +41,13 @@ class PassengerProfileData(BaseModel):
         Returns:
         (str): cleaned name string.
 
-        '''
+        """
         return clean_string(value)
 
     @field_validator('weight_lb')
     @classmethod
     def round_user_weight(cls, value: float) -> float:
-        '''
+        """
         Classmethod to round weight_lb input value to 1 decimal place.
 
         Parameters:
@@ -56,14 +56,13 @@ class PassengerProfileData(BaseModel):
         Returns:
         (float): weight value rounded to 2 decimal place.
 
-        '''
+        """
         return round(value, 2)
 
 
 class PassengerProfileReturn(PassengerProfileData):
     """
-    This class defines the data-structure used to
-    return passenger profile data to the client.
+    Schema that outlines the passenger profile data to return to the client
     """
 
     id: conint(gt=0)
@@ -71,7 +70,7 @@ class PassengerProfileReturn(PassengerProfileData):
 
 class UserEmail(BaseModel):
     """
-    This class defines the user email data structure.
+    Schema that outlines the email data to register, update and return a user
     """
 
     email: EmailStr
@@ -79,7 +78,7 @@ class UserEmail(BaseModel):
 
 class UserName(BaseModel):
     """
-    This class defines the user name data structure.
+    Schema that outlines the name data to register, update and return a user
     """
 
     name: constr(
@@ -93,7 +92,7 @@ class UserName(BaseModel):
     @field_validator('name')
     @classmethod
     def clean_user_name(cls, value: str) -> str:
-        '''
+        """
         Classmethod to clean name string.
 
         Parameters:
@@ -102,14 +101,13 @@ class UserName(BaseModel):
         Returns:
         (str): cleaned name string.
 
-        '''
+        """
         return clean_string(value)
 
 
 class UserReturnBasic(UserName, UserEmail):
     """
-    This class defines the data-structure used to return 
-    user-profile data to the client.
+    Schema that outlines the most basic user data to return to the client
     """
 
     id: conint(gt=0)
@@ -124,18 +122,15 @@ class UserReturnBasic(UserName, UserEmail):
 
 class UserReturn(UserReturnBasic):
     """
-    This class defines the data-structure used to return 
-    user data to the client, including the list of passenger profies.
+    Schema that outlines the complete user data to return to the client
     """
-
     passenger_profiles: List[PassengerProfileReturn]
 
 
 class UserPassword(BaseModel):
     """
-    This class defines the user password data structure.
+    Schema that outlines defines the user password data structure
     """
-
     password: constr(
         strip_whitespace=True,
         strict=True,
@@ -146,7 +141,7 @@ class UserPassword(BaseModel):
     @field_validator('password')
     @classmethod
     def check_passwrod_criteria(cls, password: str) -> str:
-        '''
+        """
         Classmethod to check if password contains at least 1 uppercase, 
         1 lowercase and 1 number characters.
 
@@ -155,7 +150,7 @@ class UserPassword(BaseModel):
 
         Returns:
         (string):password after validation is complete.
-        '''
+        """
 
         if any(c.isspace() or c == '\n' for c in password):
             raise ValueError(
@@ -177,14 +172,14 @@ class UserPassword(BaseModel):
 
 class UserWeight(BaseModel):
     """
-    This class defines the user weight data structure.
+    Schema that outlines the user weight data
     """
     weight_lb: confloat(ge=0, le=999.94)
 
     @field_validator('weight_lb')
     @classmethod
     def round_user_weight(cls, value: float) -> float:
-        '''
+        """
         Classmethod to round weight_lb input value to 1 decimal place.
 
         Parameters:
@@ -193,26 +188,26 @@ class UserWeight(BaseModel):
         Returns:
         (float): weight value rounded to 2 decimal place.
 
-        '''
+        """
         return round(value, 2)
 
 
 class UserRegister(UserPassword, UserName, UserEmail):
-    '''
-    This class defines the data required to register as a new user.
-    '''
+    """
+    Schema that outlines the data required to register a new user
+    """
 
 
 class UserEditProfileData(UserName, UserWeight):
-    '''
-    This class defines the data required for editing profile data.
-    '''
+    """
+    Schema that outlines the data required to edit a user profile
+    """
 
 
 class PasswordChangeData(UserPassword):
-    '''
-    This class defines the data required for user password change.
-    '''
+    """
+    Schema that outlines the data required to change a user's password
+    """
     current_password: constr(
         strip_whitespace=True,
         strict=True,
@@ -222,16 +217,16 @@ class PasswordChangeData(UserPassword):
 
 
 class JWTData(BaseModel):
-    '''
-    This class defines the JWT Return
-    '''
+    """
+    Schema that outlines the JWT data to return to the client, as an authentication result
+    """
     access_token: str
     token_type: str
 
 
 class TokenData(BaseModel):
     """
-    This class defines the JWT Payload.
+    Schema that outlines the JWT payload
     """
     email: str | None = None
     is_admin: bool
@@ -240,9 +235,8 @@ class TokenData(BaseModel):
 
 
 class EditUserData(BaseModel):
-    '''
-    This class defines the data required from a master user, to update another user.
-    '''
-
+    """
+    Schema that outlines the data required for a master user to update another user
+    """
     make_admin: bool
     activate: bool

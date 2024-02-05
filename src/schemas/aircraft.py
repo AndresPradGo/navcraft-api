@@ -4,7 +4,7 @@ Pydantic aircraft schemas
 This module defines the aircraft related pydantic schemas for data validation.
 
 Usage: 
-- Import the required schema class to validate data at the API endpoints.
+- Import the required schema to validate data at the API endpoints.
 
 """
 
@@ -17,7 +17,7 @@ from functions.data_processing import clean_string
 
 class FuelTypeData(BaseModel):
     """
-    This class defines the data-structure required from client to post fuel type data.
+    Schema that outlines the data required to create/edit a fuel type
     """
 
     name: constr(
@@ -30,7 +30,7 @@ class FuelTypeData(BaseModel):
     @field_validator('density_lb_gal')
     @classmethod
     def round_density(cls, value: float) -> float:
-        '''
+        """
         Classmethod to round density_lb_gal input value to 2 decimal places.
 
         Parameters:
@@ -38,23 +38,23 @@ class FuelTypeData(BaseModel):
 
         Returns:
         (float): density value rounded to 2 decimal places.
-        '''
+        """
         return round(value, 2)
 
 
 class FuelTypeReturn(FuelTypeData):
     """
-    This class defines the data-structure required to return fuel type data to the client.
+    Schema that outlines the fuel type data to return to the client
     """
 
     id: conint(gt=0)
 
 
 class PerformanceProfileData(BaseModel):
-    '''
-    This class defines the data structure reuired from the client, in order to add
-    a new performance profile to the database.
-    '''
+    """
+    Schema that outlines the data reuired
+    to create a new aircraft performance profile
+    """
     fuel_type_id: conint(gt=0)
     performance_profile_name: constr(
         min_length=2,
@@ -64,18 +64,17 @@ class PerformanceProfileData(BaseModel):
 
 
 class OfficialPerformanceProfileData(PerformanceProfileData):
-    '''
-    This class defines the data structure reuired from the client, in order to add
-    an official performance profile to the database.
-    '''
+    """
+    Schema that outlines the data reuired
+    to crate a new aircraft performance profile model
+    """
 
     is_complete: bool
 
 
 class PerformanceProfileReturn(OfficialPerformanceProfileData):
     """
-    This class defines the data-structure required to return performance profile data
-    to the client.
+    Schema that outlines the aircraft performance profile data to return to the client
     """
 
     id: conint(gt=0)
@@ -91,9 +90,9 @@ class PerformanceProfileReturn(OfficialPerformanceProfileData):
 
 
 class BaggageCompartmentData(BaseModel):
-    '''
-    This class defines the baggage compartment data structure.
-    '''
+    """
+    Schema that outlines the data required to create/edit an aircraft baggage compartment
+    """
 
     name: constr(
         min_length=2,
@@ -106,7 +105,7 @@ class BaggageCompartmentData(BaseModel):
     @model_validator(mode='after')
     @classmethod
     def round_values_clean_name(cls, values: Dict[str, Any]) -> Dict:
-        '''
+        """
         Classmethod to round weight data and clean name.
 
         Parameters:
@@ -115,7 +114,7 @@ class BaggageCompartmentData(BaseModel):
         Returns:
         (Dict): dictionary with the input values corrected.
 
-        '''
+        """
 
         values.arm_in = round(values.arm_in, 2)
         values.weight_limit_lb = round(values.weight_limit_lb, 2)\
@@ -126,16 +125,16 @@ class BaggageCompartmentData(BaseModel):
 
 
 class BaggageCompartmentReturn(BaggageCompartmentData):
-    '''
-    This class defines the baggage compartment data structure to be returned to the client.
-    '''
+    """
+    Schema that outlines the aircraft baggage compartment data to return to the client
+    """
     id: conint(gt=0)
 
 
 class FuelTankData(BaseModel):
-    '''
-    This class defines the fuel tank data required to post a new fuel tank.
-    '''
+    """
+    Schema that outlines the data required to create/edit an aircraft fuel tank
+    """
 
     name: constr(
         min_length=2,
@@ -150,7 +149,7 @@ class FuelTankData(BaseModel):
     @model_validator(mode='after')
     @classmethod
     def round_values_clean_name(cls, values: Dict[str, Any]) -> Dict:
-        '''
+        """
         Classmethod to round float data and clean name.
 
         Parameters:
@@ -159,7 +158,7 @@ class FuelTankData(BaseModel):
         Returns:
         (Dict): dictionary with the input values corrected.
 
-        '''
+        """
 
         values.arm_in = round(values.arm_in, 2)
         values.fuel_capacity_gallons = round(values.fuel_capacity_gallons, 2)
@@ -171,31 +170,30 @@ class FuelTankData(BaseModel):
 
 
 class FuelTankReturn(FuelTankData):
-    '''
-    This class defines the fuel tank data structure to be returned to the client.
-    '''
+    """
+    Schema that outlines the aircraft fuel tank data to return to the client
+    """
     id: conint(gt=0)
 
 
 class SeatRowData(BaggageCompartmentData):
-    '''
-    This class defines the seat row data structure.
-    '''
+    """
+    Schema that outlines the data required to create/edit an aircraft seat row
+    """
 
     number_of_seats: conint(ge=0)
 
 
 class SeatRowReturn(SeatRowData):
-    '''
-    This class defines the seat row data structure to be returned to the client.
-    '''
+    """
+    Schema that outlines the aircraft seat row data to return to the client
+    """
     id: conint(gt=0)
 
 
 class AircraftArrangementReturn(BaseModel):
     """
-    This class defines the data-structure required to return all the 
-    aircraft arrangement data from a performance profile.
+    Schema that outlines the aircraft arrangement data to return to the client
     """
     baggage_compartments: Optional[List[BaggageCompartmentReturn]] = []
     seat_rows: Optional[List[SeatRowReturn]] = []
@@ -203,10 +201,10 @@ class AircraftArrangementReturn(BaseModel):
 
 
 class PerformanceProfileWeightBalanceData(BaseModel):
-    '''
-    This class defines the data structure reuired from the client, in order to add
-    weight and balance data to a performance profile.
-    '''
+    """
+    Schema that outlines the data required to edit the weight and balance data,
+    of an aircraft performance profile
+    """
     center_of_gravity_in: confloat(ge=0, le=9999.94)
     empty_weight_lb: confloat(ge=0, le=99999.94)
     max_ramp_weight_lb: confloat(ge=0, le=99999.94)
@@ -217,7 +215,7 @@ class PerformanceProfileWeightBalanceData(BaseModel):
     @model_validator(mode='after')
     @classmethod
     def round_weight_and_cog(cls, values: Dict[str, Any]) -> Dict:
-        '''
+        """
         Classmethod to round weight data.
 
         Parameters:
@@ -226,7 +224,7 @@ class PerformanceProfileWeightBalanceData(BaseModel):
         Returns:
         (Dict): dictionary with the input values corrected.
 
-        '''
+        """
 
         values.center_of_gravity_in = round(values.center_of_gravity_in, 2)
         values.empty_weight_lb = round(values.empty_weight_lb, 2)
@@ -237,9 +235,9 @@ class PerformanceProfileWeightBalanceData(BaseModel):
 
 
 class AircraftData(BaseModel):
-    '''
-    This class defines the data required form the client to edit an aircraft.
-    '''
+    """
+    Schema that outlines the data required to create/edit an aircraft
+    """
 
     make: constr(
         strip_whitespace=True,
@@ -271,7 +269,7 @@ class AircraftData(BaseModel):
     @field_validator('make')
     @classmethod
     def clean_make(cls, value: str) -> str:
-        '''
+        """
         Classmethod to clean make.
 
         Parameters:
@@ -280,14 +278,13 @@ class AircraftData(BaseModel):
         Returns:
         - value (string): clean Make value.
 
-        '''
+        """
         return clean_string(value)
 
 
 class AircraftReturn(AircraftData):
     """
-    This class defines the base data-structure required to return aircraft data
-    to the client.
+    Schema that outlines the aircraft data to return to the client
     """
 
     id: conint(gt=0)
@@ -297,8 +294,8 @@ class AircraftReturn(AircraftData):
 
 class GetPerformanceProfileList(OfficialPerformanceProfileData):
     """
-    This class defines the data-structure required to return 
-    a list of performance profiles to the client.
+    Schema that outlines the aircraft performance profile data to return
+    a list of aircraft performance profiles to the client
     """
     id: conint(gt=0)
     is_preferred: Optional[bool] = None
@@ -308,8 +305,8 @@ class GetPerformanceProfileList(OfficialPerformanceProfileData):
 
 class GetAircraftList(AircraftReturn):
     """
-    This class defines the data-structure required to return 
-    a list of aircraft to the client.
+    Schema that outlines the aircraft data to return a list of aircraft to 
+    the client
     """
 
     profiles: Optional[List[GetPerformanceProfileList]] = []
@@ -317,8 +314,8 @@ class GetAircraftList(AircraftReturn):
 
 class WeightBalanceLimitData(BaseModel):
     """
-    This class defines the data-structure required to post weight and balance limits of a 
-    weight and balance profile.
+    Schema that outlines the data required to create/edit a limit of a weight 
+    and balance profile
     """
 
     cg_location_in: confloat(ge=0, le=9999.94)
@@ -328,7 +325,7 @@ class WeightBalanceLimitData(BaseModel):
     @model_validator(mode='after')
     @classmethod
     def round_values(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        '''
+        """
         Classmethod to round values.
 
         Parameters:
@@ -337,7 +334,7 @@ class WeightBalanceLimitData(BaseModel):
         Returns:
         (Dict): dictionary with the input values corrected.
 
-        '''
+        """
 
         values.cg_location_in = round(values.cg_location_in, 2)
         values.weight_lb = round(values.weight_lb, 2)
@@ -347,15 +344,15 @@ class WeightBalanceLimitData(BaseModel):
 
 class WeightBalanceLimitReturn(WeightBalanceLimitData):
     """
-    This class defines the data-structure required to return weight and balance limits of a 
-    weight and balance profile.
+    Schema that outlines the weight and balance profile limits' data to 
+    return to the client
     """
     id: conint(gt=0)
 
 
 class WeightBalanceData(BaseModel):
     """
-    This class defines the data-structure required to post a weight and balance profile.
+    Schema that outlines the data required to crate/edit a weight and balance profile
     """
 
     name: constr(
@@ -368,7 +365,7 @@ class WeightBalanceData(BaseModel):
     @field_validator('name')
     @classmethod
     def clean_name(cls, value: str) -> str:
-        '''
+        """
         Classmethod to clean name.
 
         Parameters:
@@ -377,13 +374,14 @@ class WeightBalanceData(BaseModel):
         Returns:
         (Dict): dictionary with the input values corrected.
 
-        '''
+        """
         return clean_string(value)
 
 
 class WeightBalanceReturn(BaseModel):
     """
-    This class defines the data-structure required to return a weight and balance profile.
+    Schema that outlines the weight and balance profile data to 
+    return to the client
     """
     name: str
     id: conint(gt=0)
@@ -394,16 +392,17 @@ class WeightBalanceReturn(BaseModel):
 
 class GetWeightBalanceData(PerformanceProfileWeightBalanceData):
     """
-    This class defines the data-structure required to return all the weight 
-    and balance data from a performance profile.
+    Schema that outlines all the weight and balance data of an aircraft 
+    performance profile to return to the client
     """
     weight_balance_profiles: Optional[List[WeightBalanceReturn]] = []
 
 
 class RunwaySurfacePercentIncrease(BaseModel):
-    '''
-    This class defines the percentage increase by runway surface data structure.
-    '''
+    """
+    Schema that outlines the data required to edit the takeoff/landing
+    performance percentage increase, by runway surface
+    """
 
     surface_id: conint(gt=0)
     percent: confloat(ge=0, le=99.94)
@@ -411,7 +410,7 @@ class RunwaySurfacePercentIncrease(BaseModel):
     @field_validator('percent')
     @classmethod
     def round_percentage(cls, value: float) -> float:
-        '''
+        """
         Classmethod to round percentages.
 
         Parameters:
@@ -420,15 +419,15 @@ class RunwaySurfacePercentIncrease(BaseModel):
         Returns:
         (Dict): dictionary with the input values corrected.
 
-        '''
+        """
         return round(value, 2)
 
 
 class RunwayDistanceAdjustmentPercentages(BaseModel):
-    '''
-    This class defines the data structure to return runway distance 
-    adjustment percentages to the client.
-    '''
+    """
+    Schema that outlines the takeoff/landing performance percentage 
+    data to return to the client
+    """
 
     percent_decrease_knot_headwind: Optional[confloat(ge=0, le=99.94)] = None
     percent_increase_knot_tailwind: Optional[confloat(ge=0, le=99.94)] = None
@@ -439,7 +438,7 @@ class RunwayDistanceAdjustmentPercentages(BaseModel):
     @model_validator(mode='after')
     @classmethod
     def round_percentage_adjustments(cls, values: Dict[str, Any]) -> Dict:
-        '''
+        """
         Classmethod to round percentages.
 
         Parameters:
@@ -448,7 +447,7 @@ class RunwayDistanceAdjustmentPercentages(BaseModel):
         Returns:
         (Dict): dictionary with the input values corrected.
 
-        '''
+        """
 
         if values.percent_decrease_knot_headwind is not None:
             values.percent_decrease_knot_headwind = round(
@@ -463,7 +462,8 @@ class RunwayDistanceAdjustmentPercentages(BaseModel):
 
 class TakeoffLandingPerformanceDataEntry(BaseModel):
     """
-    This class defines the data structure for takeoff/landing performance data entries.
+    Schema that outlines the data required to create an entry of
+    an aircraft takeoff/landing performance table
     """
 
     weight_lb: conint(ge=0)
@@ -474,18 +474,17 @@ class TakeoffLandingPerformanceDataEntry(BaseModel):
 
 
 class TakeoffLandingPerformanceReturn(RunwayDistanceAdjustmentPercentages):
-    '''
-    This class defines the data structure to return takeoff/landing 
-    performance data to the client.
-    '''
+    """
+    Schema that outlines the takeoff/landing performance table data to return to the client
+    """
 
     performance_data: List[TakeoffLandingPerformanceDataEntry]
 
 
 class ClimbPerformanceAdjustments(BaseModel):
-    '''
-    This class defines the data structure of climb adjustment data.
-    '''
+    """
+    Schema that outlines the data required to edit the climb performance adjustmnet values
+    """
 
     take_off_taxi_fuel_gallons: Optional[confloat(ge=0, le=99.94)] = None
     percent_increase_climb_temperature_c: Optional[confloat(
@@ -494,7 +493,7 @@ class ClimbPerformanceAdjustments(BaseModel):
     @model_validator(mode='after')
     @classmethod
     def round_data(cls, values: Dict[str, Any]) -> Dict:
-        '''
+        """
         Classmethod to round percentages.
 
         Parameters:
@@ -503,7 +502,7 @@ class ClimbPerformanceAdjustments(BaseModel):
         Returns:
         (Dict): dictionary with the input values corrected.
 
-        '''
+        """
 
         if values.take_off_taxi_fuel_gallons is not None:
             values.take_off_taxi_fuel_gallons = round(
@@ -518,7 +517,8 @@ class ClimbPerformanceAdjustments(BaseModel):
 
 class ClimbPerformanceDataEntry(BaseModel):
     """
-    This class defines the data structure for climb performance data entries.
+    Schema that outlines the data required to create an entry of
+    an aircraft climb performance table
     """
 
     weight_lb: conint(ge=0)
@@ -533,7 +533,7 @@ class ClimbPerformanceDataEntry(BaseModel):
     @field_validator('fuel_gal')
     @classmethod
     def round_percentage_adjustments(cls, value: float) -> float:
-        '''
+        """
         Classmethod to round fuel burn.
 
         Parameters:
@@ -542,22 +542,22 @@ class ClimbPerformanceDataEntry(BaseModel):
         Returns:
         (float): rounded fuel burn.
 
-        '''
+        """
         return round(value, 2)
 
 
 class ClimbPerformanceReturn(ClimbPerformanceAdjustments):
-    '''
-    This class defines the data structure to return climb 
-    performance data to the client.
-    '''
+    """
+    Schema that outlines the climb performance table data to return to the client
+    """
 
     performance_data: List[ClimbPerformanceDataEntry]
 
 
 class CruisePerformanceDataEntry(BaseModel):
     """
-    This class defines the data structure for cruise performance data entries.
+    Schema that outlines the data required to create an entry of
+    an aircraft cruise performance table
     """
 
     weight_lb: conint(ge=0)
@@ -571,7 +571,7 @@ class CruisePerformanceDataEntry(BaseModel):
     @field_validator('gph')
     @classmethod
     def round_percentage_adjustments(cls, value: float) -> float:
-        '''
+        """
         Classmethod to round fuel burn.
 
         Parameters:
@@ -580,14 +580,13 @@ class CruisePerformanceDataEntry(BaseModel):
         Returns:
         (float): rounded fuel burn.
 
-        '''
+        """
         return round(value, 2)
 
 
 class CruisePerformanceReturn(BaseModel):
-    '''
-    This class defines the data structure to return cruise 
-    performance data to the client.
-    '''
+    """
+    Schema that outlines the cruise performance table data to return to the client
+    """
 
     performance_data: List[CruisePerformanceDataEntry]

@@ -21,7 +21,11 @@ from startup.schedule_clean_db_job import schedule_clean_db_job
 
 error_logger.init_logger()
 
-app = FastAPI()
+app = FastAPI(
+    title="NavCraft API",
+    version="1.0.0",
+    description="An API for pilots to plan their flights. NavCraft API uses Canadian aviation rules, regulations and definitions to perform all calculation. Flight plans produced by NavCraft API include: \n \n - navigation logs, \n \n - weight and balance charts, \n \n - fuel calculations, \n \n - takeoff and landing distances."
+)
 
 create_database()
 set_up_database()

@@ -4,7 +4,7 @@ Pydantic flight weight and balance schemas
 This module defines the flight weight and balance related pydantic schemas for data validation.
 
 Usage: 
-- Import the required schema class to validate data at the API endpoints.
+- Import the required schema to validate data at the API endpoints.
 
 """
 
@@ -23,7 +23,7 @@ from functions.data_processing import clean_string
 
 class PersonOnBoardData(BaseModel):
     """"
-    This class defines the data structure required to add a new person on board.
+    Schema that outlines the data required to add a new person to a flight
     """
 
     seat_row_id: conint(gt=0)
@@ -42,19 +42,9 @@ class PersonOnBoardData(BaseModel):
     @model_validator(mode='after')
     @classmethod
     def validate_data_source(cls, values):
-        '''
+        """
         Classmethod to check that only 1 out of 3 possible data sources is provided.
-
-        Parameters:
-        - values (Any): The object with the values to be validated.
-
-        Returns:
-        (Any) : The object of validated values.
-
-        Raises:
-        ValueError: if more or less than 1 source of weight data is provided.
-
-        '''
+        """
 
         value_list = [values.weight_lb, values.is_me,
                       values.passenger_profile_id]
@@ -79,8 +69,7 @@ class PersonOnBoardData(BaseModel):
 
 class PersonOnBoardReturn(BaseModel):
     """"
-    This class defines the data structure required to return 
-    person on board data to the client.
+    Schema that outlines the person-on-board data to return to the client
     """
     id: conint(gt=0)
     seat_row_id: conint(gt=0)
@@ -99,7 +88,7 @@ class PersonOnBoardReturn(BaseModel):
 
 class FlightBaggageData(BaseModel):
     """"
-    This class defines the data structure required to add a new baggage.
+    Schema that outlines the data required to add luggage to a flight
     """
 
     baggage_compartment_id: conint(gt=0)
@@ -115,7 +104,7 @@ class FlightBaggageData(BaseModel):
     @model_validator(mode='after')
     @classmethod
     def round_weight_and_clean_name(cls, values):
-        '''
+        """
         Classmethod to round the weight and clean name string.
 
         Parameters:
@@ -123,7 +112,7 @@ class FlightBaggageData(BaseModel):
 
         Returns:
         (Any): input values with rounded weight and clean name.
-        '''
+        """
         values.weight_lb = round(values.weight_lb, 2)
         values.name = clean_string(values.name)
 
@@ -132,14 +121,14 @@ class FlightBaggageData(BaseModel):
 
 class FlightBaggageReturn(FlightBaggageData):
     """"
-    This class defines the data structure required to return baggage data to the client.
+    Schema that outlines the luggage data to return to the client
     """
     id: conint(gt=0)
 
 
 class FlightFuelReturn(BaseModel):
     """"
-    This class defines the data structure required to return fuel data to the client.
+    Schema that outlines the fuel data to return to the client
     """
     id: conint(gt=0)
     fuel_tank_id: conint(gt=0)
@@ -149,7 +138,7 @@ class FlightFuelReturn(BaseModel):
 
 class FuelData(BaseModel):
     """"
-    This class defines the data structure required to add fuel.
+    Schema that outlines the data required to add fuel to a flight
     """
 
     gallons: conint(gt=0)

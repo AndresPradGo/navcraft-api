@@ -34,18 +34,7 @@ def get_all_runways(
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Get All Runways Endpoint.
-
-    Parameters: 
-    - runway_id (int[optional]): if provided, only the runway 
-      with thisid will be returned.
-
-    Returns: 
-    - list[dict[RunwayReturn]]: list of runway dictionaries.
-
-    Raise:
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Returns all runways (only admin users can use this endpoint)
     """
 
     v = models.VfrWaypoint
@@ -96,19 +85,7 @@ def get_csv_file_with_all_runways(
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Get CSV File With All Runways Endpoint.
-
-    Parameters: None
-
-    Returns: 
-    - Zip folder: zip folder with 3 files:
-       - runways.csv
-       - aerodrome_codes.csv
-       - surface_ids.csv
-
-    Raise:
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Returns a CSV File with all runways (only admin users can use this endpoint)
     """
 
     a = models.Aerodrome
@@ -213,16 +190,7 @@ def get_all_runway_surfaces(
     _: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get All Runway Surfaces Endpoint.
-
-    Parameters: None
-
-    Returns: 
-    - list[dict[RunwaySurfaceReturn]]: list of runway surface dictionaries.
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns all runway surfaces
     """
 
     return db_session.query(models.RunwaySurface).filter(or_(
@@ -238,18 +206,7 @@ def post_runway(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Post Runway Endpoint.
-
-    Parameters: 
-    - runway_data (dict[RunwayData]): the runway object to be added.
-
-    Returns: 
-    - dic[RunwayReturn]: dictionary with the runway data.
-
-    Raise:
-    - HTTPException (400): if runway already exists.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Creates a new runway for a given aerodrome
     """
 
     # Check if aerodrome exists
@@ -356,32 +313,25 @@ async def manage_runways_with_csv_file(
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Manage Runways Endpoint.
+    Manages runways (only admin users can use this endpoint)
 
     Usage:
-    - Download the Runways csv-list, from the "Get Csv File With All Runways" endpoint.
-    - Use this file to update the list in the desired way.
+    - Download the Runways csv-list, from the "Get Csv File With All Runways" endpoint
+    - Use this file to update the list in the desired way
     - New columns can be added for your reference, but they won't be considered for updating the 
-      data in the database. 
+      data in the database
     - Do not delete or edit the headers of the existing colums in any way, 
-      or the file will be rejected.
-    - Enter all data in the correct colums to ensure data integrity.
-    - Make sure there are no typos or repeated entries.
-    - After getting a 204 response, download csv list again to check it has been uploaded correctly.
+      or the file will be rejected
+    - Enter all data in the correct colums to ensure data integrity
+    - Make sure there are no typos or repeated entries
+    - After getting a 204 response, download csv list again to check it has been uploaded correctly
 
     NOTE: This endpoint will delete all runways in the database for the given aerodromes,
-    and will post new data-entries.
+    and will post new data-entries
 
 
-    Parameters: 
-    - csv-file (UploadFile): csv file with runway data.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (400): file or file-data is wrong.
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Other Parameters: 
+    - csv-file (UploadFile schema): csv file with runway data
     """
 
     # Check and decode csv-file
@@ -496,18 +446,7 @@ def post_runway_surface(
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Post Runway Surface Endpoint.
-
-    Parameters: 
-    - surface_data (dict[RunwaySurfaceData]): the runway surface object to be added.
-
-    Returns: 
-    - dict[RunwaySurfaceReturn]: dictionary with the runway surface data.
-
-    Raise:
-    - HTTPException (400): if runway surface already exists.
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Creates a new runway surface (only admin users can use this endpoint)
     """
 
     surface_exists = db_session.query(models.RunwaySurface).filter(
@@ -538,18 +477,7 @@ def edit_runway(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit Runway Endpoint.
-
-    Parameters: 
-    - runway_data (dict[RunwayDataEdit]): the runway  object to be added.
-
-    Returns: 
-    - dict[RunwayReturn]: dictionary with the runway  data.
-
-    Raise:
-    - HTTPException (400): if runway already exists.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Edits a runway
     """
     # Check if runway exists
     runway_query = db_session.query(models.Runway).filter(
@@ -657,18 +585,7 @@ def edit_runway_surface(
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Edit Runway Surface Endpoint.
-
-    Parameters: 
-    - surface_data (dict[RunwaySurfaceData]): the runway surface object to be added.
-
-    Returns: 
-    - dict[RunwaySurfaceReturn]: dictionary with the runway surface data.
-
-    Raise:
-    - HTTPException (400): if runway surface already exists.
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Edits a runway surface (only admin users can use this endpoint)
     """
     surface_exists = db_session.query(models.RunwaySurface).filter(and_(
         models.RunwaySurface.surface == surface_data.surface,
@@ -709,17 +626,7 @@ def delete_runway(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Delete Runways.
-
-    Parameters: 
-    runway_id (int): runway id to be deleted.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (404): passenger profile not found.
-    - HTTPException (500): if there is a server error. 
+    Deletes a runways
     """
 
     # Check if runway exists
@@ -775,17 +682,7 @@ def delete_runway_surface(
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Delete Runway Surface.
-
-    Parameters: 
-    surface_id (int): runway surface id.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (404): passenger profile not found.
-    - HTTPException (500): if there is a server error. 
+    Deletes a runway surface (only admin users can use this endpoint)
     """
 
     surface_query = db_session.query(models.RunwaySurface).filter(

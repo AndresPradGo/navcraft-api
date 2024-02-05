@@ -4,7 +4,7 @@ Pydantic navlog schemas
 This module defines the data-structures needed to return navlog calculation results.
 
 Usage: 
-- Import the required schema class to validate data at the API endpoints.
+- Import the required schema to validate data at the API endpoints.
 """
 
 from typing import Optional, List
@@ -21,7 +21,7 @@ from pydantic import (
 
 class WaypointInNavLog(BaseModel):
     """
-    This class defines the basic waypoint data included in the navigation log:
+    Schema that outlines the basic waypoint data included in the navigation log
     """
 
     code: constr(
@@ -38,8 +38,7 @@ class WaypointInNavLog(BaseModel):
 
 class NavigationLogLegResults(BaseModel):
     """
-    This class defines the data-structure to return 
-    navlog calculation results for one flight leg.
+    Schema that outlines the navlog data to return to the client
     """
     leg_id: int
     from_waypoint: WaypointInNavLog
@@ -70,9 +69,9 @@ class NavigationLogLegResults(BaseModel):
     @model_validator(mode='after')
     @classmethod
     def round_float_data(cls, values):
-        '''
+        """
         Classmethod to round floats to 2 decimal places.
-        '''
+        """
 
         values.magnetic_variation = round(values.magnetic_variation, 2)
         values.fuel_to_climb_gallons = round(values.fuel_to_climb_gallons, 2)
@@ -83,9 +82,9 @@ class NavigationLogLegResults(BaseModel):
     @field_validator('magnetic_heading')
     @classmethod
     def round_correct_magnetic_heading(cls, value: int) -> int:
-        '''
+        """
         Classmethod to bound magnetic heading values within 0 to 360.
-        '''
+        """
         if value > 360:
             value -= 360
         if value < 0:
@@ -95,8 +94,8 @@ class NavigationLogLegResults(BaseModel):
 
 class FuelEnduranceAndGallons(BaseModel):
     """
-    This calss defines the data-structure to return 
-    fuel data in endurance-time(hours) and gallons.
+    Schema that outlines fuel data to return to the client 
+    as part of the fuel calculation results
     """
 
     hours: confloat(ge=0)
@@ -105,8 +104,7 @@ class FuelEnduranceAndGallons(BaseModel):
 
 class FuelCalculationResults(BaseModel):
     """
-    This class defines the data-structure to return 
-    fuel calculation results for the flight plan.
+    Schema that outlines the fuel calculations results to return to the client
     """
     pre_takeoff_gallons: confloat(ge=0)
     climb_gallons: confloat(ge=0)
@@ -120,8 +118,7 @@ class FuelCalculationResults(BaseModel):
 
 class TakeoffLandingDistancesResults(BaseModel):
     """
-    This class defines the data-structure to return 
-     takeoff and landing distance data per runway.
+    Schema that outlines the takeoff/landing distance results to return to the client
     """
 
     runway_id: conint(gt=0)
@@ -149,8 +146,7 @@ class TakeoffLandingDistancesResults(BaseModel):
 
 class TakeoffAndLandingDistances(BaseModel):
     """
-    This class defines the data-structure to return 
-    takeoff and landing distances for the flight plan.
+    Schema that outlines the takeoff and landing distance results to return to the client
     """
     departure: List[TakeoffLandingDistancesResults]
     arrival: List[TakeoffLandingDistancesResults]
@@ -158,8 +154,8 @@ class TakeoffAndLandingDistances(BaseModel):
 
 class BaseWeightAndBalanceReportReturn(BaseModel):
     """
-    This class defines the base weight and balance data 
-    returned to the client in the  W&B report.
+    Schema that outlines the base weight and balance data to return
+    to the client in the  W&B report
     """
 
     weight_lb: float
@@ -169,9 +165,9 @@ class BaseWeightAndBalanceReportReturn(BaseModel):
     @model_validator(mode='after')
     @classmethod
     def round_float_data(cls, values):
-        '''
+        """
         Classmethod to round floats to 2 decimal places.
-        '''
+        """
         values.weight_lb = round(values.weight_lb, 2)
         values.arm_in = round(values.arm_in, 2)
         values.moment_lb_in = round(values.moment_lb_in, 2)
@@ -180,8 +176,8 @@ class BaseWeightAndBalanceReportReturn(BaseModel):
 
 class WeightAndBalanceFuelReturn(BaseWeightAndBalanceReportReturn):
     """
-    This class defines the data structure to return fuel 
-    weight and balance data to the client, as pasrt of the W&B report.
+    Schema that outlines the fuel weight data structure to return fuel 
+    weight and balance data to the client, as pasrt of the W&B report
     """
 
     gallons: confloat(allow_inf_nan=False, le=999.94)
@@ -189,16 +185,16 @@ class WeightAndBalanceFuelReturn(BaseWeightAndBalanceReportReturn):
     @field_validator('gallons')
     @classmethod
     def round_gallons(cls, value: int) -> int:
-        '''
+        """
         Classmethod round fuel gallons to 2 decimal places.
-        '''
+        """
         return round(value, 2)
 
 
 class WeightAndBalanceFuelTankReturn(WeightAndBalanceFuelReturn):
     """
-    This class defines the data structure to return fuel 
-    weight and balance data to the client, as pasrt of the W&B report.
+    Schema that outlines the fuel weight and balance data to return
+    to the client, as pasrt of the W&B report
     """
 
     fuel_tank_id: conint(gt=0)
@@ -211,8 +207,8 @@ class WeightAndBalanceFuelTankReturn(WeightAndBalanceFuelReturn):
 
 class WeightAndBalanceSeatRowReturn(BaseWeightAndBalanceReportReturn):
     """
-    This class defines the seat_rows data returned to the client, 
-    as part of the  W&B report.
+    Schema that outlines the seat rows data to return to the client, 
+    as part of the  W&B report
     """
 
     seat_row_id: conint(gt=0)
@@ -225,8 +221,8 @@ class WeightAndBalanceSeatRowReturn(BaseWeightAndBalanceReportReturn):
 
 class WeightAndBalanceBaggageCompartmentReturn(BaseWeightAndBalanceReportReturn):
     """
-    This class defines the baggage_compartment data returned to the client, 
-    as part of the  W&B report.
+    Schema that outlines the baggage compartment data to return to the client, 
+    as part of the  W&B report
     """
     baggage_compartment_id: conint(gt=0)
     baggage_compartment_name: constr(
@@ -238,7 +234,7 @@ class WeightAndBalanceBaggageCompartmentReturn(BaseWeightAndBalanceReportReturn)
 
 class WeightAndBalanceReport(BaseModel):
     """
-    This class defines the  W&B report data returned to the user.
+    Schema that outlines the  W&B report data to return to the client
     """
 
     warnings: List[constr(

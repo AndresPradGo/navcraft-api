@@ -35,18 +35,7 @@ def get_all_persons_on_board(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get All Persons On Board Of Flight Endpoint.
-
-    Parameters:
-    - Flight_id (int): flight id.
-
-    Returns: 
-    - list[dict[PersonOnBoardReturn]]: list of person on board dictionaries.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns all the persons on board of a flight
     """
 
     # Check flight exist
@@ -119,18 +108,7 @@ def get_all_flight_baggage(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Flight Baggage Endpoint.
-
-    Parameters:
-    - flight_id (int): flight id.
-
-    Returns: 
-    - list[dict[FlightBaggageReturn]]: list of baggage dictionaries.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns all the luggage of a flight
     """
 
     # Check flight exist
@@ -175,18 +153,7 @@ def get_all_flight_fuel(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Flight Fuel Endpoint.
-
-    Parameters:
-    - Flight_id (int): flight id.
-
-    Returns: 
-    - list[dict[FlightFuelReturn]]: list of dictionaries with fuel tank.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns all the fuel on board of a flight
     """
 
     # Check flight exist
@@ -253,19 +220,7 @@ def add_person_on_board(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Add Person On Board Endpoint.
-
-    Parameters: 
-    - flight_id (int): flight id.
-    - data (dict[PersonOnBoardData]): name and weight of person and seat row.
-
-    Returns: 
-    - dict[PersonOnBoardReturn]: person on board data and id.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Adds a new passenger/crew-memeber to a flight
     """
 
     # Check flight exist
@@ -429,19 +384,7 @@ def add_flight_baggage(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Add Flig Baggage Endpoint.
-
-    Parameters: 
-    - flight_id (int): flight id.
-    - data (dict[FlightBaggageData]): baggage data
-
-    Returns: 
-    - dict[FlightBaggageReturn]: ggage data and id.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Adds a new luggage to a flight
     """
 
     # Check flight exist
@@ -520,19 +463,7 @@ def edit_person_on_board(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit Person On Board Endpoint.
-
-    Parameters: 
-    - pob_id (int): person on board id.
-    - data (dict[PersonOnBoardData]): name and weight of person and seat row.
-
-    Returns: 
-    - dict[PersonOnBoardReturn]: person on board data and id.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Edits a person on board of a flight
     """
     # Get person on board
     person_on_board_query = db_session.query(
@@ -710,19 +641,7 @@ def edit_flight_baggage(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit Flight Baggage Endpoint.
-
-    Parameters: 
-    - baggage_id (int): baggage id.
-    - data (dict[FlightBaggageData]): baggage data
-
-    Returns: 
-    - dict[FlightBaggageReturn]: baggage data and id.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Edits a flight luggage
     """
     # Get baggage
     baggage_query = db_session.query(
@@ -809,19 +728,7 @@ def edit_flight_fuel(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit Flight Fuel Endpoint.
-
-    Parameters: 
-    - fuel_id (int): fuel id.
-    - data (dict[FuelData]): dict with gallons of fuel in tank
-
-    Returns: 
-    - dict[FlightFuelReturn]: fuel data and id.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Edits fuel gallons at departure
     """
     # Get fuel
     fuel_query = db_session.query(
@@ -900,15 +807,7 @@ def delete_person_on_board(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Delete Person On Board Endpoint.
-
-    Parameters: 
-    - pob_id (int): person on board id.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Deletes a person on board of a flight
     """
     # Get person on board
     person_on_board_query = db_session.query(
@@ -964,15 +863,7 @@ def delete_flight_baggage(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Delete Person On Board Endpoint.
-
-    Parameters: 
-    - baggage_id (int): baggage id.
-
-    Raise:
-    - HTTPException (400): if flight doesn't exist.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Removes a luggage from a flight
     """
     # Get person on board
     baggage_query = db_session.query(

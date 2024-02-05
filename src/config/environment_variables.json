@@ -1,13 +1,13 @@
 {
-    "db_user": "FLIGHT_PLANNER_DB_USER",
-    "db_password": "FLIGHT_PLANNER_DB_PASSWORD",
-    "db_host": "FLIGHT_PLANNER_DB_HOST",
-    "db_name": "FLIGHT_PLANNER_DB_NAME",
-    "master_user_name": "FLIGHT_PLANNER_MASTER_USER_NAME",
-    "master_user_email": "FLIGHT_PLANNER_MASTER_USER_EMAIL",
-    "master_user_weight": "FLIGHT_PLANNER_MASTER_USER_WEIGHT",
-    "master_user_password": "FLIGHT_PLANNER_MASTER_USER_PASSWORD",
-    "jwt_secret_key": "FLIGHT_PLANNER_JWT_SECRET_KEY",
-    "jwt_algorithm": "FLIGHT_PLANNER_JWT_ALGORITHM",
-    "client_origin": "FLIGHT_PLANNER_CLIENT_ORIGIN"
+    "db_user": "NAVCRAFT_API_DB_USER",
+    "db_password": "NAVCRAFT_API_DB_PASSWORD",
+    "db_host": "NAVCRAFT_API_DB_HOST",
+    "db_name": "NAVCRAFT_API_DB_NAME",
+    "master_user_name": "NAVCRAFT_API_MASTER_USER_NAME",
+    "master_user_email": "NAVCRAFT_API_MASTER_USER_EMAIL",
+    "master_user_weight": "NAVCRAFT_API_MASTER_USER_WEIGHT",
+    "master_user_password": "NAVCRAFT_API_MASTER_USER_PASSWORD",
+    "jwt_secret_key": "NAVCRAFT_API_JWT_SECRET_KEY",
+    "jwt_algorithm": "NAVCRAFT_API_JWT_ALGORITHM",
+    "client_origin": "NAVCRAFT_API_CLIENT_ORIGIN"
 }

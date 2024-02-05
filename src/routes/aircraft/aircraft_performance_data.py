@@ -37,18 +37,7 @@ def get_takeoff_landing_performance_csv_file(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Takeoff/Landing Performance CSV File Endpoint.
-
-    Parameters: 
-    - profile_id (int): performance profile id.
-    - is_takeoff (bool): false if you want to get landing data.
-
-    Returns: 
-    - CSV file: csv file with the takeoff/landing data.
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns takeoff/landing performance data in a CSV File
     """
 
     # Check permissions
@@ -120,17 +109,7 @@ def get_climb_performance_csv_file(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Climb Performance CSV File Endpoint.
-
-    Parameters: 
-    - profile_id (int): performance profile id.
-
-    Returns: 
-    - CSV file: csv file with the climb data.
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns climb performance data in a CSV File
     """
 
     # Check permissions
@@ -199,17 +178,7 @@ def get_cruise_performance_csv_file(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Cruise Performance CSV File Endpoint.
-
-    Parameters: 
-    - profile_id (int): performance profile id.
-
-    Returns: 
-    - CSV file: csv file with the climb data.
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns cruise performance data in a CSV File
     """
 
     # Check permissions
@@ -282,19 +251,7 @@ def get_takeoff_landing_performance_data(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Takeoff/Landing Performance Data Endpoint.
-
-    Parameters: 
-    - profile_id (int): performance profile id.
-    - is_takeoff (bool): false if you want to get landing data.
-
-    Returns: 
-    - dict[TakeoffLandingPerformanceReturn]: dictionary with 
-      the takeoff/landing performance data.
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns takeoff/landing performance data
     """
 
     # Get the performance profile and check permissions.
@@ -376,18 +333,7 @@ def get_climb_performance_data(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Climb Performance Data Endpoint.
-
-    Parameters: 
-    - profile_id (int): performance profile id.
-
-    Returns: 
-    - dict[ClimbPerformanceReturn]: dictionary with the 
-      climb performance data.
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns climb performance data
     """
 
     # Get the performance profile and check permissions.
@@ -454,18 +400,7 @@ def get_cruise_performance_data(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Cruise Performance Data Endpoint.
-
-    Parameters: 
-    - profile_id (int): performance profile id.
-
-    Returns: 
-    - dict[CruisePerformanceReturn]: dictionary with the cruise 
-      performance data.
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns cruise performance data
     """
 
     # Get the performance profile and check permissions.
@@ -524,35 +459,25 @@ async def manage_takeoff_landing_performance_data_with_csv_file(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Manage Takeoff/Landing Performance Data Endpoint.
+    Manages takeoff/landing performance data
 
     Usage:
     - Download the Takeoff/Landing Performance Data csv, from the 
-      "Get Takeoff Landing Performance Data" endpoint.
-    - Use this file to update the data in the desired way.
+      "Get Takeoff Landing Performance Data" endpoint
+    - Use this file to update the data in the desired way
     - New columns can be added for your reference, but they won't be considered for updating the 
-      data in the database. 
+      data in the database
     - Do not delete or edit the headers of the existing colums in any way, 
-      or the file will be rejected.
-    - Enter all data in the correct colum to ensure data integrity.
-    - Make sure there are no typos or repeated entries.
-    - After getting a 204 response, download csv list again to check it has been uploaded correctly.
+      or the file will be rejected
+    - Enter all data in the correct colum to ensure data integrity
+    - Make sure there are no typos or repeated entries
+    - After getting a 204 response, download csv list again to check it has been uploaded correctly
 
     NOTE: This endpoint will replace the current data with the new data, so upload a complete
-    file, even if you just want to change 1 entry.
+    file, even if you just want to change 1 entry
 
-    Parameters: 
-    - profile_id (int): id of the profile you want to update.
-    - csv_file (UploadFile): csv file with takeoff/landing data.
-    - is_takeoff (bool): by default, this endpoint updates takeoff 
-      data. If you want to update landing data, enter false.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (400): file or file-data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Other Parameters: 
+    - csv_file (UploadFile schema): csv file with takeoff/landing data
     """
 
     # Check performance profile and permissions.
@@ -654,34 +579,25 @@ async def manage_climb_performance_data_with_csv_file(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Manage climb Performance Data Endpoint.
+    Manages climb performance data
 
     Usage:
     - Download the climb Performance Data csv, from the 
-      "Get Takeoff Landing Performance Data" endpoint.
-    - Use this file to update the data in the desired way.
+      "Get Takeoff Landing Performance Data" endpoint
+    - Use this file to update the data in the desired way
     - New columns can be added for your reference, but they won't be considered for updating the 
-      data in the database. 
+      data in the database
     - Do not delete or edit the headers of the existing colums in any way, 
-      or the file will be rejected.
-    - Enter all data in the correct colum to ensure data integrity.
-    - Make sure there are no typos or repeated entries.
-    - After getting a 204 response, download csv list again to check it has been uploaded correctly.
+      or the file will be rejected
+    - Enter all data in the correct colum to ensure data integrity
+    - Make sure there are no typos or repeated entries
+    - After getting a 204 response, download csv list again to check it has been uploaded correctly
 
     NOTE: This endpoint will replace the current data with the new data, so upload a complete
-    file, even if you just want to change 1 entry.
+    file, even if you just want to change 1 entry
 
-    Parameters: 
-    - profile_id (int): id of the profile you want to update.
-    - csv_file (UploadFile): csv file with climb data.
-      data. If you want to update landing data, enter false.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (400): file or file-data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Other Parameters: 
+    - csv_file (UploadFile schema): csv file with climb data
     """
 
     # Check performance profile and permissions.
@@ -771,34 +687,25 @@ async def manage_cruise_performance_data_with_csv_file(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Manage cruise Performance Data Endpoint.
+    Manages cruise performance data
 
     Usage:
     - Download the cruise Performance Data csv, from the 
-      "Get Takeoff Landing Performance Data" endpoint.
-    - Use this file to update the data in the desired way.
+      "Get Takeoff Landing Performance Data" endpoint
+    - Use this file to update the data in the desired way
     - New columns can be added for your reference, but they won't be considered for updating the 
-      data in the database. 
+      data in the database
     - Do not delete or edit the headers of the existing colums in any way, 
-      or the file will be rejected.
-    - Enter all data in the correct colum to ensure data integrity.
-    - Make sure there are no typos or repeated entries.
-    - After getting a 204 response, download csv list again to check it has been uploaded correctly.
+      or the file will be rejected
+    - Enter all data in the correct colum to ensure data integrity
+    - Make sure there are no typos or repeated entries
+    - After getting a 204 response, download csv list again to check it has been uploaded correctly
 
     NOTE: This endpoint will replace the current data with the new data, so upload a complete
-    file, even if you just want to change 1 entry.
+    file, even if you just want to change 1 entry
 
-    Parameters: 
-    - profile_id (int): id of the profile you want to update.
-    - csv_file (UploadFile): csv file with cruise data.
-      data. If you want to update landing data, enter false.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (400): file or file-data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Other Parameters: 
+    - csv_file (UploadFile schema): csv file with cruise data
     """
 
     # Check performance profile and permissions.
@@ -881,20 +788,7 @@ def edit_takeoff_landing_adjustment_values(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit Takeoff/Landing Performance Adjustment Values Endpoint.
-
-    Parameters: 
-    - profile_id (int): performance profile id.
-    - adjustment_data (dict[RunwayDistanceAdjustmentPercentages]): 
-      dictionary with the percentage adjustment data.
-    - is_takeoff (bool): false if you want to get landing data.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (400): if data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Edits takeoff/landing performance adjustment values
     """
 
     # Check performance profile and permissions.
@@ -973,19 +867,7 @@ def edit_climb_performance_adjustment_values(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Edit Climb Performance Adjustment Values Endpoint.
-
-    Parameters: 
-    - profile_id (int): performance profile id.
-    - adjustment_data (dict[ClimbPerformanceAdjustments]): 
-      dictionary with the percentage adjustment data.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (400): if data is wrong.
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Edits climb performance adjustment values
     """
 
     # Check performance profile and permissions.

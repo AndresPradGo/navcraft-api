@@ -36,17 +36,7 @@ def get_performance_profile_model_list(
     current_user: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Performance Profile Model List Endpoint.
-
-    Parameters: 
-    - profile_id (int [optional]): If provided, only 1 profile will be provided.
-
-    Returns: 
-    - List[dict[GetPerformanceProfileList]]: list of dictionaries with profile data.
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns all aircraft performance profile models
     """
 
     # Get performance profile models
@@ -95,18 +85,7 @@ def get_fuel_types(
     _: schemas.TokenData = Depends(auth.validate_user)
 ):
     """
-    Get Fuel Types Endpoint.
-
-    Parameters: 
-    - fuel_type_id (int): fuel type id, for returning only 1 fuel type. If 0 or none, 
-      it returns all entries. If id doesn't exist, it returns an empty list
-
-    Returns: 
-    - list[dict[FuelTypeReturn]]: list of dictionaries with the fuel types.
-
-    Raise:
-    - HTTPException (401): if user is not authenticated.
-    - HTTPException (500): if there is a server error. 
+    Returns all fuel types
     """
 
     return db_session.query(models.FuelType).filter(or_(
@@ -126,18 +105,7 @@ def post_new_fuel_type(
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Post Fuel Type Endpoint.
-
-    Parameters: 
-    - fuel_type (dict[FuelTypeData]): the fuel type data to be added.
-
-    Returns: 
-    - dic[FuelTypeReturn]: dictionary with the fuel type data added to the database, and the id.
-
-    Raise:
-    - HTTPException (400): if fuel type already exists.
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Posts a new fuel type (only admin users can use this endpoint)
     """
 
     # Check if fuel type already exists in database
@@ -164,25 +132,13 @@ def post_new_fuel_type(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.PerformanceProfileReturn
 )
-def post_new_performance_profile(
+def post_new_performance_profile_model(
     performance_data: schemas.OfficialPerformanceProfileData,
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Post New Performance Profile Endpoint.
-
-    Parameters: 
-    - performance_data (dict[OfficialPerformanceProfileData]): dictionary with 
-      the performance data to be added.
-
-    Returns: 
-    - dic[PerformanceProfileReturn]: dictionary with the data added to the database, and the id.
-
-    Raise:
-    - HTTPException (400): if data is wrong.
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Posts a new aircraft performance profile model (only admin users can use this endpoint)
     """
 
     # Check profile is not repeated
@@ -237,19 +193,7 @@ def edit_fuel_type(
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Edit Fuel Type Endpoint.
-
-    Parameters: 
-    - fuel_type_id (int): fuel type id.
-    - fuel_type (dict[FuelTypeData]): the fuel type data to be added.
-
-    Returns: 
-    - dic[FuelTypeReturn]: dictionary with the new fuel type data.
-
-    Raise:
-    - HTTPException (400): if fuel type doesn't exists.
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Edits a fuel type (only admin users can use this endpoint)
     """
 
     # Check id is valid
@@ -285,28 +229,14 @@ def edit_fuel_type(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.PerformanceProfileReturn
 )
-def edit_performance_profile(
+def edit_performance_profile_model(
     performance_profile_id: int,
     performance_data: schemas.OfficialPerformanceProfileData,
     db_session: Session = Depends(get_db),
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Edit Performance Profile Endpoint.
-
-    Parameters: 
-    - performance_profile_id (int): performance profile id.
-    - performance_data (dict[OfficialPerformanceProfileData]): the 
-      performance data to be added.
-
-    Returns: 
-    - dic[PerformanceProfileReturn]: dictionary with the performance 
-      data added to the database, and the id.
-
-    Raise:
-    - HTTPException (400): if performance profile doesn't exists, or data is wrong.
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Edits an aircraft performance profile model (only admin users can use this endpoint)
     """
 
     # Check profile exists
@@ -376,17 +306,7 @@ def delete_fuel_type(
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Delete Fuel Type Endpoint.
-
-    Parameters: 
-    - fuel_type_id (int): fuel type id.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (400): if fuel type doesn't exists.
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Deletes a fuel type (only admin users can user this endpoint)
     """
 
     # Check if fuel type exists.
@@ -412,17 +332,7 @@ def delete_performance_profile(
     _: schemas.TokenData = Depends(auth.validate_admin_user)
 ):
     """
-    Delete Performance Profile Endpoint.
-
-    Parameters: 
-    - profile_id (int): performance_profile id.
-
-    Returns: None
-
-    Raise:
-    - HTTPException (400): if performance profile doesn't exists.
-    - HTTPException (401): if user is not admin user.
-    - HTTPException (500): if there is a server error. 
+    Deletes an aircraft performance profile model (only admin users can use this endpoint)
     """
 
     # Check if performance profile exists

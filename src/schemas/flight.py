@@ -4,7 +4,7 @@ Pydantic flight schemas
 This module defines the flight related pydantic schemas for data validation.
 
 Usage: 
-- Import the required schema class to validate data at the API endpoints.
+- Import the required schema to validate data at the API endpoints.
 """
 
 from typing import List, Optional
@@ -22,8 +22,7 @@ from pydantic import (
 
 class NewFlightWaypointData(BaseModel):
     """
-    This class defines the data-structure required form client to post flight-waypoint data.
-    Name is not required and magnetic variation is optional.
+    Schema that outlines the data required to create a new flight waypoint
     """
     code: constr(
         strip_whitespace=True,
@@ -59,7 +58,7 @@ class NewFlightWaypointData(BaseModel):
     @field_validator('magnetic_variation')
     @classmethod
     def round_magnetic_variation(cls, value: float) -> float | None:
-        '''
+        """
         Classmethod to round magnetic_variation input value to 1 decimal place.
 
         Parameters:
@@ -68,7 +67,7 @@ class NewFlightWaypointData(BaseModel):
         Returns:
         (float) : The magnetic_variation value rounded to 2 decimal place.
 
-        '''
+        """
         if value is not None:
             return round(value, 2)
 
@@ -77,14 +76,14 @@ class NewFlightWaypointData(BaseModel):
     @model_validator(mode='after')
     @classmethod
     def validate_waypoint_schema(cls, values):
-        '''
+        """
         Classmethod to check whether the lattitude is between 
         89 59 59 S and 90 0 0 N, and the longitude is between 
         179 59 59 W and 180 0 0 E; as part of the data validation.
 
         Raises:
         ValueError: Whenever the lattitude or longitud values are not within the desired range.
-        '''
+        """
 
         err_message = {
             "lat": "Latitude must be between S89 59 59 and N89 59 59",
@@ -115,8 +114,7 @@ class NewFlightWaypointData(BaseModel):
 
 class NewFlightWaypointReturn(NewFlightWaypointData):
     """
-    This class defines the data structured returned to 
-    the client after posting new flight waypoints.
+    Schema that outlines the flight waypoint data to return to the client
     """
     id: conint(ge=0)
     from_user_waypoint: bool
@@ -125,7 +123,7 @@ class NewFlightWaypointReturn(NewFlightWaypointData):
 
 class LegWaypointData(BaseModel):
     """
-    This class defines the data required to add or edit a flight-leg's waypoint.
+    Schema that outlines the waypoint data required when adding a new leg to a flight
     """
     new_waypoint: Optional[NewFlightWaypointData] = None
     existing_waypoint_id: Optional[conint(ge=0)] = None
@@ -133,16 +131,16 @@ class LegWaypointData(BaseModel):
 
 class NewLegData(LegWaypointData):
     """
-    This class defines the data required to post new flight-legs.
+    Schema that outlines the data required to add a new leg to a flight
     """
     sequence: conint(ge=1)
 
     @model_validator(mode='after')
     @classmethod
     def validate_waypoint_schema(cls, values):
-        '''
-        Classmethod to check that only new_waypoint or existing_waypoint_id are provided.
-        '''
+        """
+        Classmethod to check that only new_waypoint or existing_waypoint_id are provided
+        """
         if values.existing_waypoint_id is None and values.new_waypoint is None:
             raise ValueError(
                 "Please provide waypoint data, or a valid waypoint id.")
@@ -155,7 +153,7 @@ class NewLegData(LegWaypointData):
 
 class LegWeatherData(BaseModel):
     """
-    This class defines the data required to update flight-legs weather data.
+    Schema that outlines the data required to edit a flight-leg's weather data
     """
     temperature_c: int
     altimeter_inhg: confloat(ge=-99.94, le=99.94)
@@ -168,17 +166,17 @@ class LegWeatherData(BaseModel):
     @field_validator('altimeter_inhg')
     @classmethod
     def round_altimeter_inhg(cls, value: float) -> float | None:
-        '''
+        """
         Classmethod to round altimeter_inhg input value to 2 decimal place.
-        '''
+        """
         return round(value, 2)
 
     @model_validator(mode='after')
     @classmethod
     def validate_wind_data(cls, values):
-        '''
+        """
         Classmethod to check that wind direction is provided, if wind magnitud is not zero.
-        '''
+        """
 
         if values.wind_magnitude_knot > 0 and values.wind_direction is None:
             raise ValueError(
@@ -192,8 +190,8 @@ class LegWeatherData(BaseModel):
 
 class BaseWeatherReportRequestData(BaseModel):
     """
-    This class defines the aerodrome data required by the client, to get weather data 
-    reports from nerby aerodromes, for flight planing and briefing purposes.
+    Schema that outlines the aerodrome data to return to the client, 
+    in a list of breifing aerodromes, as part of the detailed flight-data
     """
     code: str
     distance_from_target_nm: int
@@ -201,7 +199,7 @@ class BaseWeatherReportRequestData(BaseModel):
 
 class NewLegReturn(LegWeatherData):
     """
-    This class defines the data returned to the client, after posting new flight-legs.
+    Schema that outlines the data to return to the client, after posting new flight-legs
     """
     id: conint(ge=0)
     sequence: conint(ge=1)
@@ -214,16 +212,16 @@ class NewLegReturn(LegWeatherData):
 
 class UpdateLegData(LegWeatherData, LegWaypointData):
     """
-    This class defines the data required from the client to update a leg data.
+    Schema that outlines the data required to update a flight leg
     """
     altitude_ft: conint(ge=500, lt=18000)
 
     @model_validator(mode='after')
     @classmethod
     def validate_waypoint_schema(cls, values):
-        '''
-        Classmethod to check that only new_waypoint or existing_waypoint_id are provided.
-        '''
+        """
+        Classmethod to check that only new_waypoint or existing_waypoint_id are provided
+        """
 
         if values.existing_waypoint_id is not None and values.new_waypoint is not None:
             raise ValueError(
@@ -234,7 +232,7 @@ class UpdateLegData(LegWeatherData, LegWaypointData):
 
 class NewFlightData(BaseModel):
     """
-    This class defines the flight data requiered to post a new flight.
+    Schema that outlines the data requiered to create a new flight
     """
     departure_time: AwareDatetime
     aircraft_id: Optional[conint(gt=0)] = None
@@ -244,8 +242,7 @@ class NewFlightData(BaseModel):
 
 class UpdateFlightData(BaseModel):
     """
-    This class defines the data required from the 
-    client to update the general flight data.
+    Schema that outlines the data required to update the general flight settings
     """
     departure_time: AwareDatetime
     bhp_percent: conint(ge=20, le=100)
@@ -258,9 +255,9 @@ class UpdateFlightData(BaseModel):
     @model_validator(mode='after')
     @classmethod
     def round_fuel(cls, values):
-        '''
+        """
         Classmethod to round the fuel values.
-        '''
+        """
         values.added_enroute_time_hours = round(
             values.added_enroute_time_hours, 2)
         values.reserve_fuel_hours = round(values.reserve_fuel_hours, 2)
@@ -271,7 +268,7 @@ class UpdateFlightData(BaseModel):
 
 class NewFlightReturn(NewFlightData):
     """
-    This class defines the flight data returned to the client after posting a new flight.
+    Schema that outlines the flight data to return to the client after posting a new flight
     """
     id: conint(gt=0)
     departure_aerodrome_is_private: Optional[bool] = None
@@ -281,7 +278,8 @@ class NewFlightReturn(NewFlightData):
 
 class ExtensiveFlightDataReturn(NewFlightData, UpdateFlightData):
     """
-    This class defines the data returned to the client, for a detailed flight observation.
+    Schema that outlines the flight data to return a detailed and extensive 
+    flight summary to the client
     """
     id: conint(gt=0)
     departure_aerodrome_is_private: Optional[bool] = None
@@ -302,8 +300,7 @@ class ExtensiveFlightDataReturn(NewFlightData, UpdateFlightData):
 
 class UpdateDepartureArrivalData(BaseModel):
     """
-    This class defines the data required from the 
-    client to update the departure and arrival flight data.
+    Schema that outlines the data required to update the departure and arrival flight data
     """
     aerodrome_id: conint(gt=0)
     wind_direction: Optional[conint(gt=0, le=360)] = None
@@ -317,9 +314,9 @@ class UpdateDepartureArrivalData(BaseModel):
     @model_validator(mode='after')
     @classmethod
     def validate_wind_data(cls, values):
-        '''
+        """
         Classmethod to check that wind direction is provided, if wind magnitud is not zero.
-        '''
+        """
 
         if values.wind_magnitude_knot > 0 and values.wind_direction is None:
             raise ValueError(
@@ -333,16 +330,16 @@ class UpdateDepartureArrivalData(BaseModel):
     @field_validator('altimeter_inhg')
     @classmethod
     def round_altimeter_inhg(cls, value: float) -> float | None:
-        '''
+        """
         Classmethod to round altimeter_inhg input value to 2 decimal place.
-        '''
+        """
         return round(value, 2)
 
 
 class WaypointsNotUpdatedReturn(BaseModel):
     """
-    This class defined the basic data returned to the client, 
-    to show a list of flight waypoints that could not be updated.
+    Schema that outlines the basic data to return the 
+    list of flight waypoints that could not be updated
     """
     waypoint_id: conint(gt=0)
     code: constr(
@@ -356,8 +353,8 @@ class WaypointsNotUpdatedReturn(BaseModel):
 
 class UpdateWaypointsReturn(BaseModel):
     """
-    This class defines the data returned to the user, after updating a flight's
-    waypoints.
+    Schema that outlines the data to return to the client, after updating a flight's
+    waypoints
     """
 
     flight_data: ExtensiveFlightDataReturn

@@ -4,7 +4,7 @@ Pydantic waypoint schemas
 This module defines the waipoint, aerodrome, and related pydantic schemas for data validation.
 
 Usage: 
-- Import the required schema class to validate data at the API endpoints.
+- Import the required schema to validate data at the API endpoints.
 
 """
 
@@ -17,7 +17,7 @@ from functions.data_processing import clean_string
 
 class RunwayDataEdit(BaseModel):
     """
-    This class defines the data-structure required from client to update runway data.
+    Schema that outlines the data required to update a runway
     """
 
     length_ft: int
@@ -60,15 +60,14 @@ class RunwayDataEdit(BaseModel):
 
 class RunwayData(RunwayDataEdit):
     """
-    This class defines the data-structure rquired form the client to post new runways.
+    Schema that outlines the data rquired to create a new runway
     """
-
     aerodrome_id: int
 
 
 class RunwayReturn(RunwayData):
     """
-    This class defines the data-structure used to return runway data to the client.
+    Schema that outlines the runway data to return to the client
     """
 
     id: conint(gt=0)
@@ -91,7 +90,7 @@ class RunwayReturn(RunwayData):
 
 class RunwaySurfaceData(BaseModel):
     """
-    This class defines the data-structure required from the client to post a new runway-surface.
+    Schema that outlines the data required to create a new runway-surface
     """
 
     surface: constr(
@@ -104,7 +103,7 @@ class RunwaySurfaceData(BaseModel):
     @field_validator('surface')
     @classmethod
     def clean_surface_string(cls, value: str) -> str:
-        '''
+        """
         Classmethod to clean surface string.
 
         Parameters:
@@ -113,13 +112,13 @@ class RunwaySurfaceData(BaseModel):
         Returns:
         (str): cleaned surface string.
 
-        '''
+        """
         return clean_string(value)
 
 
 class RunwaySurfaceReturn(RunwaySurfaceData):
     """
-    This class defines the data-structure used to return runway-surface data to the client.
+    Schema that outlines the runway-surface data to return to the client
     """
 
     id: conint(gt=0)

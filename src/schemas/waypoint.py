@@ -4,7 +4,7 @@ Pydantic waypoint schemas
 This module defines the waipoint, aerodrome, and related pydantic schemas for data validation.
 
 Usage: 
-- Import the required schema class to validate data at the API endpoints.
+- Import the required schema to validate data at the API endpoints.
 
 """
 
@@ -26,11 +26,7 @@ from functions.data_processing import clean_string
 
 class WaypointBase(BaseModel):
     """
-    This class defines the basic waypoint data:
-    - code
-    - name
-    - coordinates
-    - magnetic variation
+    Schema that outlines the basic waypoint data required to create, edit or return waypoints
     """
 
     code: constr(
@@ -67,8 +63,7 @@ class WaypointBase(BaseModel):
 
 class UserWaypointReturn(WaypointBase):
     """
-    This class defines the data-structure used to return user-waypoint data to the client.
-    - name is optional.
+    Schema that outlines the user-waypoint data to return to the client
     """
 
     id: conint(gt=0)
@@ -83,7 +78,7 @@ class UserWaypointReturn(WaypointBase):
 
 class VfrWaypointReturn(UserWaypointReturn):
     """
-    This class defines the data-structure used to return vfr-waypoint data to the client.
+    Schema that outlines the vfr-waypoint data to return to the client
     """
 
     hidden: Optional[bool] = None
@@ -91,16 +86,15 @@ class VfrWaypointReturn(UserWaypointReturn):
 
 class UserWaypointData(WaypointBase):
     """
-    This class defines the data-structure required form client to post user-waypoint data.
-    It includes data validation.
+    Schema that outlines defines the data required to create a new user-waypoint
     """
 
     @field_validator('magnetic_variation')
     @classmethod
     def round_magnetic_variation(cls, value: float) -> float:
-        '''
-        Class method to round magnetic_variation input value to 1 decimal place.
-        '''
+        """
+        Classmethod to round magnetic_variation input value to 1 decimal place.
+        """
         if value is None:
             return None
         return round(value, 2)
@@ -108,19 +102,19 @@ class UserWaypointData(WaypointBase):
     @field_validator('name')
     @classmethod
     def clean_waypoint_name(cls, value: str) -> str:
-        '''
-        Class method to clean name string.
-        '''
+        """
+        Classmethod to clean name string.
+        """
         return None if value is None else clean_string(value)
 
     @model_validator(mode='after')
     @classmethod
     def validate_waypoint_schema(cls, values):
-        '''
-        Class method to check whether the lattitude is between 
+        """
+        Classmethod to check whether the lattitude is between 
         89 59 59 S and 90 0 0 N, and the longitude is between 
         179 59 59 W and 180 0 0 E; as part of the data validation.
-        '''
+        """
 
         err_message = {
             "lat": "Latitude must be between S89 59 59 and N89 59 59",
@@ -151,23 +145,21 @@ class UserWaypointData(WaypointBase):
 
 class VfrWaypointData(UserWaypointData):
     """
-    This class defines the data-structure required form client to post vfr-waypoint data.
-    It includes data validation.
+    Schema that outlines the data required to create a new vfr-waypoint
     """
-
     hidden: bool
 
 
 class AerodromeBase(BaseModel):
     """
-    This class defines the basic aerodrome data-structure
+    Schema that outlines the basic aerodrome data required to create, edit or return aerodromes
     """
     elevation_ft: int
 
 
 class RegisteredAerodromeData(VfrWaypointData, AerodromeBase):
     """
-    This class defines the data required from client to post a new registered aerodrome.
+    Schema that outlines the data required create a new registered aerodrome
     """
     status: int
     has_taf: bool
@@ -177,14 +169,14 @@ class RegisteredAerodromeData(VfrWaypointData, AerodromeBase):
 
 class PrivateAerodromeData(UserWaypointData, AerodromeBase):
     """
-    This class defines the data required from client to post a new private aerodrome.
+    Schema that outlines the data required to create a new private aerodrome
     """
     status: int
 
 
 class RegisteredAerodromeReturn(VfrWaypointReturn, AerodromeBase):
     """
-    This class defines the registered-aerodrome data returned to the client.
+    Schema that outlines the registered-aerodrome data to return to the client
     """
     status: str
     registered: bool
@@ -195,7 +187,7 @@ class RegisteredAerodromeReturn(VfrWaypointReturn, AerodromeBase):
 
 class PrivateAerodromeReturn(UserWaypointReturn, AerodromeBase):
     """
-    This class defines the private-aerodrome data returned to the client.
+    Schema that outlines the private-aerodrome data to return to the client
     """
     status: str
     registered: bool
@@ -203,8 +195,8 @@ class PrivateAerodromeReturn(UserWaypointReturn, AerodromeBase):
 
 class RunwayInAerodromeReturn(BaseModel):
     """
-    This class defines the runway  data-structure used to return to the client a list of runways,
-    as part of the aerodrome data.
+    Schema that outlines the runway data to return a list of 
+    runways to the client, as part of the aerodrome data
     """
     id: conint(gt=0)
     number: conint(
@@ -255,14 +247,15 @@ class RunwayInAerodromeReturn(BaseModel):
 
 class AerodromeReturnWithRunways(RegisteredAerodromeReturn):
     """
-    This class defines the aerodrome data returned to the client, including the list of runways.
+    Schema that outlines the aerodrome data to return to the 
+    client, including the list of runways
     """
     runways: Optional[conlist(item_type=RunwayInAerodromeReturn)] = []
 
 
 class AerodromeStatusReturn(BaseModel):
     """
-    This class defines the aerodrome-status data returned to the client.
+    Schema that outlines the aerodrome-status data to return to the client
     """
     id: int
     status: str
@@ -270,7 +263,7 @@ class AerodromeStatusReturn(BaseModel):
 
 class NearbyWaypointReturn(WaypointBase):
     """
-    This class defines the data return to the client, from waypoints nearby a coordinate. 
+    Schema that outlines the data to return to the client, a list of waypoints nearby a coordinate
     """
     id: int
     type: str
