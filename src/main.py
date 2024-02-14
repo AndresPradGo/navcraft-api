@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from startup.create_db import create_database
 from startup.config_cors import config_cors
 from startup import error_logger
-from startup.set_up_dp import set_up_database
+from startup.migrate_db import migrate_db
 from startup.routes import link_routes
 from startup.schedule_clean_db_job import schedule_clean_db_job
 
@@ -28,7 +28,7 @@ app = FastAPI(
 )
 
 create_database()
-set_up_database()
+migrate_db()
 config_cors(app)
 link_routes(app)
 schedule_clean_db_job()

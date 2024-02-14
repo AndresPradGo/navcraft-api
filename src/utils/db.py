@@ -27,7 +27,8 @@ DB_NAME = environ.get('db_name')
 DB_USER = environ.get('db_user')
 DB_PASSWORD = environ.get('db_password')
 DB_HOST = environ.get('db_host')
-DB_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
+DB_PORT = environ.get('db_port')
+DB_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 engine = create_engine(DB_URL, echo=False)
 

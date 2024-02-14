@@ -565,11 +565,11 @@ def _populate_db():
     _add_performance_profile_models()
 
 
-def set_up_database():
+def migrate_db():
     """
-    This function runs all the bd-setup functions in the correct order
+    This function runs all the db-setup functions in the correct order
     """
-    print("----- SETING UP DATABSE -----")
+    print("--- RUNNING DB MIGRATIONS ---")
     _set_charracter_set()
     _create_tables()
     _populate_db()

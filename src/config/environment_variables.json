@@ -2,6 +2,7 @@
     "db_user": "NAVCRAFT_API_DB_USER",
     "db_password": "NAVCRAFT_API_DB_PASSWORD",
     "db_host": "NAVCRAFT_API_DB_HOST",
+    "db_port": "NAVCRAFT_API_DB_PORT",
     "db_name": "NAVCRAFT_API_DB_NAME",
     "master_user_name": "NAVCRAFT_API_MASTER_USER_NAME",
     "master_user_email": "NAVCRAFT_API_MASTER_USER_EMAIL",

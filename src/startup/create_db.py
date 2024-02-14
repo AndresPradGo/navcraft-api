@@ -18,7 +18,8 @@ DB_NAME = environ.get('db_name')
 DB_USER = environ.get('db_user')
 DB_PASSWORD = environ.get('db_password')
 DB_HOST = environ.get('db_host')
-TEMP_DB_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/mysql"
+DB_PORT = environ.get('db_port')
+TEMP_DB_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/mysql"
 
 
 def create_database() -> None:
