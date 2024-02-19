@@ -49,7 +49,7 @@ def get_jwt_payload(token: str):
 def validate_user(
     token: Annotated[
         str,
-        Depends(OAuth2PasswordBearer(tokenUrl="login"))
+        Depends(OAuth2PasswordBearer(tokenUrl="api/login"))
     ]
 ):
     """
@@ -86,7 +86,7 @@ def validate_user(
 def validate_admin_user(
     token: Annotated[
         str,
-        Depends(OAuth2PasswordBearer(tokenUrl="login"))
+        Depends(OAuth2PasswordBearer(tokenUrl="api/login"))
     ]
 ):
     """
@@ -113,7 +113,7 @@ def validate_admin_user(
 def validate_master_user(
     token: Annotated[
         str,
-        Depends(OAuth2PasswordBearer(tokenUrl="login"))
+        Depends(OAuth2PasswordBearer(tokenUrl="api/login"))
     ]
 ):
     """
