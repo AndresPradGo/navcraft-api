@@ -24,7 +24,7 @@ error_logger.init_logger()
 app = FastAPI(
     title="NavCraft API",
     version="1.0.0",
-    description="An API for pilots to plan their flights. NavCraft API uses Canadian aviation rules, regulations and definitions to perform all calculation. Flight plans produced by NavCraft API include: \n \n - navigation logs, \n \n - weight and balance charts, \n \n - fuel calculations, \n \n - takeoff and landing distances."
+    description="An API tool to help pilots craft the perfect navigation flight plans. It uses aircraft performance data, and Canadian aviation rules, regulations and definitions, to produce flight plans that include: \n \n - navigation logs, \n \n - weight and balance charts and calculations, \n \n - fuel calculations, \n \n - takeoff and landing distances."
 )
 
 create_database()
