@@ -90,12 +90,12 @@
     ],
     "surface_performance_decreas_data": [
         {
-            "surface_id": 4,
+            "surface_id": 5,
             "percent": 15,
             "is_takeoff":true
         },
         {
-            "surface_id": 4,
+            "surface_id": 5,
             "percent": 45,
             "is_takeoff":false
         }
