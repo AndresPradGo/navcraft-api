@@ -5,3 +5,9 @@ src/*/*/__pycache__
 
 # macOS
 .DS_Store
+
+# Environment Variables
+.env[.]?*
+
+# Production container 
+Dockerfile.prod

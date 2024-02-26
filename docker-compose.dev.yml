@@ -1,0 +1,53 @@
+version: "3.8"
+
+services: 
+  database:
+    image: mysql:8.0-debian
+    ports:
+     - 3307:3306 # Port 3306 in localhost may already be occupied by MySQL, so you can map it to a different port (e.g. port 3307)
+    restart: unless-stopped
+    volumes:
+      - navcraft_data:/var/lib/mysql # This works for general linux and MacOs. If running on Windows, or if your MySQL configuration is different, find the location of your MySQL data-storage directory
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u root", "--password=your_db_password"]
+      start_period: 5s
+      interval: 5s
+      timeout: 30s
+      retries: 20
+    # ---------- NOTE: Adjust environment variables as desired ----------
+    environment:
+      MYSQL_ROOT_PASSWORD: your_db_password # Must be the same in both services
+      MYSQL_DATABASE: name_your_database # Must be the same in both services
+
+  # ------------------------------------------- || -------------------------------------------
+
+  app: 
+    build: 
+      context: ./
+      dockerfile: Dockerfile.dev
+    image: navcraft-api:1 # Adjust tag number if appropriate
+    command: pipenv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    ports: 
+      - 8000:8000 # If port 8000 is already occupied in your local machine, map to a different port
+    restart: unless-stopped
+    volumes:
+      - ./src:/app/src:ro
+    depends_on:
+      database:
+        condition: service_healthy
+    # ---------- NOTE: Adjust environment variables as desired ----------
+    environment:
+      NAVCRAFT_API_DB_PASSWORD: your_db_password # Must be the same in both services
+      NAVCRAFT_API_DB_HOST: database # Don't change it unless you know what you're doing
+      NAVCRAFT_API_DB_NAME: name_your_database # Must be the same in both services
+      NAVCRAFT_API_MASTER_USER_NAME: Master User Name
+      NAVCRAFT_API_MASTER_USER_EMAIL: master.user@email.com
+      NAVCRAFT_API_MASTER_USER_WEIGHT: 200 # Weight in lbs
+      NAVCRAFT_API_MASTER_USER_PASSWORD: masterUserPassword1 # At least one uppercase and one number
+      NAVCRAFT_API_JWT_SECRET_KEY: RandomStringForJWTkey # Random long strings are preferred
+      NAVCRAFT_API_JWT_ALGORITHM: HS256 # Change it if you prefer a different algorithm, but HS256 works fine
+
+# -------------------------------------------- || --------------------------------------------
+
+volumes:
+  navcraft_data:

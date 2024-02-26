@@ -1,0 +1,35 @@
+FROM python:3.11-slim-bookworm
+RUN pip install pipenv
+
+# Set working directory
+WORKDIR /app
+
+# Instal depnedencies
+COPY Pipfile* .
+RUN pipenv install --ignore-pipfile
+
+# Copy source code
+COPY ./src ./src
+
+# Expose port
+EXPOSE 8000
+
+# Move to the src folder
+WORKDIR /app/src
+
+# Add environment variables
+ENV NAVCRAFT_API_DB_USER="root" \
+    NAVCRAFT_API_DB_PASSWORD="" \
+    NAVCRAFT_API_DB_HOST="" \
+    NAVCRAFT_API_DB_PORT=3306 \
+    NAVCRAFT_API_DB_NAME="" \
+    NAVCRAFT_API_MASTER_USER_NAME="" \
+    NAVCRAFT_API_MASTER_USER_EMAIL="" \
+    NAVCRAFT_API_MASTER_USER_WEIGHT="" \
+    NAVCRAFT_API_MASTER_USER_PASSWORD="" \
+    NAVCRAFT_API_JWT_SECRET_KEY="" \
+    NAVCRAFT_API_JWT_ALGORITHM="" \
+    NAVCRAFT_API_CLIENT_ORIGIN="*" 
+
+# Run the application
+CMD ["pipenv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
