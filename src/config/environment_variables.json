@@ -10,5 +10,6 @@
     "master_user_password": "NAVCRAFT_API_MASTER_USER_PASSWORD",
     "jwt_secret_key": "NAVCRAFT_API_JWT_SECRET_KEY",
     "jwt_algorithm": "NAVCRAFT_API_JWT_ALGORITHM",
-    "client_origin": "NAVCRAFT_API_CLIENT_ORIGIN"
+    "client_origin": "NAVCRAFT_API_CLIENT_ORIGIN",
+    "sentry_dsn": "NAVCRAFT_API_SENTRY_DSN"
 }

@@ -29,7 +29,8 @@ ENV NAVCRAFT_API_DB_USER="root" \
     NAVCRAFT_API_MASTER_USER_PASSWORD="" \
     NAVCRAFT_API_JWT_SECRET_KEY="" \
     NAVCRAFT_API_JWT_ALGORITHM="" \
-    NAVCRAFT_API_CLIENT_ORIGIN="*" 
+    NAVCRAFT_API_CLIENT_ORIGIN="*" \
+    NAVCRAFT_API_SENTRY_DSN=""
 
 # Run the application
 CMD ["pipenv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

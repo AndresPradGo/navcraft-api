@@ -9,14 +9,17 @@ Usage:
 """
 
 import sentry_sdk
+from utils import environ_variable_tools as environ
 
 
 def init_logger():
     """
     This function initiates the error logger.
     """
-    sentry_sdk.init(
-        dsn="https://ab69a96a2792e940845e18c17bf637ee@o1258167.ingest.sentry.io/4506419141410816",
-        traces_sample_rate=1.0,
-        profiles_sample_rate=1.0,
-    )
+    sentry_dsn = environ.get("sentry_dsn")
+    if sentry_dsn is not None and sentry_dsn != "":
+        sentry_sdk.init(
+            dsn=sentry_dsn,
+            traces_sample_rate=1.0,
+            profiles_sample_rate=1.0,
+        )
