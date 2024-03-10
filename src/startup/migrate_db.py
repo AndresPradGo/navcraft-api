@@ -23,7 +23,7 @@ from utils import environ_variable_tools as environ, csv_tools as csv
 from utils.db import engine, Session
 from functions.data_processing import clean_string
 
-_PATH = "static_data/"
+_PATH = "static/"
 
 
 def _set_charracter_set() -> None:
