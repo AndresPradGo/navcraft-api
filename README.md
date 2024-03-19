@@ -8,7 +8,7 @@ _<center>_
 
 </center>
 
-NavCraft API uses aircraft performance data, and Canadian aviation rules, regulations and definitions, to produce VFR flight plans that include:
+NavCraft API uses aircraft performance data and Canadian aviation rules, regulations and definitions, to produce VFR flight plans that include:
 
 - navigation logs,
 
@@ -20,7 +20,7 @@ NavCraft API uses aircraft performance data, and Canadian aviation rules, regula
 
 # <a id="motivation"></a> 🌟 Motivation
 
-NavCraft API was developed with one goal:
+NavCraft API was developed to achieve one goal:
 
 > Minimize flight planning time.
 
